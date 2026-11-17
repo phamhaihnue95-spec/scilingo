@@ -142,7 +142,9 @@ export function CurriculumMapPage({ onSelectLesson }: Props) {
       )}
       {error && (
         <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
-          Không thể kết nối Backend API: {error}. Hãy đảm bảo FastAPI đang chạy tại cổng 8000.
+          Không thể kết nối Backend API ({error}). Nếu đang chạy bản GitHub Pages + Render Free,
+          server Backend có thể đang khởi động lại (~30–50 giây) hoặc chưa cấu hình biến{" "}
+          <code>VITE_API_BASE_URL</code>.
         </div>
       )}
 

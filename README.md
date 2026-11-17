@@ -84,3 +84,22 @@ cd frontend
 npm run dev
 ```
 Truy cập `http://localhost:5173`. Các tài khoản demo (`an.hs8@demo.scilingo.vn`, `minh.gv@demo.scilingo.vn`, `hung.bgh@demo.scilingo.vn`) có nút đăng nhập nhanh tại mục **Đăng nhập**.
+
+---
+
+## 5. Hướng dẫn Deploy Production (Render + GitHub Pages)
+
+### 5.1. Deploy Backend FastAPI + PostgreSQL lên Render (qua `render.yaml`)
+1. Đăng nhập https://dashboard.render.com → chọn **New +** → **Blueprint**.
+2. Kết nối GitHub repository `phamhaihnue95-spec/scilingo`.
+3. Render tự đọc tệp `render.yaml` ở thư mục gốc và khởi tạo đồng thời:
+   * Database PostgreSQL miễn phí (`scilingo-khtn-db`).
+   * Web Service Docker (`scilingo-khtn-api`) build từ `backend/Dockerfile`, tự động chạy `alembic upgrade head` và `python -m app.seed` khi container khởi động.
+4. Sau khi deploy xong, sao chép URL backend do Render cấp (ví dụ: `https://scilingo-khtn-api.onrender.com`) và kiểm tra endpoint `/api/v1/health`.
+
+### 5.2. Deploy Frontend React lên GitHub Pages
+1. Trên GitHub repository **Settings → Pages → Build and deployment → Source**, chọn **GitHub Actions**.
+2. Vào **Settings → Secrets and variables → Actions → tab Variables → New repository variable**:
+   * Name: `VITE_API_BASE_URL`
+   * Value: URL Render Backend ở bước 5.1 (ví dụ `https://scilingo-khtn-api.onrender.com`, **không** có dấu `/` ở cuối).
+3. Vào tab **Actions → Deploy Frontend to GitHub Pages → Run workflow** (hoặc push vào `main` ở thư mục `frontend/`) → website sẽ hoạt động tại `https://phamhaihnue95-spec.github.io/scilingo/`.

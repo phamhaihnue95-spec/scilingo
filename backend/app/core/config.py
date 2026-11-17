@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import json
 from functools import lru_cache
 from pathlib import Path
+from typing import Annotated
 
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import field_validator
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
-# Resolve workspace root: backend/app/core/config.py -> KHTN/
+# Resolve workspace root: backend/app/core/config.py -> repo root
 BACKEND_DIR = Path(__file__).resolve().parent.parent.parent
 REPO_ROOT = BACKEND_DIR.parent
 
@@ -33,8 +36,37 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 30
     refresh_token_expire_days: int = 7
 
-    cors_origins: list[str] = ["http://localhost:5173", "http://127.0.0.1:5173"]
+    cors_origins: Annotated[list[str], NoDecode] = [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "https://phamhaihnue95-spec.github.io",
+    ]
     data_dir: Path = REPO_ROOT / "data"
+
+    @field_validator("database_url", mode="before")
+    @classmethod
+    def _normalize_database_url(cls, value: str) -> str:
+        """Convert Render/Heroku postgres:// or postgresql:// URLs to psycopg v3 dialect."""
+        raw = str(value).strip()
+        if raw.startswith("postgres://"):
+            return "postgresql+psycopg://" + raw.removeprefix("postgres://")
+        if raw.startswith("postgresql://"):
+            return "postgresql+psycopg://" + raw.removeprefix("postgresql://")
+        return raw
+
+    @field_validator("cors_origins", mode="before")
+    @classmethod
+    def _parse_cors_origins(cls, value: str | list[str]) -> list[str]:
+        """Allow either JSON array or comma-separated origins in CORS_ORIGINS env var."""
+        if isinstance(value, list):
+            return [str(item).strip() for item in value if str(item).strip()]
+        raw = str(value).strip()
+        if not raw:
+            return []
+        if raw.startswith("["):
+            parsed = json.loads(raw)
+            return [str(item).strip() for item in parsed if str(item).strip()]
+        return [item.strip() for item in raw.split(",") if item.strip()]
 
 
 @lru_cache

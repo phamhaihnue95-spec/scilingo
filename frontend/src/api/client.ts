@@ -16,7 +16,8 @@ import type {
   UserProfile,
 } from "./types";
 
-const API_BASE = "/api/v1";
+const API_ROOT = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/+$/, "");
+const API_BASE = `${API_ROOT}/api/v1`;
 const ACCESS_KEY = "scilingo_access_token";
 const REFRESH_KEY = "scilingo_refresh_token";
 

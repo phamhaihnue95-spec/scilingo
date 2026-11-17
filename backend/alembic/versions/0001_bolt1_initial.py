@@ -30,7 +30,17 @@ def upgrade() -> None:
     if is_pg:
         op.execute("CREATE SCHEMA IF NOT EXISTS identity_billing")
         op.execute("CREATE SCHEMA IF NOT EXISTS curriculum")
-        op.execute("CREATE EXTENSION IF NOT EXISTS vector")
+        op.execute(
+            """
+            DO $$
+            BEGIN
+                CREATE EXTENSION IF NOT EXISTS vector;
+            EXCEPTION WHEN OTHERS THEN
+                RAISE NOTICE 'pgvector extension not available, continuing without it';
+            END
+            $$;
+            """
+        )
 
     op.create_table(
         "tenants",
