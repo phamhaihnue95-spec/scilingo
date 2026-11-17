@@ -1,0 +1,36 @@
+[project]
+name = "scilingo-khtn-backend"
+version = "0.1.0"
+description = "SciLingo KHTN 8 Backend API (AI-DLC Bolt 1: Curriculum Core + Identity & Billing)"
+readme = "../README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "alembic>=1.14.0",
+    "fastapi>=0.115.0",
+    "psycopg[binary]>=3.2.0",
+    "pwdlib[argon2]>=0.2.1",
+    "pydantic[email]>=2.9.0",
+    "pydantic-settings>=2.6.0",
+    "pyjwt>=2.9.0",
+    "sqlalchemy>=2.0.35",
+    "uvicorn[standard]>=0.32.0",
+]
+
+[dependency-groups]
+dev = [
+    "httpx>=0.27.0",
+    "pytest>=8.3.0",
+    "ruff>=0.7.0",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+ignore = ["B008"]

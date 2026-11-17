@@ -1,0 +1,779 @@
+{
+  "metadata": {
+    "subject": "Khoa học tự nhiên",
+    "subject_en": "Natural Sciences",
+    "grade": 8,
+    "textbook_series": "Kết nối tri thức với cuộc sống",
+    "publisher": "Nhà xuất bản Giáo dục Việt Nam",
+    "legal_basis": [
+      "Thông tư 32/2018/TT-BGDĐT",
+      "Quyết định 3588/QĐ-BGDĐT",
+      "Thông tư 94/2026/TT-BGDĐT",
+      "Công văn 5208/BGDĐT-GDPT"
+    ],
+    "total_lessons": 47
+  },
+  "chapters": [
+    {
+      "chapter_no": 0,
+      "code": "MO_DAU",
+      "title_vi": "Mở đầu",
+      "title_en": "Introduction to Laboratory Safety & Equipment",
+      "discipline": "general_lab",
+      "lessons": [
+        {
+          "lesson_no": 1,
+          "title_vi": "Sử dụng một số hóa chất, thiết bị cơ bản trong phòng thí nghiệm",
+          "title_en": "Using Basic Chemicals and Laboratory Equipment",
+          "discipline": "general_lab",
+          "is_practical": true,
+          "integration_links": [
+            { "target_lesson_no": 8, "note_vi": "An toàn hóa chất áp dụng trực tiếp khi pha loãng và sử dụng Acid." },
+            { "target_lesson_no": 25, "note_vi": "Quy tắc an toàn điện áp dụng khi đo bằng ammeter và voltmeter." }
+          ],
+          "glossary_seed": [
+            { "en": "Laboratory", "vi": "Phòng thí nghiệm", "ipa": "/ˈlæb.rə.tɔːr.i/", "symbol_or_formula": "", "note": "Thường viết tắt là Lab" },
+            { "en": "Test tube", "vi": "Ống nghiệm", "ipa": "/ˈtest tjuːb/", "symbol_or_formula": "", "note": "" },
+            { "en": "Beaker", "vi": "Cốc thủy tinh chia vạch", "ipa": "/ˈbiː.kər/", "symbol_or_formula": "", "note": "" },
+            { "en": "Conical flask", "vi": "Bình tam giác (bình nón)", "ipa": "/ˈkɒn.ɪ.kəl flɑːsk/", "symbol_or_formula": "", "note": "" },
+            { "en": "Graduated cylinder", "vi": "Ống đong", "ipa": "/ˈɡrædʒ.u.eɪ.tɪd ˈsɪl.ɪn.dər/", "symbol_or_formula": "", "note": "" },
+            { "en": "Dropper", "vi": "Ống hút nhỏ giọt", "ipa": "/ˈdrɒp.ər/", "symbol_or_formula": "", "note": "" },
+            { "en": "Hazard symbol", "vi": "Ký hiệu cảnh báo nguy hiểm", "ipa": "/ˈhæz.əd ˈsɪm.bəl/", "symbol_or_formula": "", "note": "Corrosive (ăn mòn), Flammable (dễ cháy), Toxic (độc)" }
+          ]
+        }
+      ]
+    },
+    {
+      "chapter_no": 1,
+      "code": "CHUONG_I",
+      "title_vi": "Chương I. Phản ứng hóa học",
+      "title_en": "Chapter I. Chemical Reactions",
+      "discipline": "chemistry",
+      "lessons": [
+        {
+          "lesson_no": 2,
+          "title_vi": "Phản ứng hóa học",
+          "title_en": "Chemical Reactions",
+          "discipline": "chemistry",
+          "is_practical": false,
+          "integration_links": [
+            { "target_lesson_no": 26, "note_vi": "Phản ứng tỏa nhiệt và thu nhiệt liên hệ trực tiếp đến sự biến đổi năng lượng nhiệt." }
+          ],
+          "glossary_seed": [
+            { "en": "Physical change", "vi": "Biến đổi vật lí", "ipa": "/ˈfɪz.ɪ.kəl tʃeɪndʒ/", "symbol_or_formula": "", "note": "Không tạo chất mới" },
+            { "en": "Chemical change", "vi": "Biến đổi hóa học", "ipa": "/ˈkem.ɪ.kəl tʃeɪndʒ/", "symbol_or_formula": "", "note": "Tạo thành chất mới" },
+            { "en": "Chemical reaction", "vi": "Phản ứng hóa học", "ipa": "/ˈkem.ɪ.kəl riˈæk.ʃən/", "symbol_or_formula": "", "note": "" },
+            { "en": "Reactant", "vi": "Chất phản ứng (chất tham gia)", "ipa": "/riˈæk.tənt/", "symbol_or_formula": "", "note": "" },
+            { "en": "Product", "vi": "Chất sản phẩm", "ipa": "/ˈprɒd.ʌkt/", "symbol_or_formula": "", "note": "" },
+            { "en": "Exothermic reaction", "vi": "Phản ứng tỏa nhiệt", "ipa": "/ˌek.səʊˈθɜː.mɪk riˈæk.ʃən/", "symbol_or_formula": "", "note": "" },
+            { "en": "Endothermic reaction", "vi": "Phản ứng thu nhiệt", "ipa": "/ˌen.dəʊˈθɜː.mɪk riˈæk.ʃən/", "symbol_or_formula": "", "note": "" }
+          ]
+        },
+        {
+          "lesson_no": 3,
+          "title_vi": "Mol và tỉ khối chất khí",
+          "title_en": "Mole and Relative Gas Density",
+          "discipline": "chemistry",
+          "is_practical": false,
+          "integration_links": [
+            { "target_lesson_no": 13, "note_vi": "Khối lượng riêng của chất khí liên hệ mật thiết với khái niệm khối lượng riêng trong Vật lí." }
+          ],
+          "glossary_seed": [
+            { "en": "Mole", "vi": "Mol", "ipa": "/məʊl/", "symbol_or_formula": "mol", "note": "1 mol chứa 6.022 × 10²³ hạt (hằng số Avogadro)" },
+            { "en": "Molar mass", "vi": "Khối lượng mol", "ipa": "/ˈməʊ.lər mæs/", "symbol_or_formula": "M (g/mol)", "note": "" },
+            { "en": "Molar volume", "vi": "Thể tích mol của chất khí", "ipa": "/ˈməʊ.lər ˈvɒl.juːm/", "symbol_or_formula": "24.79 L/mol (25°C, 1 bar)", "note": "Điều kiện chuẩn (đkc)" },
+            { "en": "Relative gas density", "vi": "Tỉ khối của chất khí", "ipa": "/ˈrel.ə.tɪv ɡæs ˈden.sɪ.ti/", "symbol_or_formula": "d_A/B = M_A / M_B", "note": "" }
+          ]
+        },
+        {
+          "lesson_no": 4,
+          "title_vi": "Dung dịch và nồng độ",
+          "title_en": "Solutions and Concentration",
+          "discipline": "chemistry",
+          "is_practical": false,
+          "integration_links": [
+            { "target_lesson_no": 36, "note_vi": "Nồng độ chất tan liên quan đến cân bằng áp suất thẩm thấu trong môi trường trong cơ thể." }
+          ],
+          "glossary_seed": [
+            { "en": "Solution", "vi": "Dung dịch", "ipa": "/səˈluː.ʃən/", "symbol_or_formula": "", "note": "Hỗn hợp đồng nhất của dung môi và chất tan" },
+            { "en": "Solute", "vi": "Chất tan", "ipa": "/ˈsɒl.juːt/", "symbol_or_formula": "", "note": "" },
+            { "en": "Solvent", "vi": "Dung môi", "ipa": "/ˈsɒl.vənt/", "symbol_or_formula": "", "note": "" },
+            { "en": "Solubility", "vi": "Độ tan", "ipa": "/ˌsɒl.jʊˈbɪl.ə.ti/", "symbol_or_formula": "S (g/100 g nước)", "note": "" },
+            { "en": "Concentration", "vi": "Nồng độ", "ipa": "/ˌkɒn.sənˈtreɪ.ʃən/", "symbol_or_formula": "C%, C_M (mol/L)", "note": "Mass concentration (C%) & Molar concentration (C_M)" }
+          ]
+        },
+        {
+          "lesson_no": 5,
+          "title_vi": "Định luật bảo toàn khối lượng và phương trình hóa học",
+          "title_en": "Law of Conservation of Mass and Chemical Equations",
+          "discipline": "chemistry",
+          "is_practical": false,
+          "integration_links": [],
+          "glossary_seed": [
+            { "en": "Law of conservation of mass", "vi": "Định luật bảo toàn khối lượng", "ipa": "/lɔː əv ˌkɒn.səˈveɪ.ʃən əv mæs/", "symbol_or_formula": "∑m_reactants = ∑m_products", "note": "" },
+            { "en": "Chemical equation", "vi": "Phương trình hóa học", "ipa": "/ˈkem.ɪ.kəl ɪˈkweɪ.ʒən/", "symbol_or_formula": "", "note": "" },
+            { "en": "Coefficient", "vi": "Hệ số cân bằng", "ipa": "/ˌkəʊ.ɪˈfɪʃ.ənt/", "symbol_or_formula": "", "note": "" }
+          ]
+        },
+        {
+          "lesson_no": 6,
+          "title_vi": "Tính theo phương trình hóa học",
+          "title_en": "Calculations from Chemical Equations",
+          "discipline": "chemistry",
+          "is_practical": false,
+          "integration_links": [],
+          "glossary_seed": [
+            { "en": "Stoichiometry", "vi": "Tính toán hóa học theo tỉ lệ mol", "ipa": "/ˌstɔɪ.kiˈɒm.ə.tri/", "symbol_or_formula": "", "note": "" },
+            { "en": "Percentage yield", "vi": "Hiệu suất phản ứng", "ipa": "/pəˈsen.tɪdʒ jiːld/", "symbol_or_formula": "H (%)", "note": "" },
+            { "en": "Excess reactant", "vi": "Chất dư", "ipa": "/ˈek.ses riˈæk.tənt/", "symbol_or_formula": "", "note": "" }
+          ]
+        },
+        {
+          "lesson_no": 7,
+          "title_vi": "Tốc độ phản ứng và chất xúc tác",
+          "title_en": "Reaction Rate and Catalysts",
+          "discipline": "chemistry",
+          "is_practical": false,
+          "integration_links": [
+            { "target_lesson_no": 32, "note_vi": "Enzyme tiêu hóa là chất xúc tác sinh học làm tăng tốc độ phản ứng phân giải thức ăn." }
+          ],
+          "glossary_seed": [
+            { "en": "Reaction rate", "vi": "Tốc độ phản ứng", "ipa": "/riˈæk.ʃən reɪt/", "symbol_or_formula": "", "note": "" },
+            { "en": "Catalyst", "vi": "Chất xúc tác", "ipa": "/ˈkæt.əl.ɪst/", "symbol_or_formula": "", "note": "Làm tăng tốc độ phản ứng nhưng còn lại sau phản ứng" },
+            { "en": "Surface area", "vi": "Diện tích bề mặt tiếp xúc", "ipa": "/ˈsɜː.fɪs ˈeə.ri.ə/", "symbol_or_formula": "", "note": "" }
+          ]
+        }
+      ]
+    },
+    {
+      "chapter_no": 2,
+      "code": "CHUONG_II",
+      "title_vi": "Chương II. Một số hợp chất thông dụng",
+      "title_en": "Chapter II. Common Chemical Compounds",
+      "discipline": "chemistry",
+      "lessons": [
+        {
+          "lesson_no": 8,
+          "title_vi": "Acid",
+          "title_en": "Acids",
+          "discipline": "chemistry",
+          "is_practical": false,
+          "integration_links": [
+            { "target_lesson_no": 32, "note_vi": "Hydrochloric acid (HCl) có trong dịch vị dạ dày giúp tiêu hóa protein và diệt khuẩn." }
+          ],
+          "glossary_seed": [
+            { "en": "Acid", "vi": "Acid (hợp chất chứa H+)", "ipa": "/ˈæs.ɪd/", "symbol_or_formula": "HCl, H₂SO₄", "note": "Bắt buộc viết Acid (không viết Axit)" },
+            { "en": "Hydrochloric acid", "vi": "Hydrochloric acid", "ipa": "/ˌhaɪ.drəˈklɒr.ɪk ˈæs.ɪd/", "symbol_or_formula": "HCl", "note": "Chuẩn IUPAC" },
+            { "en": "Sulfuric acid", "vi": "Sulfuric acid", "ipa": "/sʌlˈfjʊə.rɪk ˈæs.ɪd/", "symbol_or_formula": "H₂SO₄", "note": "Chuẩn IUPAC (dùng chữ f trong Sulfur)" },
+            { "en": "Litmus paper", "vi": "Giấy quỳ tím", "ipa": "/ˈlɪt.məs ˈpeɪ.pər/", "symbol_or_formula": "", "note": "Chuyển màu đỏ trong dung dịch acid" }
+          ]
+        },
+        {
+          "lesson_no": 9,
+          "title_vi": "Base – Thang pH",
+          "title_en": "Bases and the pH Scale",
+          "discipline": "chemistry",
+          "is_practical": false,
+          "integration_links": [
+            { "target_lesson_no": 36, "note_vi": "pH máu người được duy trì ổn định trong khoảng 7.35 - 7.45 nhờ cân bằng nội môi." }
+          ],
+          "glossary_seed": [
+            { "en": "Base", "vi": "Base", "ipa": "/beɪs/", "symbol_or_formula": "NaOH, Ca(OH)₂", "note": "Bắt buộc viết Base (không viết Bazơ)" },
+            { "en": "Alkali", "vi": "Kiềm (base tan trong nước)", "ipa": "/ˈæl.kə.laɪ/", "symbol_or_formula": "", "note": "" },
+            { "en": "Sodium hydroxide", "vi": "Sodium hydroxide", "ipa": "/ˈsəʊ.di.əm haɪˈdrɒk.saɪd/", "symbol_or_formula": "NaOH", "note": "Chuẩn IUPAC" },
+            { "en": "pH scale", "vi": "Thang pH", "ipa": "/ˌpiːˈeɪtʃ skeɪl/", "symbol_or_formula": "0 – 14", "note": "pH < 7: acid; pH = 7: neutral; pH > 7: base" }
+          ]
+        },
+        {
+          "lesson_no": 10,
+          "title_vi": "Oxide",
+          "title_en": "Oxides",
+          "discipline": "chemistry",
+          "is_practical": false,
+          "integration_links": [
+            { "target_lesson_no": 47, "note_vi": "Carbon dioxide (CO₂) và Sulfur dioxide (SO₂) liên quan đến hiệu ứng nhà kính và mưa acid." }
+          ],
+          "glossary_seed": [
+            { "en": "Oxide", "vi": "Oxide", "ipa": "/ˈɒk.saɪd/", "symbol_or_formula": "CO₂, CaO, Fe₂O₃", "note": "Bắt buộc viết Oxide (không viết Oxit)" },
+            { "en": "Basic oxide", "vi": "Oxide base", "ipa": "/ˈbeɪ.sɪk ˈɒk.saɪd/", "symbol_or_formula": "CaO, CuO", "note": "" },
+            { "en": "Acidic oxide", "vi": "Oxide acid", "ipa": "/əˈsɪd.ɪk ˈɒk.saɪd/", "symbol_or_formula": "CO₂, SO₂", "note": "" },
+            { "en": "Amphoteric oxide", "vi": "Oxide lưỡng tính", "ipa": "/ˌæm.fəˈter.ɪk ˈɒk.saɪd/", "symbol_or_formula": "Al₂O₃, ZnO", "note": "" }
+          ]
+        },
+        {
+          "lesson_no": 11,
+          "title_vi": "Muối",
+          "title_en": "Salts",
+          "discipline": "chemistry",
+          "is_practical": false,
+          "integration_links": [],
+          "glossary_seed": [
+            { "en": "Salt", "vi": "Muối", "ipa": "/sɔːlt/", "symbol_or_formula": "NaCl, CuSO₄", "note": "" },
+            { "en": "Sodium chloride", "vi": "Sodium chloride", "ipa": "/ˈsəʊ.di.əm ˈklɔː.raɪd/", "symbol_or_formula": "NaCl", "note": "Chuẩn IUPAC" },
+            { "en": "Neutralization", "vi": "Phản ứng trung hòa", "ipa": "/ˌnjuː.trəl.aɪˈzeɪ.ʃən/", "symbol_or_formula": "Acid + Base → Salt + H₂O", "note": "" },
+            { "en": "Precipitate", "vi": "Chất kết tủa", "ipa": "/prɪˈsɪp.ɪ.teɪt/", "symbol_or_formula": "↓", "note": "" }
+          ]
+        },
+        {
+          "lesson_no": 12,
+          "title_vi": "Phân bón hóa học",
+          "title_en": "Chemical Fertilizers",
+          "discipline": "chemistry",
+          "is_practical": false,
+          "integration_links": [
+            { "target_lesson_no": 47, "note_vi": "Sử dụng phân bón hợp lí để tránh ô nhiễm đất và nguồn nước." }
+          ],
+          "glossary_seed": [
+            { "en": "Fertilizer", "vi": "Phân bón", "ipa": "/ˈfɜː.tɪ.laɪ.zər/", "symbol_or_formula": "", "note": "" },
+            { "en": "Nitrogenous fertilizer", "vi": "Phân đạm", "ipa": "/naɪˈtrɒdʒ.ɪ.nəs ˈfɜː.tɪ.laɪ.zər/", "symbol_or_formula": "N", "note": "" },
+            { "en": "Phosphate fertilizer", "vi": "Phân lân", "ipa": "/ˈfɒs.feɪt ˈfɜː.tɪ.laɪ.zər/", "symbol_or_formula": "P", "note": "" },
+            { "en": "Potassium fertilizer", "vi": "Phân kali", "ipa": "/pəˈtæs.i.əm ˈfɜː.tɪ.laɪ.zər/", "symbol_or_formula": "K", "note": "" }
+          ]
+        }
+      ]
+    },
+    {
+      "chapter_no": 3,
+      "code": "CHUONG_III",
+      "title_vi": "Chương III. Khối lượng riêng và áp suất",
+      "title_en": "Chapter III. Density and Pressure",
+      "discipline": "physics",
+      "lessons": [
+        {
+          "lesson_no": 13,
+          "title_vi": "Khối lượng riêng",
+          "title_en": "Density",
+          "discipline": "physics",
+          "is_practical": false,
+          "integration_links": [
+            { "target_lesson_no": 3, "note_vi": "Liên hệ khái niệm khối lượng riêng của chất với tỉ khối chất khí." }
+          ],
+          "glossary_seed": [
+            { "en": "Density", "vi": "Khối lượng riêng", "ipa": "/ˈden.sɪ.ti/", "symbol_or_formula": "D = m / V (kg/m³)", "note": "Quốc tế thường ký hiệu ρ" },
+            { "en": "Mass", "vi": "Khối lượng", "ipa": "/mæs/", "symbol_or_formula": "m (kg)", "note": "" },
+            { "en": "Volume", "vi": "Thể tích", "ipa": "/ˈvɒl.juːm/", "symbol_or_formula": "V (m³)", "note": "" }
+          ]
+        },
+        {
+          "lesson_no": 14,
+          "title_vi": "Thực hành xác định khối lượng riêng",
+          "title_en": "Experiment: Measuring Density",
+          "discipline": "physics",
+          "is_practical": true,
+          "integration_links": [],
+          "glossary_seed": [
+            { "en": "Electronic balance", "vi": "Cân điện tử", "ipa": "/ˌel.ekˈtrɒn.ɪk ˈbæl.əns/", "symbol_or_formula": "", "note": "" },
+            { "en": "Overflow can", "vi": "Bình tràn", "ipa": "/ˈəʊ.və.fləʊ kæn/", "symbol_or_formula": "", "note": "Dùng đo thể tích vật rắn không thấm nước có hình dạng bất kỳ" }
+          ]
+        },
+        {
+          "lesson_no": 15,
+          "title_vi": "Áp suất trên một bề mặt",
+          "title_en": "Pressure on a Surface",
+          "discipline": "physics",
+          "is_practical": false,
+          "integration_links": [
+            { "target_lesson_no": 31, "note_vi": "Diện tích tiếp xúc của bàn chân và cấu tạo xương bàn chân giúp giảm áp suất khi di chuyển." }
+          ],
+          "glossary_seed": [
+            { "en": "Pressure", "vi": "Áp suất", "ipa": "/ˈpreʃ.ər/", "symbol_or_formula": "p = F / S (Pa)", "note": "1 Pa = 1 N/m²" },
+            { "en": "Normal force", "vi": "Áp lực (lực vuông góc bề mặt)", "ipa": "/ˈnɔː.məl fɔːs/", "symbol_or_formula": "F (N)", "note": "" },
+            { "en": "Pascal", "vi": "Đơn vị Pascal", "ipa": "/ˈpæs.kəl/", "symbol_or_formula": "Pa", "note": "" }
+          ]
+        },
+        {
+          "lesson_no": 16,
+          "title_vi": "Áp suất chất lỏng. Áp suất khí quyển",
+          "title_en": "Liquid Pressure and Atmospheric Pressure",
+          "discipline": "physics",
+          "is_practical": false,
+          "integration_links": [
+            { "target_lesson_no": 33, "note_vi": "Huyết áp là áp suất của máu tác dụng lên thành mạch." },
+            { "target_lesson_no": 34, "note_vi": "Hoạt động hít vào và thở ra dựa trên sự thay đổi áp suất không khí trong phổi." }
+          ],
+          "glossary_seed": [
+            { "en": "Liquid pressure", "vi": "Áp suất chất lỏng", "ipa": "/ˈlɪk.wɪd ˈpreʃ.ər/", "symbol_or_formula": "p = d · h", "note": "" },
+            { "en": "Atmospheric pressure", "vi": "Áp suất khí quyển", "ipa": "/ˌæt.məsˈfer.ɪk ˈpreʃ.ər/", "symbol_or_formula": "atm / Pa", "note": "" },
+            { "en": "Communicating vessels", "vi": "Bình thông nhau", "ipa": "/kəˈmjuː.nɪ.keɪ.tɪŋ ˈves.əlz/", "symbol_or_formula": "", "note": "" }
+          ]
+        },
+        {
+          "lesson_no": 17,
+          "title_vi": "Lực đẩy Archimedes",
+          "title_en": "Archimedes' Principle and Buoyant Force",
+          "discipline": "physics",
+          "is_practical": false,
+          "integration_links": [],
+          "glossary_seed": [
+            { "en": "Buoyant force", "vi": "Lực đẩy Archimedes (lực đẩy nổi)", "ipa": "/ˈbɔɪ.ənt fɔːs/", "symbol_or_formula": "F_A = d · V (N)", "note": "Còn gọi là Upthrust" },
+            { "en": "Archimedes' principle", "vi": "Định luật Archimedes", "ipa": "/ˌɑː.kɪˈmiː.diːz ˈprɪn.sə.pəl/", "symbol_or_formula": "", "note": "SGK KNTT giữ tên quốc tế Archimedes" },
+            { "en": "Float / Sink", "vi": "Nổi / Chìm", "ipa": "/fləʊt/ /sɪŋk/", "symbol_or_formula": "", "note": "" }
+          ]
+        }
+      ]
+    },
+    {
+      "chapter_no": 4,
+      "code": "CHUONG_IV",
+      "title_vi": "Chương IV. Tác dụng làm quay của lực",
+      "title_en": "Chapter IV. Turning Effect of a Force",
+      "discipline": "physics",
+      "lessons": [
+        {
+          "lesson_no": 18,
+          "title_vi": "Tác dụng làm quay của lực. Moment lực",
+          "title_en": "Turning Effect of a Force and Moment of Force",
+          "discipline": "physics",
+          "is_practical": false,
+          "integration_links": [
+            { "target_lesson_no": 31, "note_vi": "Khớp xương và cơ bắp trong hệ vận động hoạt động theo nguyên tắc moment lực." }
+          ],
+          "glossary_seed": [
+            { "en": "Moment of a force", "vi": "Moment lực", "ipa": "/ˈməʊ.mənt əv ə fɔːs/", "symbol_or_formula": "M = F · d (N·m)", "note": "SGK KNTT dùng trực tiếp từ Moment lực" },
+            { "en": "Pivot", "vi": "Trục quay / Điểm tựa", "ipa": "/ˈpɪv.ət/", "symbol_or_formula": "", "note": "Còn gọi là Fulcrum" },
+            { "en": "Clockwise / Anticlockwise", "vi": "Cùng chiều / Ngược chiều kim đồng hồ", "ipa": "/ˈklɒk.waɪz/", "symbol_or_formula": "", "note": "" }
+          ]
+        },
+        {
+          "lesson_no": 19,
+          "title_vi": "Đòn bẩy và ứng dụng",
+          "title_en": "Levers and Applications",
+          "discipline": "physics",
+          "is_practical": false,
+          "integration_links": [
+            { "target_lesson_no": 31, "note_vi": "Cánh tay, khớp khuỷu và khớp cổ là các đòn bẩy sinh học trong cơ thể người." }
+          ],
+          "glossary_seed": [
+            { "en": "Lever", "vi": "Đòn bẩy", "ipa": "/ˈliː.vər/", "symbol_or_formula": "", "note": "" },
+            { "en": "Fulcrum", "vi": "Điểm tựa", "ipa": "/ˈfʊl.krəm/", "symbol_or_formula": "O", "note": "" },
+            { "en": "Effort / Load", "vi": "Lực tác dụng / Lực cản (tải)", "ipa": "/ˈef.ət/ /ləʊd/", "symbol_or_formula": "", "note": "" }
+          ]
+        }
+      ]
+    },
+    {
+      "chapter_no": 5,
+      "code": "CHUONG_V",
+      "title_vi": "Chương V. Điện",
+      "title_en": "Chapter V. Electricity",
+      "discipline": "physics",
+      "lessons": [
+        {
+          "lesson_no": 20,
+          "title_vi": "Hiện tượng nhiễm điện do cọ xát",
+          "title_en": "Charging by Friction",
+          "discipline": "physics",
+          "is_practical": false,
+          "integration_links": [],
+          "glossary_seed": [
+            { "en": "Electric charge", "vi": "Điện tích", "ipa": "/ɪˈlek.trɪk tʃɑːdʒ/", "symbol_or_formula": "+ / -", "note": "" },
+            { "en": "Static electricity", "vi": "Tĩnh điện", "ipa": "/ˈstæt.ɪk ɪˌlekˈtrɪs.ə.ti/", "symbol_or_formula": "", "note": "" },
+            { "en": "Electron", "vi": "Electron", "ipa": "/ɪˈlek.trɒn/", "symbol_or_formula": "e⁻", "note": "" }
+          ]
+        },
+        {
+          "lesson_no": 21,
+          "title_vi": "Dòng điện, nguồn điện",
+          "title_en": "Electric Current and Power Sources",
+          "discipline": "physics",
+          "is_practical": false,
+          "integration_links": [],
+          "glossary_seed": [
+            { "en": "Electric current", "vi": "Dòng điện", "ipa": "/ɪˈlek.trɪk ˈkʌr.ənt/", "symbol_or_formula": "", "note": "Dòng chuyển dời có hướng của các hạt mang điện" },
+            { "en": "Conductor", "vi": "Vật dẫn điện", "ipa": "/kənˈdʌk.tər/", "symbol_or_formula": "", "note": "" },
+            { "en": "Insulator", "vi": "Vật cách điện", "ipa": "/ˈɪn.sjʊ.leɪ.tər/", "symbol_or_formula": "", "note": "" },
+            { "en": "Power source / Battery", "vi": "Nguồn điện / Pin, ắc quy", "ipa": "/ˈpaʊər sɔːs/", "symbol_or_formula": "", "note": "" }
+          ]
+        },
+        {
+          "lesson_no": 22,
+          "title_vi": "Mạch điện đơn giản",
+          "title_en": "Simple Electric Circuits",
+          "discipline": "physics",
+          "is_practical": false,
+          "integration_links": [],
+          "glossary_seed": [
+            { "en": "Electric circuit", "vi": "Mạch điện", "ipa": "/ɪˈlek.trɪk ˈsɜː.kɪt/", "symbol_or_formula": "", "note": "" },
+            { "en": "Circuit diagram", "vi": "Sơ đồ mạch điện", "ipa": "/ˈsɜː.kɪt ˈdaɪ.ə.ɡræm/", "symbol_or_formula": "", "note": "" },
+            { "en": "Switch", "vi": "Công tắc (khóa K)", "ipa": "/swɪtʃ/", "symbol_or_formula": "", "note": "" },
+            { "en": "Fuse / Circuit breaker", "vi": "Cầu chì / Cầu dao tự động", "ipa": "/fjuːz/", "symbol_or_formula": "", "note": "" }
+          ]
+        },
+        {
+          "lesson_no": 23,
+          "title_vi": "Tác dụng của dòng điện",
+          "title_en": "Effects of Electric Current",
+          "discipline": "physics",
+          "is_practical": false,
+          "integration_links": [
+            { "target_lesson_no": 37, "note_vi": "Tác dụng sinh lí của dòng điện lên hệ thần kinh và cơ bắp." }
+          ],
+          "glossary_seed": [
+            { "en": "Thermal effect", "vi": "Tác dụng nhiệt", "ipa": "/ˈθɜː.məl ɪˈfekt/", "symbol_or_formula": "", "note": "" },
+            { "en": "Luminous effect", "vi": "Tác dụng phát sáng", "ipa": "/ˈluː.mɪ.nəs ɪˈfekt/", "symbol_or_formula": "", "note": "" },
+            { "en": "Chemical effect", "vi": "Tác dụng hóa học", "ipa": "/ˈkem.ɪ.kəl ɪˈfekt/", "symbol_or_formula": "", "note": "" },
+            { "en": "Physiological effect", "vi": "Tác dụng sinh lí", "ipa": "/ˌfɪz.i.əˈlɒdʒ.ɪ.kəl ɪˈfekt/", "symbol_or_formula": "", "note": "" }
+          ]
+        },
+        {
+          "lesson_no": 24,
+          "title_vi": "Cường độ dòng điện và hiệu điện thế",
+          "title_en": "Current Intensity and Voltage",
+          "discipline": "physics",
+          "is_practical": false,
+          "integration_links": [],
+          "glossary_seed": [
+            { "en": "Current intensity", "vi": "Cường độ dòng điện", "ipa": "/ˈkʌr.ənt ɪnˈten.sɪ.ti/", "symbol_or_formula": "I (A)", "note": "Đơn vị Ampere (A)" },
+            { "en": "Voltage", "vi": "Hiệu điện thế", "ipa": "/ˈvəʊl.tɪdʒ/", "symbol_or_formula": "U / V (V)", "note": "Đơn vị Volt (V); SGK VN ký hiệu U, quốc tế hay ký hiệu V" },
+            { "en": "Ammeter", "vi": "Ampe kế", "ipa": "/ˈæm.iː.tər/", "symbol_or_formula": "A", "note": "Mắc nối tiếp (Series)" },
+            { "en": "Voltmeter", "vi": "Vôn kế", "ipa": "/ˈvəʊlt.miː.tər/", "symbol_or_formula": "V", "note": "Mắc song song (Parallel)" }
+          ]
+        },
+        {
+          "lesson_no": 25,
+          "title_vi": "Thực hành đo cường độ dòng điện và hiệu điện thế",
+          "title_en": "Experiment: Measuring Current and Voltage",
+          "discipline": "physics",
+          "is_practical": true,
+          "integration_links": [
+            { "target_lesson_no": 1, "note_vi": "Tuân thủ quy tắc an toàn điện trong phòng thí nghiệm." }
+          ],
+          "glossary_seed": [
+            { "en": "Series connection", "vi": "Mắc nối tiếp", "ipa": "/ˈsɪə.riːz kəˈnek.ʃən/", "symbol_or_formula": "", "note": "" },
+            { "en": "Parallel connection", "vi": "Mắc song song", "ipa": "/ˈpær.ə.lel kəˈnek.ʃən/", "symbol_or_formula": "", "note": "" }
+          ]
+        }
+      ]
+    },
+    {
+      "chapter_no": 6,
+      "code": "CHUONG_VI",
+      "title_vi": "Chương VI. Nhiệt",
+      "title_en": "Chapter VI. Heat and Thermal Energy",
+      "discipline": "physics",
+      "lessons": [
+        {
+          "lesson_no": 26,
+          "title_vi": "Năng lượng nhiệt và nội năng",
+          "title_en": "Thermal Energy and Internal Energy",
+          "discipline": "physics",
+          "is_practical": false,
+          "integration_links": [
+            { "target_lesson_no": 2, "note_vi": "Sự truyền năng lượng nhiệt trong phản ứng tỏa nhiệt và thu nhiệt." }
+          ],
+          "glossary_seed": [
+            { "en": "Thermal energy", "vi": "Năng lượng nhiệt", "ipa": "/ˈθɜː.məl ˈen.ə.dʒi/", "symbol_or_formula": "J", "note": "" },
+            { "en": "Internal energy", "vi": "Nội năng", "ipa": "/ɪnˈtɜː.nəl ˈen.ə.dʒi/", "symbol_or_formula": "U (J)", "note": "" },
+            { "en": "Heat", "vi": "Nhiệt lượng", "ipa": "/hiːt/", "symbol_or_formula": "Q (J)", "note": "" },
+            { "en": "Temperature", "vi": "Nhiệt độ", "ipa": "/ˈtem.prə.tʃər/", "symbol_or_formula": "°C / K", "note": "" }
+          ]
+        },
+        {
+          "lesson_no": 27,
+          "title_vi": "Thực hành đo năng lượng nhiệt bằng joulemeter",
+          "title_en": "Experiment: Measuring Thermal Energy with a Joulemeter",
+          "discipline": "physics",
+          "is_practical": true,
+          "integration_links": [],
+          "glossary_seed": [
+            { "en": "Joulemeter", "vi": "Đồng hồ đo năng lượng nhiệt (Joulemeter)", "ipa": "/ˈdʒuːl.miː.tər/", "symbol_or_formula": "J", "note": "SGK KNTT giữ trực tiếp thuật ngữ joulemeter" },
+            { "en": "Calorimeter", "vi": "Nhiệt lượng kế", "ipa": "/ˌkæl.əˈrɪm.ɪ.tər/", "symbol_or_formula": "", "note": "" }
+          ]
+        },
+        {
+          "lesson_no": 28,
+          "title_vi": "Sự truyền nhiệt",
+          "title_en": "Heat Transfer",
+          "discipline": "physics",
+          "is_practical": false,
+          "integration_links": [
+            { "target_lesson_no": 39, "note_vi": "Da người điều hòa thân nhiệt qua bức xạ, dẫn nhiệt, đối lưu và bay hơi mồ hôi." }
+          ],
+          "glossary_seed": [
+            { "en": "Conduction", "vi": "Dẫn nhiệt", "ipa": "/kənˈdʌk.ʃən/", "symbol_or_formula": "", "note": "Chủ yếu trong chất rắn" },
+            { "en": "Convection", "vi": "Đối lưu", "ipa": "/kənˈvek.ʃən/", "symbol_or_formula": "", "note": "Trong chất lỏng và chất khí" },
+            { "en": "Thermal radiation", "vi": "Bức xạ nhiệt", "ipa": "/ˈθɜː.məl ˌreɪ.diˈeɪ.ʃən/", "symbol_or_formula": "", "note": "Truyền được trong chân không" },
+            { "en": "Greenhouse effect", "vi": "Hiệu ứng nhà kính", "ipa": "/ˈɡriːn.haʊs ɪˈfekt/", "symbol_or_formula": "", "note": "" }
+          ]
+        },
+        {
+          "lesson_no": 29,
+          "title_vi": "Sự nở vì nhiệt",
+          "title_en": "Thermal Expansion",
+          "discipline": "physics",
+          "is_practical": false,
+          "integration_links": [],
+          "glossary_seed": [
+            { "en": "Thermal expansion", "vi": "Sự nở vì nhiệt", "ipa": "/ˈθɜː.məl ɪkˈspæn.ʃən/", "symbol_or_formula": "", "note": "" },
+            { "en": "Bimetallic strip", "vi": "Băng kép", "ipa": "/ˌbaɪ.məˈtæl.ɪk strɪp/", "symbol_or_formula": "", "note": "" }
+          ]
+        }
+      ]
+    },
+    {
+      "chapter_no": 7,
+      "code": "CHUONG_VII",
+      "title_vi": "Chương VII. Sinh học cơ thể người",
+      "title_en": "Chapter VII. Human Biology",
+      "discipline": "biology",
+      "lessons": [
+        {
+          "lesson_no": 30,
+          "title_vi": "Khái quát về cơ thể người",
+          "title_en": "Overview of the Human Body",
+          "discipline": "biology",
+          "is_practical": false,
+          "integration_links": [],
+          "glossary_seed": [
+            { "en": "Organ system", "vi": "Hệ cơ quan", "ipa": "/ˈɔː.ɡən ˈsɪs.təm/", "symbol_or_formula": "", "note": "" },
+            { "en": "Tissue", "vi": "Mô", "ipa": "/ˈtɪʃ.uː/", "symbol_or_formula": "", "note": "" }
+          ]
+        },
+        {
+          "lesson_no": 31,
+          "title_vi": "Hệ vận động ở người",
+          "title_en": "The Human Locomotor System",
+          "discipline": "biology",
+          "is_practical": false,
+          "integration_links": [
+            { "target_lesson_no": 18, "note_vi": "Khớp xương và cơ bắp vận hành như hệ đòn bẩy và moment lực." }
+          ],
+          "glossary_seed": [
+            { "en": "Skeletal system", "vi": "Hệ xương", "ipa": "/ˈskel.ɪ.təl ˈsɪs.təm/", "symbol_or_formula": "", "note": "" },
+            { "en": "Muscular system", "vi": "Hệ cơ", "ipa": "/ˈmʌs.kjə.lər ˈsɪs.təm/", "symbol_or_formula": "", "note": "" },
+            { "en": "Joint", "vi": "Khớp xương", "ipa": "/dʒɔɪnt/", "symbol_or_formula": "", "note": "" }
+          ]
+        },
+        {
+          "lesson_no": 32,
+          "title_vi": "Dinh dưỡng và tiêu hóa ở người",
+          "title_en": "Nutrition and Human Digestion",
+          "discipline": "biology",
+          "is_practical": false,
+          "integration_links": [
+            { "target_lesson_no": 7, "note_vi": "Enzyme tiêu hóa là chất xúc tác sinh học." },
+            { "target_lesson_no": 8, "note_vi": "Acid HCl trong dạ dày." }
+          ],
+          "glossary_seed": [
+            { "en": "Digestive system", "vi": "Hệ tiêu hóa", "ipa": "/daɪˈdʒes.tɪv ˈsɪs.təm/", "symbol_or_formula": "", "note": "" },
+            { "en": "Nutrient", "vi": "Chất dinh dưỡng", "ipa": "/ˈnjuː.tri.ənt/", "symbol_or_formula": "", "note": "" },
+            { "en": "Enzyme", "vi": "Enzyme (men tiêu hóa)", "ipa": "/ˈen.zaɪm/", "symbol_or_formula": "", "note": "" }
+          ]
+        },
+        {
+          "lesson_no": 33,
+          "title_vi": "Máu và hệ tuần hoàn của cơ thể người",
+          "title_en": "Blood and the Human Circulatory System",
+          "discipline": "biology",
+          "is_practical": false,
+          "integration_links": [
+            { "target_lesson_no": 16, "note_vi": "Huyết áp liên hệ đến áp suất chất lỏng trong mạch kín." }
+          ],
+          "glossary_seed": [
+            { "en": "Circulatory system", "vi": "Hệ tuần hoàn", "ipa": "/ˌsɜː.kjəˈleɪ.tər.i ˈsɪs.təm/", "symbol_or_formula": "", "note": "" },
+            { "en": "Red blood cell", "vi": "Hồng cầu", "ipa": "/red blʌd sel/", "symbol_or_formula": "", "note": "" },
+            { "en": "White blood cell", "vi": "Bạch cầu", "ipa": "/waɪt blʌd sel/", "symbol_or_formula": "", "note": "" },
+            { "en": "Blood pressure", "vi": "Huyết áp", "ipa": "/ˈblʌd ˌpreʃ.ər/", "symbol_or_formula": "mmHg", "note": "" }
+          ]
+        },
+        {
+          "lesson_no": 34,
+          "title_vi": "Hệ hô hấp ở người",
+          "title_en": "The Human Respiratory System",
+          "discipline": "biology",
+          "is_practical": false,
+          "integration_links": [
+            { "target_lesson_no": 16, "note_vi": "Thông khí ở phổi nhờ chênh lệch áp suất khí." }
+          ],
+          "glossary_seed": [
+            { "en": "Respiratory system", "vi": "Hệ hô hấp", "ipa": "/rɪˈspɪr.ə.tər.i ˈsɪs.təm/", "symbol_or_formula": "", "note": "" },
+            { "en": "Alveolus (Alveoli)", "vi": "Phế nang", "ipa": "/ælˈviː.ə.ləs/", "symbol_or_formula": "", "note": "" },
+            { "en": "Gas exchange", "vi": "Trao đổi khí", "ipa": "/ɡæs ɪksˈtʃeɪndʒ/", "symbol_or_formula": "O₂ / CO₂", "note": "" }
+          ]
+        },
+        {
+          "lesson_no": 35,
+          "title_vi": "Hệ bài tiết ở người",
+          "title_en": "The Human Excretory System",
+          "discipline": "biology",
+          "is_practical": false,
+          "integration_links": [],
+          "glossary_seed": [
+            { "en": "Excretory system", "vi": "Hệ bài tiết", "ipa": "/ɪkˈskriː.tər.i ˈsɪs.təm/", "symbol_or_formula": "", "note": "" },
+            { "en": "Kidney", "vi": "Thận", "ipa": "/ˈkɪd.ni/", "symbol_or_formula": "", "note": "" },
+            { "en": "Nephron", "vi": "Đơn vị chức năng thận (Nephron)", "ipa": "/ˈnef.rɒn/", "symbol_or_formula": "", "note": "" }
+          ]
+        },
+        {
+          "lesson_no": 36,
+          "title_vi": "Điều hòa môi trường trong của cơ thể người",
+          "title_en": "Homeostasis in the Human Body",
+          "discipline": "biology",
+          "is_practical": false,
+          "integration_links": [
+            { "target_lesson_no": 9, "note_vi": "Duy trì pH máu ổn định quanh mức 7.35 - 7.45." }
+          ],
+          "glossary_seed": [
+            { "en": "Homeostasis", "vi": "Cân bằng môi trường trong (nội môi)", "ipa": "/ˌhəʊ.mi.əʊˈsteɪ.sɪs/", "symbol_or_formula": "", "note": "" },
+            { "en": "Internal environment", "vi": "Môi trường trong cơ thể", "ipa": "/ɪnˈtɜː.nəl ɪnˈvaɪ.rən.mənt/", "symbol_or_formula": "", "note": "" }
+          ]
+        },
+        {
+          "lesson_no": 37,
+          "title_vi": "Hệ thần kinh và các giác quan ở người",
+          "title_en": "The Nervous System and Sensory Organs",
+          "discipline": "biology",
+          "is_practical": false,
+          "integration_links": [
+            { "target_lesson_no": 23, "note_vi": "Xung thần kinh là tín hiệu điện sinh học." }
+          ],
+          "glossary_seed": [
+            { "en": "Nervous system", "vi": "Hệ thần kinh", "ipa": "/ˈnɜː.vəs ˈsɪs.təm/", "symbol_or_formula": "", "note": "" },
+            { "en": "Neuron", "vi": "Tế bào thần kinh (Nơ-ron)", "ipa": "/ˈnjʊə.rɒn/", "symbol_or_formula": "", "note": "" },
+            { "en": "Reflex", "vi": "Phản xạ", "ipa": "/ˈriː.fleks/", "symbol_or_formula": "", "note": "" }
+          ]
+        },
+        {
+          "lesson_no": 38,
+          "title_vi": "Hệ nội tiết ở người",
+          "title_en": "The Human Endocrine System",
+          "discipline": "biology",
+          "is_practical": false,
+          "integration_links": [],
+          "glossary_seed": [
+            { "en": "Endocrine system", "vi": "Hệ nội tiết", "ipa": "/ˈen.dəʊ.kraɪn ˈsɪs.təm/", "symbol_or_formula": "", "note": "" },
+            { "en": "Hormone", "vi": "Hoocmôn (Hormone)", "ipa": "/ˈhɔː.məʊn/", "symbol_or_formula": "", "note": "" },
+            { "en": "Insulin", "vi": "Insulin", "ipa": "/ˈɪn.sjʊ.lɪn/", "symbol_or_formula": "", "note": "" }
+          ]
+        },
+        {
+          "lesson_no": 39,
+          "title_vi": "Da và điều hòa thân nhiệt ở người",
+          "title_en": "Skin and Thermoregulation",
+          "discipline": "biology",
+          "is_practical": false,
+          "integration_links": [
+            { "target_lesson_no": 28, "note_vi": "Cơ chế tỏa nhiệt của da dựa trên dẫn nhiệt, đối lưu, bức xạ nhiệt và bay hơi." }
+          ],
+          "glossary_seed": [
+            { "en": "Thermoregulation", "vi": "Điều hòa thân nhiệt", "ipa": "/ˌθɜː.məʊˌreɡ.jəˈleɪ.ʃən/", "symbol_or_formula": "37°C", "note": "" },
+            { "en": "Sweat gland", "vi": "Tuyến mồ hôi", "ipa": "/swet ɡlænd/", "symbol_or_formula": "", "note": "" }
+          ]
+        },
+        {
+          "lesson_no": 40,
+          "title_vi": "Sinh sản ở người",
+          "title_en": "Human Reproduction",
+          "discipline": "biology",
+          "is_practical": false,
+          "integration_links": [],
+          "glossary_seed": [
+            { "en": "Reproduction", "vi": "Sinh sản", "ipa": "/ˌriː.prəˈdʌk.ʃən/", "symbol_or_formula": "", "note": "" },
+            { "en": "Fertilization", "vi": "Sự thụ tinh", "ipa": "/ˌfɜː.tɪ.laɪˈzeɪ.ʃən/", "symbol_or_formula": "", "note": "" },
+            { "en": "Puberty", "vi": "Tuổi dậy thì", "ipa": "/ˈpjuː.bə.ti/", "symbol_or_formula": "", "note": "" }
+          ]
+        }
+      ]
+    },
+    {
+      "chapter_no": 8,
+      "code": "CHUONG_VIII",
+      "title_vi": "Chương VIII. Sinh vật và môi trường",
+      "title_en": "Chapter VIII. Organisms and the Environment",
+      "discipline": "biology",
+      "lessons": [
+        {
+          "lesson_no": 41,
+          "title_vi": "Môi trường và các nhân tố sinh thái",
+          "title_en": "Habitats and Ecological Factors",
+          "discipline": "biology",
+          "is_practical": false,
+          "integration_links": [],
+          "glossary_seed": [
+            { "en": "Habitat", "vi": "Môi trường sống / Nơi ở", "ipa": "/ˈhæb.ɪ.tæt/", "symbol_or_formula": "", "note": "" },
+            { "en": "Abiotic factor", "vi": "Nhân tố vô sinh", "ipa": "/ˌeɪ.baɪˈɒt.ɪk ˈfæk.tər/", "symbol_or_formula": "", "note": "" },
+            { "en": "Biotic factor", "vi": "Nhân tố hữu sinh", "ipa": "/baɪˈɒt.ɪk ˈfæk.tər/", "symbol_or_formula": "", "note": "" }
+          ]
+        },
+        {
+          "lesson_no": 42,
+          "title_vi": "Quần thể sinh vật",
+          "title_en": "Populations",
+          "discipline": "biology",
+          "is_practical": false,
+          "integration_links": [],
+          "glossary_seed": [
+            { "en": "Population", "vi": "Quần thể sinh vật", "ipa": "/ˌpɒp.jəˈleɪ.ʃən/", "symbol_or_formula": "", "note": "Lưu ý không dịch là dân số trong ngữ cảnh sinh thái" },
+            { "en": "Population density", "vi": "Mật độ cá thể của quần thể", "ipa": "/ˌpɒp.jəˈleɪ.ʃən ˈden.sɪ.ti/", "symbol_or_formula": "", "note": "" }
+          ]
+        },
+        {
+          "lesson_no": 43,
+          "title_vi": "Quần xã sinh vật",
+          "title_en": "Biological Communities",
+          "discipline": "biology",
+          "is_practical": false,
+          "integration_links": [],
+          "glossary_seed": [
+            { "en": "Community", "vi": "Quần xã sinh vật", "ipa": "/kəˈmjuː.nə.ti/", "symbol_or_formula": "", "note": "" },
+            { "en": "Biodiversity", "vi": "Đa dạng sinh học", "ipa": "/ˌbaɪ.əʊ.daɪˈvɜː.sə.ti/", "symbol_or_formula": "", "note": "" }
+          ]
+        },
+        {
+          "lesson_no": 44,
+          "title_vi": "Hệ sinh thái",
+          "title_en": "Ecosystems",
+          "discipline": "biology",
+          "is_practical": false,
+          "integration_links": [],
+          "glossary_seed": [
+            { "en": "Ecosystem", "vi": "Hệ sinh thái", "ipa": "/ˈiː.kəʊˌsɪs.təm/", "symbol_or_formula": "", "note": "" },
+            { "en": "Producer", "vi": "Sinh vật sản xuất", "ipa": "/prəˈdʒuː.sər/", "symbol_or_formula": "", "note": "" },
+            { "en": "Consumer", "vi": "Sinh vật tiêu thụ", "ipa": "/kənˈsjuː.mər/", "symbol_or_formula": "", "note": "" },
+            { "en": "Decomposer", "vi": "Sinh vật phân giải", "ipa": "/ˌdiː.kəmˈpəʊ.zər/", "symbol_or_formula": "", "note": "" },
+            { "en": "Food chain / Food web", "vi": "Chuỗi thức ăn / Lưới thức ăn", "ipa": "/fuːd tʃeɪn/", "symbol_or_formula": "", "note": "" }
+          ]
+        },
+        {
+          "lesson_no": 45,
+          "title_vi": "Sinh quyển",
+          "title_en": "The Biosphere",
+          "discipline": "biology",
+          "is_practical": false,
+          "integration_links": [],
+          "glossary_seed": [
+            { "en": "Biosphere", "vi": "Sinh quyển", "ipa": "/ˈbaɪ.əʊ.sfɪər/", "symbol_or_formula": "", "note": "" },
+            { "en": "Biome", "vi": "Khu sinh học", "ipa": "/ˈbaɪ.əʊm/", "symbol_or_formula": "", "note": "" }
+          ]
+        },
+        {
+          "lesson_no": 46,
+          "title_vi": "Cân bằng tự nhiên",
+          "title_en": "Ecological Balance",
+          "discipline": "biology",
+          "is_practical": false,
+          "integration_links": [],
+          "glossary_seed": [
+            { "en": "Ecological balance", "vi": "Cân bằng tự nhiên", "ipa": "/ˌiː.kəˈlɒdʒ.ɪ.kəl ˈbæl.əns/", "symbol_or_formula": "", "note": "" }
+          ]
+        },
+        {
+          "lesson_no": 47,
+          "title_vi": "Bảo vệ môi trường",
+          "title_en": "Environmental Protection",
+          "discipline": "biology",
+          "is_practical": false,
+          "integration_links": [
+            { "target_lesson_no": 10, "note_vi": "Khí thải oxide (CO₂, SO₂) gây mưa acid và biến đổi khí hậu." },
+            { "target_lesson_no": 12, "note_vi": "Dư lượng phân bón hóa học gây phú dưỡng nguồn nước." }
+          ],
+          "glossary_seed": [
+            { "en": "Environmental pollution", "vi": "Ô nhiễm môi trường", "ipa": "/ɪnˌvaɪ.rənˈmen.təl pəˈluː.ʃən/", "symbol_or_formula": "", "note": "" },
+            { "en": "Climate change", "vi": "Biến đổi khí hậu", "ipa": "/ˈklaɪ.mət tʃeɪndʒ/", "symbol_or_formula": "", "note": "" },
+            { "en": "Sustainable development", "vi": "Phát triển bền vững", "ipa": "/səˈsteɪ.nə.bəl dɪˈvel.əp.mənt/", "symbol_or_formula": "", "note": "" }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,209 @@
+{
+  "metadata": {
+    "name": "KHTN 8 Terminology Guardrails & IUPAC Rules",
+    "legal_basis": [
+      "Thông tư 32/2018/TT-BGDĐT",
+      "TCVN 5529:2010",
+      "TCVN 5530:2010",
+      "Thông tư 94/2026/TT-BGDĐT"
+    ]
+  },
+  "exception_13_elements": [
+    {
+      "symbol": "Au",
+      "vi_elemental": "vàng",
+      "iupac_en": "Gold",
+      "allowed_elemental_contexts": ["nhẫn vàng", "lá vàng", "kim loại vàng"],
+      "compound_example_iupac": "Gold(III) chloride"
+    },
+    {
+      "symbol": "Ag",
+      "vi_elemental": "bạc",
+      "iupac_en": "Silver",
+      "allowed_elemental_contexts": ["dây bạc", "kim loại bạc"],
+      "compound_example_iupac": "Silver nitrate"
+    },
+    {
+      "symbol": "Cu",
+      "vi_elemental": "đồng",
+      "iupac_en": "Copper",
+      "allowed_elemental_contexts": ["dây đồng", "lõi đồng", "lá đồng"],
+      "compound_example_iupac": "Copper(II) sulfate"
+    },
+    {
+      "symbol": "Pb",
+      "vi_elemental": "chì",
+      "iupac_en": "Lead",
+      "allowed_elemental_contexts": ["tấm chì", "điện cực chì"],
+      "compound_example_iupac": "Lead(II) nitrate"
+    },
+    {
+      "symbol": "Fe",
+      "vi_elemental": "sắt",
+      "iupac_en": "Iron",
+      "allowed_elemental_contexts": ["đinh sắt", "bột sắt", "thanh sắt"],
+      "compound_example_iupac": "Iron(III) sulfate"
+    },
+    {
+      "symbol": "Al",
+      "vi_elemental": "nhôm",
+      "iupac_en": "Aluminium",
+      "allowed_elemental_contexts": ["lá nhôm", "dây nhôm", "vỏ nhôm"],
+      "compound_example_iupac": "Aluminium hydroxide"
+    },
+    {
+      "symbol": "Zn",
+      "vi_elemental": "kẽm",
+      "iupac_en": "Zinc",
+      "allowed_elemental_contexts": ["viên kẽm", "lá kẽm"],
+      "compound_example_iupac": "Zinc chloride"
+    },
+    {
+      "symbol": "S",
+      "vi_elemental": "lưu huỳnh",
+      "iupac_en": "Sulfur",
+      "allowed_elemental_contexts": ["bột lưu huỳnh", "lưu huỳnh cháy"],
+      "compound_example_iupac": "Sulfur dioxide"
+    },
+    {
+      "symbol": "Sn",
+      "vi_elemental": "thiếc",
+      "iupac_en": "Tin",
+      "allowed_elemental_contexts": ["hàn thiếc", "lá thiếc"],
+      "compound_example_iupac": "Tin(II) chloride"
+    },
+    {
+      "symbol": "N",
+      "vi_elemental": "nitơ",
+      "iupac_en": "Nitrogen",
+      "allowed_elemental_contexts": ["khí nitơ", "phân đạm chứa nitơ"],
+      "compound_example_iupac": "Nitrogen dioxide"
+    },
+    {
+      "symbol": "Na",
+      "vi_elemental": "natri",
+      "iupac_en": "Sodium",
+      "allowed_elemental_contexts": ["mẩu natri", "kim loại natri"],
+      "compound_example_iupac": "Sodium hydroxide"
+    },
+    {
+      "symbol": "K",
+      "vi_elemental": "kali",
+      "iupac_en": "Potassium",
+      "allowed_elemental_contexts": ["kim loại kali", "phân kali"],
+      "compound_example_iupac": "Potassium hydroxide"
+    },
+    {
+      "symbol": "Hg",
+      "vi_elemental": "thủy ngân",
+      "iupac_en": "Mercury",
+      "allowed_elemental_contexts": ["nhiệt kế thủy ngân", "cột thủy ngân"],
+      "compound_example_iupac": "Mercury(II) oxide"
+    }
+  ],
+  "deprecated_terms_to_flag": [
+    {
+      "pattern": "\\baxit\\b",
+      "recommended": "acid",
+      "discipline": "chemistry",
+      "severity": "error",
+      "reason": "Chương trình GDPT 2018 (KHTN 8 Bài 8) dùng danh pháp quốc tế 'acid'."
+    },
+    {
+      "pattern": "\\bbazơ\\b",
+      "recommended": "base",
+      "discipline": "chemistry",
+      "severity": "error",
+      "reason": "Chương trình GDPT 2018 (KHTN 8 Bài 9) dùng danh pháp quốc tế 'base'."
+    },
+    {
+      "pattern": "\\boxit\\b",
+      "recommended": "oxide",
+      "discipline": "chemistry",
+      "severity": "error",
+      "reason": "Chương trình GDPT 2018 (KHTN 8 Bài 10) dùng danh pháp quốc tế 'oxide'."
+    },
+    {
+      "pattern": "\\bhiđr[oô]\\b",
+      "recommended": "hydrogen",
+      "discipline": "chemistry",
+      "severity": "error",
+      "reason": "Tên nguyên tố phải viết theo chuẩn IUPAC 'hydrogen'."
+    },
+    {
+      "pattern": "\\boxi\\b",
+      "recommended": "oxygen",
+      "discipline": "chemistry",
+      "severity": "error",
+      "reason": "Tên nguyên tố phải viết theo chuẩn IUPAC 'oxygen'."
+    },
+    {
+      "pattern": "\\bcanxi\\b",
+      "recommended": "calcium",
+      "discipline": "chemistry",
+      "severity": "error",
+      "reason": "Tên nguyên tố ngoài 13 ngoại lệ phải dùng chuẩn IUPAC 'calcium'."
+    },
+    {
+      "pattern": "\\bmagi[êe]\\b",
+      "recommended": "magnesium",
+      "discipline": "chemistry",
+      "severity": "error",
+      "reason": "Tên nguyên tố ngoài 13 ngoại lệ phải dùng chuẩn IUPAC 'magnesium'."
+    },
+    {
+      "pattern": "\\bsunfat\\b",
+      "recommended": "sulfate",
+      "discipline": "chemistry",
+      "severity": "error",
+      "reason": "Gốc muối phải gọi theo chuẩn IUPAC 'sulfate'."
+    },
+    {
+      "pattern": "\\bclorua\\b",
+      "recommended": "chloride",
+      "discipline": "chemistry",
+      "severity": "error",
+      "reason": "Gốc muối phải gọi theo chuẩn IUPAC 'chloride'."
+    },
+    {
+      "pattern": "\\bhiđroxit\\b",
+      "recommended": "hydroxide",
+      "discipline": "chemistry",
+      "severity": "error",
+      "reason": "Hợp chất hydroxide phải gọi theo chuẩn IUPAC 'hydroxide'."
+    },
+    {
+      "pattern": "\\bADN\\b",
+      "recommended": "DNA",
+      "discipline": "biology",
+      "severity": "warning",
+      "reason": "Chương trình GDPT 2018 ưu tiên chuẩn quốc tế 'DNA' thay cho viết tắt tiếng Pháp 'ADN'."
+    },
+    {
+      "pattern": "\\bARN\\b",
+      "recommended": "RNA",
+      "discipline": "biology",
+      "severity": "warning",
+      "reason": "Chương trình GDPT 2018 ưu tiên chuẩn quốc tế 'RNA' thay cho viết tắt tiếng Pháp 'ARN'."
+    },
+    {
+      "pattern": "\\bmô-?men\\b",
+      "recommended": "moment",
+      "discipline": "physics",
+      "severity": "warning",
+      "reason": "SGK KHTN 8 KNTT (Bài 18) viết trực tiếp 'moment lực'."
+    }
+  ],
+  "exam_compliance_presets": {
+    "tt94_level_initial": {
+      "label": "Mốc tối thiểu 10% tiếng Anh (Thông tư 94/2026)",
+      "min_english_points_ratio": 0.10,
+      "min_points_out_of_10": 1.0
+    },
+    "tt94_level_advanced": {
+      "label": "Mốc nâng cao 50% tiếng Anh (Thông tư 94/2026)",
+      "min_english_points_ratio": 0.50,
+      "min_points_out_of_10": 5.0
+    }
+  }
+}
