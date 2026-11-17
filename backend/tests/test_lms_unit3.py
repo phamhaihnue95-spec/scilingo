@@ -36,7 +36,7 @@ def test_exam_point_allocation_math_is_exact() -> None:
 
 
 def test_clil_lesson_resources_and_exam_docx_pdf_export(client: TestClient) -> None:
-    teacher_headers = _login(client, "minh.gv@demo.scilingo.vn", "Teacher123!")
+    teacher_headers = _login(client, "hai.gv@demo.scilingo.vn", "Teacher123!")
 
     # Lesson 8 resources include plan, slides, and worksheet with CV 5208 integration
     res_resp = client.get("/api/v1/lms/resources", params={"lesson_no": 8}, headers=teacher_headers)
@@ -78,6 +78,8 @@ def test_clil_lesson_resources_and_exam_docx_pdf_export(client: TestClient) -> N
     assert docx_resp.status_code == 200
     doc = Document(BytesIO(docx_resp.content))
     full_text = "\n".join(p.text for p in doc.paragraphs)
+    assert "TRƯỜNG THCS CẦU GIẤY B" in full_text
+    assert "Phạm Thị Hải" in full_text
     assert "ĐỀ KIỂM TRA ĐỊNH KỲ" in full_text
     assert "5.0/10.0 điểm" in full_text
 
@@ -93,7 +95,7 @@ def test_clil_lesson_resources_and_exam_docx_pdf_export(client: TestClient) -> N
 
 
 def test_classroom_assignment_submission_analytics_and_tt94_report(client: TestClient) -> None:
-    teacher_headers = _login(client, "minh.gv@demo.scilingo.vn", "Teacher123!")
+    teacher_headers = _login(client, "hai.gv@demo.scilingo.vn", "Teacher123!")
     student_headers = _login(client, "an.hs8@demo.scilingo.vn", "Student123!")
 
     # Create a new classroom
@@ -226,7 +228,7 @@ def test_classroom_assignment_submission_analytics_and_tt94_report(client: TestC
 
 def test_lms_rbac_and_tenant_isolation(client: TestClient) -> None:
     student_headers = _login(client, "an.hs8@demo.scilingo.vn", "Student123!")
-    cva_teacher_headers = _login(client, "minh.gv@demo.scilingo.vn", "Teacher123!")
+    cva_teacher_headers = _login(client, "hai.gv@demo.scilingo.vn", "Teacher123!")
     nt_admin_headers = _login(client, "lan.bgh@demo.scilingo.vn", "Admin123!")
 
     # Student cannot create classroom or generate exams or read TT94 school report

@@ -67,16 +67,18 @@ def test_public_registration_and_privilege_escalation_blocked(client: TestClient
 
 
 def test_login_refresh_and_entitlements(client: TestClient) -> None:
-    login_data = _login(client, "minh.gv@demo.scilingo.vn", "Teacher123!")
+    login_data = _login(client, "hai.gv@demo.scilingo.vn", "Teacher123!")
     headers = {"Authorization": f"Bearer {login_data['access_token']}"}
 
     me_resp = client.get("/api/v1/auth/me", headers=headers)
     assert me_resp.status_code == 200
-    assert me_resp.json()["email"] == "minh.gv@demo.scilingo.vn"
+    assert me_resp.json()["email"] == "hai.gv@demo.scilingo.vn"
+    assert me_resp.json()["full_name"] == "Phạm Thị Hải"
 
     ent_resp = client.get("/api/v1/tenants/me/entitlements", headers=headers)
     assert ent_resp.status_code == 200
     ent = ent_resp.json()
+    assert ent["tenant"]["name"] == "Trường THCS Cầu Giấy B"
     assert ent["plan_code"] == "school_l2"
     assert "exam_builder_tt94" in ent["features"]
 
@@ -90,7 +92,7 @@ def test_login_refresh_and_entitlements(client: TestClient) -> None:
 
 def test_rbac_and_tenant_isolation(client: TestClient) -> None:
     student = _login(client, "an.hs8@demo.scilingo.vn", "Student123!")
-    teacher = _login(client, "minh.gv@demo.scilingo.vn", "Teacher123!")
+    teacher = _login(client, "hai.gv@demo.scilingo.vn", "Teacher123!")
     cva_admin = _login(client, "hung.bgh@demo.scilingo.vn", "Admin123!")
     nt_admin = _login(client, "lan.bgh@demo.scilingo.vn", "Admin123!")
 
@@ -118,7 +120,7 @@ def test_rbac_and_tenant_isolation(client: TestClient) -> None:
     assert cva_users_resp.status_code == 200
     cva_emails = {u["email"] for u in cva_users_resp.json()}
     assert "an.hs8@demo.scilingo.vn" in cva_emails
-    assert "minh.gv@demo.scilingo.vn" in cva_emails
+    assert "hai.gv@demo.scilingo.vn" in cva_emails
     assert "lan.bgh@demo.scilingo.vn" not in cva_emails
 
     # Tenant B admin only sees Tenant B users

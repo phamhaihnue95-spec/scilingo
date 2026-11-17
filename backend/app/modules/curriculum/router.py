@@ -9,6 +9,11 @@ from app.core.database import get_db
 from app.modules.curriculum.schemas import (
     CurriculumTreeResponse,
     LessonDetailOut,
+    StudyPackOverviewOut,
+    StudyPackQuizOut,
+    StudyPackQuizStartRequest,
+    StudyPackSearchResponse,
+    StudyPackUnitDetailOut,
     TermDetailOut,
     TerminologyRulebookOut,
     TermSearchResponse,
@@ -65,3 +70,44 @@ def search_terms(
 def get_term_detail(slug: str, db: Session = Depends(get_db)) -> TermDetailOut:
     """Retrieve a single standardized term card by slug."""
     return CurriculumService(db).get_term_detail(slug)
+
+
+@router.get("/study-packs/english-science", response_model=StudyPackOverviewOut)
+def get_study_pack_overview(db: Session = Depends(get_db)) -> StudyPackOverviewOut:
+    """Return all 16 Units metadata for The English Dictionary for SCIENCE."""
+    return CurriculumService(db).get_english_science_pack_overview()
+
+
+@router.get(
+    "/study-packs/english-science/units/{unit_no}",
+    response_model=StudyPackUnitDetailOut,
+)
+def get_study_pack_unit(unit_no: int, db: Session = Depends(get_db)) -> StudyPackUnitDetailOut:
+    """Return every extracted bilingual item with IPA and IUPAC notes for Unit 1..16."""
+    return CurriculumService(db).get_english_science_unit(unit_no)
+
+
+@router.get("/study-packs/english-science/search", response_model=StudyPackSearchResponse)
+def search_study_pack_items(
+    q: str | None = Query(default=None, max_length=120),
+    unit_no: int | None = Query(default=None, ge=1, le=16),
+    limit: int = Query(default=100, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+    db: Session = Depends(get_db),
+) -> StudyPackSearchResponse:
+    """Search across all 920 science items in the 16-Unit study pack."""
+    return CurriculumService(db).search_english_science_items(
+        q=q,
+        unit_no=unit_no,
+        limit=limit,
+        offset=offset,
+    )
+
+
+@router.post("/study-packs/english-science/quiz", response_model=StudyPackQuizOut)
+def generate_study_pack_quiz(
+    payload: StudyPackQuizStartRequest,
+    db: Session = Depends(get_db),
+) -> StudyPackQuizOut:
+    """Generate a bilingual 10-point practice quiz from selected Study Pack Unit(s)."""
+    return CurriculumService(db).generate_study_pack_quiz(payload)

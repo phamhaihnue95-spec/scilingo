@@ -64,11 +64,11 @@ export function LearningHubPage({
     <div className="space-y-6">
       {/* Gamification Strip */}
       {session && gamification ? (
-        <section className="rounded-2xl border border-teal-200 bg-gradient-to-r from-teal-700 to-slate-900 p-5 text-white shadow-sm">
+        <section className="rounded-3xl bg-gradient-to-r from-violet-600 via-fuchsia-500 to-orange-500 p-6 text-white shadow-lg">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
-              <div className="text-xs font-medium text-teal-100">
-                Hồ sơ Học tập · {session.user.full_name}
+              <div className="text-xs font-bold text-amber-100">
+                Hồ sơ Học tập · {session.user.full_name} · Trường THCS Cầu Giấy B
               </div>
               <div className="mt-1 flex flex-wrap items-center gap-4">
                 <span className="inline-flex items-center gap-1.5 text-lg font-extrabold">
@@ -131,10 +131,10 @@ export function LearningHubPage({
         <button
           type="button"
           onClick={() => setSubTab("srs")}
-          className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition ${
+          className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition ${
             subTab === "srs"
-              ? "bg-teal-700 text-white shadow-sm"
-              : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+              ? "bg-gradient-to-r from-indigo-600 to-sky-500 text-white shadow-sm"
+              : "border border-slate-200 bg-white text-slate-700 hover:bg-sky-50"
           }`}
         >
           <Layers className="h-4 w-4" />
@@ -144,10 +144,10 @@ export function LearningHubPage({
         <button
           type="button"
           onClick={() => setSubTab("mindmap")}
-          className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition ${
+          className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition ${
             subTab === "mindmap"
-              ? "bg-teal-700 text-white shadow-sm"
-              : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+              ? "bg-gradient-to-r from-indigo-600 to-sky-500 text-white shadow-sm"
+              : "border border-slate-200 bg-white text-slate-700 hover:bg-sky-50"
           }`}
         >
           <GitBranch className="h-4 w-4" />
@@ -157,10 +157,10 @@ export function LearningHubPage({
         <button
           type="button"
           onClick={() => setSubTab("quiz")}
-          className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition ${
+          className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition ${
             subTab === "quiz"
-              ? "bg-teal-700 text-white shadow-sm"
-              : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+              ? "bg-gradient-to-r from-indigo-600 to-sky-500 text-white shadow-sm"
+              : "border border-slate-200 bg-white text-slate-700 hover:bg-sky-50"
           }`}
         >
           <Target className="h-4 w-4" />
@@ -170,10 +170,10 @@ export function LearningHubPage({
         <button
           type="button"
           onClick={() => setSubTab("assignments")}
-          className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition ${
+          className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition ${
             subTab === "assignments"
-              ? "bg-teal-700 text-white shadow-sm"
-              : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+              ? "bg-gradient-to-r from-indigo-600 to-sky-500 text-white shadow-sm"
+              : "border border-slate-200 bg-white text-slate-700 hover:bg-sky-50"
           }`}
         >
           <ClipboardCheck className="h-4 w-4" />

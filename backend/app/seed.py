@@ -143,27 +143,35 @@ def seed_curriculum(db: Session, data_dir: Path) -> tuple[int, int, int]:
 
 def seed_demo_tenants(db: Session) -> None:
     """Create demo B2B school tenants and RBAC accounts for development/pilot testing."""
-    cva_name = "Trường THCS Chu Văn An (Demo TT94)"
-    cva = db.scalar(select(Tenant).where(Tenant.name == cva_name))
-    if cva is None:
-        cva = Tenant(
-            name=cva_name,
-            tenant_type="school",
-            province="Hà Nội",
-            district="Tây Hồ",
-            target_tt94_level=2,
-        )
-        db.add(cva)
-        db.flush()
-        db.add(
-            Subscription(
-                tenant_id=cva.id,
-                plan_code="school_l2",
-                ai_monthly_quota=5000,
-                ai_used_this_month=0,
-                status="active",
+    cgb_name = "Trường THCS Cầu Giấy B"
+    legacy_cva_name = "Trường THCS Chu Văn An (Demo TT94)"
+    cgb = db.scalar(select(Tenant).where(Tenant.name == cgb_name))
+    if cgb is None:
+        cgb = db.scalar(select(Tenant).where(Tenant.name == legacy_cva_name))
+        if cgb is not None:
+            cgb.name = cgb_name
+            cgb.province = "Hà Nội"
+            cgb.district = "Cầu Giấy"
+            db.flush()
+        else:
+            cgb = Tenant(
+                name=cgb_name,
+                tenant_type="school",
+                province="Hà Nội",
+                district="Cầu Giấy",
+                target_tt94_level=2,
             )
-        )
+            db.add(cgb)
+            db.flush()
+            db.add(
+                Subscription(
+                    tenant_id=cgb.id,
+                    plan_code="school_l2",
+                    ai_monthly_quota=5000,
+                    ai_used_this_month=0,
+                    status="active",
+                )
+            )
 
     nt_name = "Trường THCS Nguyễn Trãi (Demo TT94)"
     nt = db.scalar(select(Tenant).where(Tenant.name == nt_name))
@@ -187,11 +195,24 @@ def seed_demo_tenants(db: Session) -> None:
             )
         )
 
+    # Migrate legacy teacher account email/name in-place on existing databases so FK links remain
+    hai_teacher = db.scalar(select(User).where(User.email == "hai.gv@demo.scilingo.vn"))
+    if hai_teacher is None:
+        legacy_teacher = db.scalar(select(User).where(User.email == "minh.gv@demo.scilingo.vn"))
+        if legacy_teacher is not None:
+            legacy_teacher.email = "hai.gv@demo.scilingo.vn"
+            legacy_teacher.full_name = "Phạm Thị Hải"
+            legacy_teacher.tenant_id = cgb.id
+            db.flush()
+    elif hai_teacher.full_name != "Phạm Thị Hải":
+        hai_teacher.full_name = "Phạm Thị Hải"
+        db.flush()
+
     demo_accounts = [
-        (cva.id, "an.hs8@demo.scilingo.vn", "Student123!", "Nguyễn Minh An", "student", 8),
-        (cva.id, "minh.gv@demo.scilingo.vn", "Teacher123!", "Cô Lê Thu Minh", "teacher", None),
+        (cgb.id, "an.hs8@demo.scilingo.vn", "Student123!", "Nguyễn Minh An", "student", 8),
+        (cgb.id, "hai.gv@demo.scilingo.vn", "Teacher123!", "Phạm Thị Hải", "teacher", None),
         (
-            cva.id,
+            cgb.id,
             "hung.bgh@demo.scilingo.vn",
             "Admin123!",
             "Thầy Trần Quốc Hùng",
@@ -220,14 +241,19 @@ def seed_demo_tenants(db: Session) -> None:
 
 def seed_demo_lms(db: Session) -> None:
     """Create a demo KHTN 8 CLIL classroom and starter session logs idempotently."""
-    teacher = db.scalar(select(User).where(User.email == "minh.gv@demo.scilingo.vn"))
+    teacher = db.scalar(select(User).where(User.email == "hai.gv@demo.scilingo.vn"))
     student = db.scalar(select(User).where(User.email == "an.hs8@demo.scilingo.vn"))
     if teacher is None:
         return
 
-    demo_code = "KHTN8-CVA8"
+    demo_code = "KHTN8-CGB8"
     classroom = db.scalar(select(Classroom).where(Classroom.join_code == demo_code))
     if classroom is None:
+        legacy_cls = db.scalar(select(Classroom).where(Classroom.join_code == "KHTN8-CVA8"))
+        if legacy_cls is not None:
+            legacy_cls.join_code = demo_code
+            db.commit()
+            return
         classroom = Classroom(
             tenant_id=teacher.tenant_id,
             teacher_id=teacher.id,

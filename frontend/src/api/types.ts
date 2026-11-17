@@ -473,3 +473,71 @@ export interface TT94ComplianceReport {
     meets_105_periods: boolean;
   }>;
 }
+
+export interface StudyPackItem {
+  unit_no: number;
+  unit_title_en: string;
+  unit_title_vi: string;
+  discipline: Discipline;
+  order_no: number;
+  term_en: string;
+  ipa: string;
+  pos: string;
+  meaning_vi: string;
+  iupac_note: string | null;
+}
+
+export interface StudyPackUnitSummary {
+  unit_no: number;
+  title_en: string;
+  title_vi: string;
+  discipline: Discipline;
+  kntt8_related_lessons: number[];
+  item_count: number;
+}
+
+export interface StudyPackOverview {
+  id: string;
+  title: string;
+  subtitle: string;
+  author: string;
+  source_org: string;
+  school_context: string;
+  total_units: number;
+  total_items: number;
+  units: StudyPackUnitSummary[];
+}
+
+export interface StudyPackUnitDetail {
+  unit: StudyPackUnitSummary;
+  items: StudyPackItem[];
+}
+
+export interface StudyPackSearchResponse {
+  total: number;
+  items: StudyPackItem[];
+}
+
+export interface StudyPackQuizQuestion {
+  index: number;
+  unit_no: number;
+  language: "vi" | "en";
+  prompt_text: string;
+  options: string[];
+  correct_index: number;
+  points: number;
+  ipa: string;
+  iupac_note: string | null;
+  explanation_vi: string;
+}
+
+export interface StudyPackQuiz {
+  title: string;
+  unit_nos: number[];
+  mode: PracticeMode;
+  total_points: number;
+  en_points: number;
+  vi_points: number;
+  english_ratio: number;
+  questions: StudyPackQuizQuestion[];
+}

@@ -1,6 +1,6 @@
 # SciLingo KHTN 8 — Nền tảng Học & Giảng dạy Tiếng Anh Khoa học tự nhiên THCS
 
-> **Trạng thái:** **Bolt 3 hoàn tất** (Unit 1: Curriculum Core 47 bài + Unit 2: Flashcard SRS, Mindmap song ngữ, Quiz & Bài tập Lớp học + Unit 3: Teacher Studio, Kho giáo án/slide CLIL, Exam Builder 10%/50% xuất Word `.docx` & `.pdf`, Lớp học & Báo cáo Thông tư 94/2026 + Unit 5: Identity & Billing RBAC).  
+> **Trạng thái:** **Bolt 3 hoàn tất + Nâng cấp giao diện & Bộ đề 16 Units** (Unit 1: Curriculum Core 47 bài + Bộ Đề Học 16 Units / 920 thuật ngữ IPA từ *The English Dictionary for SCIENCE* + Unit 2: Flashcard SRS, Mindmap song ngữ, Quiz & Bài tập Lớp học + Unit 3: Teacher Studio *Trường THCS Cầu Giấy B · GV Phạm Thị Hải*, Kho giáo án/slide CLIL, Exam Builder 10%/50% xuất Word `.docx` & `.pdf`, Lớp học & Báo cáo Thông tư 94/2026 + Unit 5: Identity & Billing RBAC).  
 > **Phạm vi Pilot MVP:** Toàn bộ chương trình **KHTN Lớp 8 – Bộ sách Kết nối tri thức với cuộc sống** (Bài 1 đến Bài 47, 8 Chương).  
 > **Phương pháp phát triển:** **AI-DLC (AI-Driven Development Life Cycle)** — `Inception → Construction (Bolts) → Operations`.
 
@@ -83,7 +83,7 @@ uv run uvicorn app.main:app --reload
 cd frontend
 npm run dev
 ```
-Truy cập `http://localhost:5173`. Các tài khoản demo (`an.hs8@demo.scilingo.vn`, `minh.gv@demo.scilingo.vn`, `hung.bgh@demo.scilingo.vn`) có nút đăng nhập nhanh tại mục **Đăng nhập**.
+Truy cập `http://localhost:5173`. Các tài khoản demo (`an.hs8@demo.scilingo.vn`, `hai.gv@demo.scilingo.vn` — Cô Phạm Thị Hải, `hung.bgh@demo.scilingo.vn` — Trường THCS Cầu Giấy B) có nút đăng nhập nhanh tại mục **Đăng nhập**.
 
 ---
 

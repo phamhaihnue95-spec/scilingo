@@ -170,4 +170,4 @@ class IdentityService:
 
     def get_tenant_name(self, tenant_id: str) -> str:
         tenant = self.repo.get_tenant_by_id(tenant_id)
-        return tenant.name if tenant else "Trường THCS"
+        return tenant.name if tenant else "Trường THCS Cầu Giấy B"

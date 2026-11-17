@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict
+from typing import Literal
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class LessonSummaryOut(BaseModel):
@@ -148,3 +150,93 @@ class TerminologyRulebookOut(BaseModel):
     legal_basis: list[str]
     exception_13_elements: list[ExceptionElementOut]
     deprecated_terms_to_flag: list[DeprecatedTermRuleOut]
+
+
+class StudyPackItemOut(BaseModel):
+    """Single vocabulary entry from The English Dictionary for SCIENCE."""
+
+    unit_no: int
+    unit_title_en: str
+    unit_title_vi: str
+    discipline: str
+    order_no: int
+    term_en: str
+    ipa: str
+    pos: str
+    meaning_vi: str
+    iupac_note: str | None = None
+
+
+class StudyPackUnitSummaryOut(BaseModel):
+    """Summary metadata for one unit (1..16) in the attached study pack."""
+
+    unit_no: int
+    title_en: str
+    title_vi: str
+    discipline: str
+    kntt8_related_lessons: list[int]
+    item_count: int
+
+
+class StudyPackOverviewOut(BaseModel):
+    """Overview and 16-unit index for The English Dictionary for SCIENCE."""
+
+    id: str
+    title: str
+    subtitle: str
+    author: str
+    source_org: str
+    school_context: str
+    total_units: int
+    total_items: int
+    units: list[StudyPackUnitSummaryOut]
+
+
+class StudyPackUnitDetailOut(BaseModel):
+    """Detailed unit payload containing all extracted bilingual items."""
+
+    unit: StudyPackUnitSummaryOut
+    items: list[StudyPackItemOut]
+
+
+class StudyPackSearchResponse(BaseModel):
+    """Search results across all 16 units of the study pack."""
+
+    total: int
+    items: list[StudyPackItemOut]
+
+
+class StudyPackQuizStartRequest(BaseModel):
+    """Request to build a bilingual practice quiz from selected Study Pack unit(s)."""
+
+    unit_nos: list[int] = Field(min_length=1)
+    mode: Literal["quiz_10", "quiz_50", "quiz_100"] = "quiz_10"
+    question_count: int = Field(default=10, ge=4, le=40)
+
+
+class StudyPackQuizQuestionOut(BaseModel):
+    """Single generated bilingual question grounded strictly in Study Pack entries."""
+
+    index: int
+    unit_no: int
+    language: Literal["vi", "en"]
+    prompt_text: str
+    options: list[str]
+    correct_index: int
+    points: float
+    ipa: str
+    iupac_note: str | None = None
+    explanation_vi: str
+
+
+class StudyPackQuizOut(BaseModel):
+    """Deterministic 10-point practice quiz from the 16-Unit Dictionary for Science."""
+
+    title: str
+    unit_nos: list[int]
+    mode: str
+    total_points: float
+    en_points: float
+    vi_points: float
+    english_ratio: float
+    questions: list[StudyPackQuizQuestionOut]

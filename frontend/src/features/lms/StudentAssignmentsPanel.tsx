@@ -142,22 +142,22 @@ export function StudentAssignmentsPanel() {
     <div className="space-y-5">
       <form
         onSubmit={(e) => void handleJoin(e)}
-        className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center"
+        className="flex flex-col gap-3 rounded-2xl border border-sky-200 bg-white/95 p-4 shadow-sm sm:flex-row sm:items-center"
       >
-        <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
-          <KeyRound className="h-4 w-4 text-teal-700" />
+        <div className="flex items-center gap-2 text-sm font-bold text-slate-800">
+          <KeyRound className="h-4 w-4 text-indigo-600" />
           Tham gia lớp bằng mã:
         </div>
         <input
           type="text"
           value={joinCode}
           onChange={(e) => setJoinCode(e.target.value)}
-          placeholder="Nhập mã lớp (vd: KHTN8-CVA8)"
-          className="flex-1 rounded-lg border border-slate-300 px-3 py-1.5 text-sm uppercase"
+          placeholder="Nhập mã lớp (vd: KHTN8-CGB8)"
+          className="flex-1 rounded-xl border border-sky-200 px-3 py-1.5 text-sm uppercase focus:border-indigo-500 focus:outline-none"
         />
         <button
           type="submit"
-          className="rounded-lg bg-teal-700 px-4 py-1.5 text-sm font-bold text-white hover:bg-teal-800"
+          className="rounded-xl bg-gradient-to-r from-indigo-600 to-sky-500 px-4 py-1.5 text-sm font-bold text-white shadow-sm hover:opacity-95"
         >
           Vào lớp
         </button>
@@ -195,8 +195,10 @@ export function StudentAssignmentsPanel() {
         <div className="rounded-xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500">
           <ClipboardCheck className="mx-auto mb-2 h-8 w-8 text-slate-400" />
           Chưa có bài kiểm tra nào được giao cho lớp của bạn. Hãy tham gia lớp (mã{" "}
-          <code className="rounded bg-slate-100 px-1.5 py-0.5 font-mono">KHTN8-CVA8</code>) hoặc nhờ
-          giáo viên giao đề từ Teacher Studio!
+          <code className="rounded bg-indigo-50 px-1.5 py-0.5 font-mono font-bold text-indigo-700">
+            KHTN8-CGB8
+          </code>
+          ) hoặc nhờ cô Phạm Thị Hải giao đề từ Teacher Studio!
         </div>
       ) : (
         <div className="grid gap-3 md:grid-cols-2">

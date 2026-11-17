@@ -81,12 +81,14 @@ export function GlossaryAndRulesPage({ onSelectLesson }: Props) {
           </p>
         </div>
 
-        <div className="inline-flex rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
+        <div className="inline-flex rounded-2xl border border-sky-200 bg-white p-1 shadow-sm">
           <button
             type="button"
             onClick={() => setTab("glossary")}
-            className={`inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-sm font-medium ${
-              tab === "glossary" ? "bg-teal-700 text-white" : "text-slate-700 hover:bg-slate-100"
+            className={`inline-flex items-center gap-1.5 rounded-xl px-3.5 py-1.5 text-sm font-bold ${
+              tab === "glossary"
+                ? "bg-gradient-to-r from-indigo-600 to-sky-500 text-white"
+                : "text-slate-700 hover:bg-sky-50"
             }`}
           >
             <BookMarked className="h-4 w-4" />
@@ -95,8 +97,10 @@ export function GlossaryAndRulesPage({ onSelectLesson }: Props) {
           <button
             type="button"
             onClick={() => setTab("iupac")}
-            className={`inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-sm font-medium ${
-              tab === "iupac" ? "bg-teal-700 text-white" : "text-slate-700 hover:bg-slate-100"
+            className={`inline-flex items-center gap-1.5 rounded-xl px-3.5 py-1.5 text-sm font-bold ${
+              tab === "iupac"
+                ? "bg-gradient-to-r from-indigo-600 to-sky-500 text-white"
+                : "text-slate-700 hover:bg-sky-50"
             }`}
           >
             <ShieldCheck className="h-4 w-4" />

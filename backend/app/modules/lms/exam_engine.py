@@ -6,7 +6,12 @@ import math
 import random
 from dataclasses import dataclass
 
-from app.modules.curriculum.schemas import LessonDetailOut, TermSummaryOut
+from app.modules.curriculum.schemas import (
+    LessonDetailOut,
+    StudyPackItemOut,
+    StudyPackUnitDetailOut,
+    TermSummaryOut,
+)
 
 
 @dataclass(frozen=True)
@@ -170,6 +175,74 @@ def synthesize_questions_from_curriculum(
                 "correct_answer": correct_text,
                 "explanation_vi": explanation_vi,
                 "linked_term_ids": [term.id],
+            }
+        )
+
+    return generated
+
+
+def synthesize_questions_from_study_pack(
+    *,
+    units: list[StudyPackUnitDetailOut],
+    all_items: list[StudyPackItemOut],
+    language: str,
+    needed: int,
+    seed: int | None = None,
+) -> list[dict]:
+    """Generate MCQ questions directly from The English Dictionary for SCIENCE (16 Units)."""
+    if needed <= 0 or not units:
+        return []
+
+    rng = random.Random(seed)
+    pool_entries: list[tuple[int, StudyPackItemOut]] = []
+    for unit_detail in units:
+        related_lesson = (
+            unit_detail.unit.kntt8_related_lessons[0]
+            if unit_detail.unit.kntt8_related_lessons
+            else 1
+        )
+        for item in unit_detail.items:
+            pool_entries.append((related_lesson, item))
+
+    rng.shuffle(pool_entries)
+    all_en = [item.term_en for item in all_items]
+    all_vi = [item.meaning_vi for item in all_items]
+
+    generated: list[dict] = []
+    for idx in range(needed):
+        lesson_no, entry = pool_entries[idx % len(pool_entries)]
+        if language == "en":
+            correct_text = entry.term_en
+            distractors = _pick_distinct_distractors(correct_text, all_en, rng)
+            prompt = (
+                f"[Unit {entry.unit_no} - {entry.unit_title_en}] Which English scientific term "
+                f"({entry.pos}) corresponds to '{entry.meaning_vi}'?"
+            )
+        else:
+            correct_text = entry.meaning_vi
+            distractors = _pick_distinct_distractors(correct_text, all_vi, rng)
+            prompt = (
+                f"[Chuyên đề Unit {entry.unit_no}: {entry.unit_title_vi}] Thuật ngữ "
+                f"'{entry.term_en}' {entry.ipa} ({entry.pos}) có nghĩa tiếng Việt là gì?"
+            )
+
+        options = [correct_text, *distractors]
+        rng.shuffle(options)
+        note_text = f" | {entry.iupac_note}" if entry.iupac_note else ""
+        explanation_vi = (
+            f"{entry.term_en} {entry.ipa} ({entry.pos}) = {entry.meaning_vi}{note_text}."
+        )
+        generated.append(
+            {
+                "lesson_no": lesson_no,
+                "language": language,
+                "cognitive_level": "understand" if idx % 3 == 2 else "know",
+                "discipline": entry.discipline,
+                "prompt_text": prompt,
+                "options": options,
+                "correct_answer": correct_text,
+                "explanation_vi": explanation_vi,
+                "linked_term_ids": [],
             }
         )
 

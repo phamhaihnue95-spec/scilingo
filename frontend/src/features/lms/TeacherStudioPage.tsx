@@ -46,7 +46,9 @@ export function TeacherStudioPage({ session, onSessionChange }: Props) {
 
   // Exam Builder state
   const [examTitle, setExamTitle] = useState("Kiểm tra giữa kỳ KHTN 8 (Chuẩn Thông tư 94)");
+  const [examSourceMode, setExamSourceMode] = useState<"kntt" | "study_pack" | "both">("both");
   const [lessonRangeText, setLessonRangeText] = useState("8, 9, 10, 13, 18");
+  const [studyPackRangeText, setStudyPackRangeText] = useState("1, 7, 14");
   const [targetRatio, setTargetRatio] = useState<number>(0.5);
   const [questionCount, setQuestionCount] = useState<number>(10);
   const [durationMinutes, setDurationMinutes] = useState<number>(45);
@@ -154,7 +156,7 @@ export function TeacherStudioPage({ session, onSessionChange }: Props) {
             <p className="mt-1 text-sm text-slate-700">
               {session
                 ? `Bạn đang đăng nhập bằng tài khoản học sinh (${session.user.full_name}). Vui lòng chuyển sang tài khoản Giáo viên hoặc Ban Giám hiệu để soạn giáo án CLIL, tạo đề kiểm tra 10%–50% và xem báo cáo Thông tư 94/2026.`
-                : "Đăng nhập nhanh bằng tài khoản Giáo viên KHTN hoặc Ban Giám hiệu trường THCS Chu Văn An để trải nghiệm trọn bộ Unit 3."}
+                : "Đăng nhập nhanh bằng tài khoản Giáo viên KHTN Phạm Thị Hải hoặc Ban Giám hiệu Trường THCS Cầu Giấy B để trải nghiệm trọn bộ Unit 3."}
             </p>
           </div>
         </div>
@@ -163,14 +165,14 @@ export function TeacherStudioPage({ session, onSessionChange }: Props) {
           <button
             type="button"
             disabled={loggingIn}
-            onClick={() => void handleDemoLogin("minh.gv@demo.scilingo.vn", "Teacher123!")}
-            className="flex items-center justify-between rounded-xl border border-teal-300 bg-white p-4 text-left shadow-sm hover:border-teal-600"
+            onClick={() => void handleDemoLogin("hai.gv@demo.scilingo.vn", "Teacher123!")}
+            className="flex items-center justify-between rounded-xl border border-indigo-300 bg-white p-4 text-left shadow-sm transition hover:border-indigo-600"
           >
             <div>
-              <div className="font-bold text-slate-900">Cô Lê Thu Minh (Giáo viên)</div>
-              <div className="text-xs text-slate-500">minh.gv@demo.scilingo.vn</div>
+              <div className="font-bold text-slate-900">Cô Phạm Thị Hải (Giáo viên)</div>
+              <div className="text-xs text-slate-500">hai.gv@demo.scilingo.vn</div>
             </div>
-            <UserCheck className="h-5 w-5 text-teal-700" />
+            <UserCheck className="h-5 w-5 text-indigo-700" />
           </button>
 
           <button
@@ -193,13 +195,26 @@ export function TeacherStudioPage({ session, onSessionChange }: Props) {
   const handleGenerateExam = async () => {
     setErrorMsg(null);
     setStatusMsg(null);
-    const parsedNos = lessonRangeText
-      .split(/[,\s]+/)
-      .map((s) => Number(s.trim()))
-      .filter((n) => Number.isInteger(n) && n >= 1 && n <= 47);
+    const parsedLessons =
+      examSourceMode === "study_pack"
+        ? []
+        : lessonRangeText
+            .split(/[,\s]+/)
+            .map((s) => Number(s.trim()))
+            .filter((n) => Number.isInteger(n) && n >= 1 && n <= 47);
 
-    if (parsedNos.length === 0) {
-      setErrorMsg("Vui lòng nhập ít nhất 1 số bài hợp lệ (1–47), ví dụ: 8, 9, 13.");
+    const parsedUnits =
+      examSourceMode === "kntt"
+        ? []
+        : studyPackRangeText
+            .split(/[,\s]+/)
+            .map((s) => Number(s.trim()))
+            .filter((n) => Number.isInteger(n) && n >= 1 && n <= 16);
+
+    if (parsedLessons.length === 0 && parsedUnits.length === 0) {
+      setErrorMsg(
+        "Vui lòng nhập ít nhất 1 bài SGK (1–47) hoặc 1 chuyên đề Bộ Đề 16 Units (1–16)."
+      );
       return;
     }
 
@@ -207,7 +222,8 @@ export function TeacherStudioPage({ session, onSessionChange }: Props) {
     try {
       const detail = await api.generateExam({
         title: examTitle,
-        lesson_nos: parsedNos,
+        lesson_nos: parsedLessons,
+        study_pack_unit_nos: parsedUnits,
         classroom_id: assignClassroomId || null,
         target_en_ratio: targetRatio,
         total_points: 10,
@@ -331,24 +347,26 @@ export function TeacherStudioPage({ session, onSessionChange }: Props) {
   return (
     <div className="space-y-6">
       {/* Studio Header */}
-      <section className="rounded-2xl border border-teal-200 bg-gradient-to-r from-slate-900 via-teal-900 to-teal-800 p-6 text-white shadow-sm">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-indigo-700 via-blue-600 to-teal-500 p-6 text-white shadow-lg">
+        <div className="pointer-events-none absolute -right-12 -top-12 h-48 w-48 rounded-full bg-white/15 blur-2xl" />
+        <div className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <div className="text-xs font-semibold uppercase tracking-wider text-teal-200">
+            <div className="text-xs font-bold uppercase tracking-wider text-sky-100">
               Unit 3 · Teacher Studio, LMS & Hồ sơ Thông tư 94/2026/TT-BGDĐT
             </div>
             <h1 className="mt-1 text-2xl font-extrabold">{session.tenant.name}</h1>
-            <p className="mt-1 text-xs text-teal-100">
-              Người dùng: {session.user.full_name} ({session.user.role}) · Năm học 2026–2027
+            <p className="mt-1 text-xs text-sky-50">
+              Giáo viên phụ trách: <strong>{session.user.full_name}</strong> ({session.user.role}) ·
+              Năm học 2026–2027
             </p>
           </div>
           {report && (
-            <div className="rounded-xl bg-white/10 px-4 py-3 text-right backdrop-blur-sm">
-              <div className="text-xs text-teal-100">Tự đánh giá Thông tư 94</div>
+            <div className="rounded-2xl bg-white/15 px-4 py-3 text-right backdrop-blur-sm">
+              <div className="text-xs text-sky-50">Tự đánh giá Thông tư 94</div>
               <div className="text-xl font-extrabold text-amber-300">
                 Mức độ {report.estimated_tt94_level}
               </div>
-              <div className="text-[11px] text-teal-100">
+              <div className="text-[11px] text-sky-50">
                 {report.total_periods_logged} tiết · {report.exams_meeting_10_pct} đề ≥ 10% EN
               </div>
             </div>
@@ -373,10 +391,10 @@ export function TeacherStudioPage({ session, onSessionChange }: Props) {
               key={item.id}
               type="button"
               onClick={() => setTab(item.id)}
-              className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition ${
+              className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition ${
                 active
-                  ? "bg-teal-700 text-white shadow-sm"
-                  : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                  ? "bg-gradient-to-r from-indigo-600 to-sky-500 text-white shadow-sm"
+                  : "border border-slate-200 bg-white text-slate-700 hover:bg-sky-50"
               }`}
             >
               <Icon className="h-4 w-4" />
@@ -487,17 +505,60 @@ export function TeacherStudioPage({ session, onSessionChange }: Props) {
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-semibold text-slate-600">
-                  Các bài học (1–47, cách nhau dấu phẩy)
+                <label className="mb-1.5 block text-xs font-semibold text-slate-600">
+                  Nguồn học liệu sinh đề
                 </label>
-                <input
-                  type="text"
-                  value={lessonRangeText}
-                  onChange={(e) => setLessonRangeText(e.target.value)}
-                  placeholder="vd: 8, 9, 10, 13, 18"
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                />
+                <div className="grid grid-cols-3 gap-1.5 text-xs">
+                  {[
+                    { id: "kntt", label: "SGK 47 bài" },
+                    { id: "study_pack", label: "Bộ Đề 16 Units" },
+                    { id: "both", label: "Kết hợp" },
+                  ].map((src) => (
+                    <button
+                      key={src.id}
+                      type="button"
+                      onClick={() => setExamSourceMode(src.id as "kntt" | "study_pack" | "both")}
+                      className={`rounded-lg border py-1.5 font-bold transition ${
+                        examSourceMode === src.id
+                          ? "border-indigo-600 bg-indigo-50 text-indigo-900"
+                          : "border-slate-200 text-slate-600 hover:bg-slate-50"
+                      }`}
+                    >
+                      {src.label}
+                    </button>
+                  ))}
+                </div>
               </div>
+
+              {examSourceMode !== "study_pack" && (
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-slate-600">
+                    Các bài học SGK KNTT 8 (1–47, cách nhau dấu phẩy)
+                  </label>
+                  <input
+                    type="text"
+                    value={lessonRangeText}
+                    onChange={(e) => setLessonRangeText(e.target.value)}
+                    placeholder="vd: 8, 9, 10, 13, 18"
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                  />
+                </div>
+              )}
+
+              {examSourceMode !== "kntt" && (
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-slate-600">
+                    Chuyên đề Bộ Đề 16 Units (1–16, cách nhau dấu phẩy)
+                  </label>
+                  <input
+                    type="text"
+                    value={studyPackRangeText}
+                    onChange={(e) => setStudyPackRangeText(e.target.value)}
+                    placeholder="vd: 1, 7, 14"
+                    className="w-full rounded-lg border border-indigo-200 bg-indigo-50/30 px-3 py-2 text-sm"
+                  />
+                </div>
+              )}
 
               <div>
                 <label className="mb-1.5 block text-xs font-semibold text-slate-600">

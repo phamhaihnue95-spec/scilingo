@@ -11,19 +11,19 @@ interface Props {
 
 const DEMO_PERSONAS = [
   {
-    label: "Học sinh lớp 8 (An)",
+    label: "Học sinh lớp 8 (Nguyễn Minh An)",
     email: "an.hs8@demo.scilingo.vn",
     password: "Student123!",
     badge: "student",
   },
   {
-    label: "Giáo viên KHTN (Cô Minh)",
-    email: "minh.gv@demo.scilingo.vn",
+    label: "Giáo viên KHTN (Cô Phạm Thị Hải)",
+    email: "hai.gv@demo.scilingo.vn",
     password: "Teacher123!",
     badge: "teacher",
   },
   {
-    label: "Ban Giám hiệu (Thầy Hùng)",
+    label: "Ban Giám hiệu (Thầy Trần Quốc Hùng)",
     email: "hung.bgh@demo.scilingo.vn",
     password: "Admin123!",
     badge: "school_admin",
@@ -327,12 +327,12 @@ export function AccountPage({ session, onSessionChange }: Props) {
       </section>
 
       {/* Quick Demo Persona Panel */}
-      <section className="rounded-2xl border border-teal-200 bg-teal-50/60 p-6">
-        <h2 className="text-base font-bold text-teal-900">
-          Đăng nhập nhanh Tài khoản Demo (Trường THCS Chu Văn An)
+      <section className="rounded-3xl border border-indigo-200 bg-gradient-to-br from-indigo-50 via-sky-50 to-emerald-50 p-6 shadow-sm">
+        <h2 className="text-base font-extrabold text-indigo-950">
+          Đăng nhập nhanh Tài khoản Demo (Trường THCS Cầu Giấy B)
         </h2>
-        <p className="mt-1 text-xs text-teal-800">
-          Kiểm thử phân quyền RBAC giữa Học sinh, Giáo viên và Ban Giám hiệu trong Bolt 1.
+        <p className="mt-1 text-xs text-indigo-800">
+          Trải nghiệm phân quyền RBAC giữa Học sinh, Giáo viên Phạm Thị Hải và Ban Giám hiệu.
         </p>
 
         <div className="mt-4 space-y-3">
@@ -342,13 +342,13 @@ export function AccountPage({ session, onSessionChange }: Props) {
               type="button"
               disabled={submitting}
               onClick={() => void handleDemoLogin(persona.email, persona.password)}
-              className="flex w-full items-center justify-between rounded-xl border border-teal-200 bg-white px-4 py-3 text-left shadow-sm transition hover:border-teal-500"
+              className="flex w-full items-center justify-between rounded-2xl border border-indigo-200 bg-white/90 px-4 py-3 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-500 hover:shadow-md"
             >
               <div>
                 <div className="text-sm font-bold text-slate-900">{persona.label}</div>
                 <div className="text-xs text-slate-500">{persona.email}</div>
               </div>
-              <span className="rounded-md bg-teal-100 px-2 py-0.5 font-mono text-xs font-semibold text-teal-900">
+              <span className="rounded-lg bg-gradient-to-r from-indigo-600 to-sky-500 px-2.5 py-0.5 font-mono text-xs font-bold text-white">
                 {persona.badge}
               </span>
             </button>

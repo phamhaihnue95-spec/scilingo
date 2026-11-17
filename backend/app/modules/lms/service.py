@@ -15,6 +15,7 @@ from app.modules.identity_billing.service import IdentityService
 from app.modules.lms.exam_engine import (
     compute_exam_allocation,
     synthesize_questions_from_curriculum,
+    synthesize_questions_from_study_pack,
 )
 from app.modules.lms.exporter import export_exam_docx, export_exam_pdf
 from app.modules.lms.models import (
@@ -232,17 +233,52 @@ class LMSService:
         ]
 
     # --- Exam Builder & Export ---
+    def _save_synthesized_questions(
+        self, teacher: User, synthesized: list[dict]
+    ) -> list[QuestionBankItem]:
+        saved: list[QuestionBankItem] = []
+        for q_dict in synthesized:
+            item = QuestionBankItem(
+                lesson_no=q_dict["lesson_no"],
+                author_id=teacher.id,
+                tenant_id=teacher.tenant_id,
+                question_type="mcq",
+                language=q_dict["language"],
+                cognitive_level=q_dict["cognitive_level"],
+                discipline=q_dict["discipline"],
+                prompt_text=q_dict["prompt_text"],
+                options_json=q_dict["options"],
+                correct_answer=q_dict["correct_answer"],
+                explanation_vi=q_dict["explanation_vi"],
+                linked_term_ids_json=q_dict["linked_term_ids"],
+                linter_verified=True,
+            )
+            self.repo.create_question(item)
+            saved.append(item)
+        return saved
+
     def _ensure_questions_for_language(
         self,
         *,
         teacher: User,
         lessons: list,
         all_terms: list,
+        study_pack_units: list,
+        all_pack_items: list,
         language: str,
         needed: int,
     ) -> list[QuestionBankItem]:
         if needed <= 0:
             return []
+        if study_pack_units and not lessons:
+            synthesized = synthesize_questions_from_study_pack(
+                units=study_pack_units,
+                all_items=all_pack_items,
+                language=language,
+                needed=needed,
+            )
+            return self._save_synthesized_questions(teacher, synthesized)[:needed]
+
         lesson_nos = [lesson.lesson_no for lesson in lessons]
         existing = self.repo.list_questions(
             tenant_id=teacher.tenant_id,
@@ -252,30 +288,24 @@ class LMSService:
         selected = existing[:needed]
         shortfall = needed - len(selected)
         if shortfall > 0:
-            synthesized = synthesize_questions_from_curriculum(
-                lessons=lessons,
-                all_terms=all_terms,
-                language=language,
-                needed=shortfall,
-            )
-            for q_dict in synthesized:
-                item = QuestionBankItem(
-                    lesson_no=q_dict["lesson_no"],
-                    author_id=teacher.id,
-                    tenant_id=teacher.tenant_id,
-                    question_type="mcq",
-                    language=q_dict["language"],
-                    cognitive_level=q_dict["cognitive_level"],
-                    discipline=q_dict["discipline"],
-                    prompt_text=q_dict["prompt_text"],
-                    options_json=q_dict["options"],
-                    correct_answer=q_dict["correct_answer"],
-                    explanation_vi=q_dict["explanation_vi"],
-                    linked_term_ids_json=q_dict["linked_term_ids"],
-                    linter_verified=True,
+            if study_pack_units:
+                study_count = max(1, shortfall // 2)
+                synthesized_pack = synthesize_questions_from_study_pack(
+                    units=study_pack_units,
+                    all_items=all_pack_items,
+                    language=language,
+                    needed=study_count,
                 )
-                self.repo.create_question(item)
-                selected.append(item)
+                selected.extend(self._save_synthesized_questions(teacher, synthesized_pack))
+                shortfall = needed - len(selected)
+            if shortfall > 0 and lessons:
+                synthesized = synthesize_questions_from_curriculum(
+                    lessons=lessons,
+                    all_terms=all_terms,
+                    language=language,
+                    needed=shortfall,
+                )
+                selected.extend(self._save_synthesized_questions(teacher, synthesized))
         return selected[:needed]
 
     def _to_exam_detail(self, exam: Exam) -> ExamDetailOut:
@@ -333,7 +363,16 @@ class LMSService:
                 )
 
         lessons = [self.curriculum.get_lesson_detail(no) for no in sorted(set(payload.lesson_nos))]
-        all_terms = self.curriculum.search_terms(limit=200).items
+        all_terms = self.curriculum.search_terms(limit=200).items if lessons else []
+        study_pack_units = [
+            self.curriculum.get_english_science_unit(u_no)
+            for u_no in sorted(set(payload.study_pack_unit_nos))
+        ]
+        all_pack_items = (
+            self.curriculum.search_english_science_items(limit=1000).items
+            if study_pack_units
+            else []
+        )
         plan = compute_exam_allocation(
             question_count=payload.question_count,
             total_points=payload.total_points,
@@ -344,6 +383,8 @@ class LMSService:
             teacher=teacher,
             lessons=lessons,
             all_terms=all_terms,
+            study_pack_units=study_pack_units,
+            all_pack_items=all_pack_items,
             language="vi",
             needed=plan.vi_count,
         )
@@ -351,6 +392,8 @@ class LMSService:
             teacher=teacher,
             lessons=lessons,
             all_terms=all_terms,
+            study_pack_units=study_pack_units,
+            all_pack_items=all_pack_items,
             language="en",
             needed=plan.en_count,
         )
@@ -376,6 +419,7 @@ class LMSService:
             duration_minutes=payload.duration_minutes,
             matrix_json={
                 "lesson_nos": [lesson.lesson_no for lesson in lessons],
+                "study_pack_unit_nos": [u.unit.unit_no for u in study_pack_units],
                 "vi_count": plan.vi_count,
                 "en_count": plan.en_count,
                 "vi_points": plan.vi_points,
@@ -415,15 +459,24 @@ class LMSService:
         return self._to_exam_detail(exam)
 
     def export_exam(self, teacher: User, exam_id: str, fmt: str) -> tuple[bytes, str, str]:
-        detail = self.get_exam_detail(teacher, exam_id)
+        exam = self.repo.get_exam(exam_id)
+        if exam is None or exam.tenant_id != teacher.tenant_id:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Không tìm thấy đề kiểm tra.",
+            )
+        detail = self._to_exam_detail(exam)
         school_name = self.identity.get_tenant_name(teacher.tenant_id)
+        teacher_name = self.identity.get_user_names_map([exam.teacher_id]).get(
+            exam.teacher_id, teacher.full_name
+        )
         if fmt == "docx":
-            content = export_exam_docx(detail, school_name)
+            content = export_exam_docx(detail, school_name, teacher_name=teacher_name)
             media = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             filename = f"exam-{exam_id[:8]}.docx"
             return content, media, filename
         if fmt == "pdf":
-            content = export_exam_pdf(detail, school_name)
+            content = export_exam_pdf(detail, school_name, teacher_name=teacher_name)
             return content, "application/pdf", f"exam-{exam_id[:8]}.pdf"
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

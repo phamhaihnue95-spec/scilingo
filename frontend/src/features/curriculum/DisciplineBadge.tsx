@@ -6,22 +6,22 @@ const DISCIPLINE_META: Record<
 > = {
   general_lab: {
     label: "Phòng thí nghiệm",
-    badgeClass: "bg-slate-100 text-slate-700 border-slate-200",
-    dotClass: "bg-slate-500",
+    badgeClass: "bg-violet-100 text-violet-800 border-violet-200",
+    dotClass: "bg-violet-500",
   },
   chemistry: {
     label: "Hóa học (IUPAC)",
-    badgeClass: "bg-amber-50 text-amber-800 border-amber-200",
-    dotClass: "bg-amber-500",
+    badgeClass: "bg-orange-100 text-orange-800 border-orange-200",
+    dotClass: "bg-orange-500",
   },
   physics: {
     label: "Vật lí (SI)",
-    badgeClass: "bg-sky-50 text-sky-800 border-sky-200",
+    badgeClass: "bg-sky-100 text-sky-800 border-sky-200",
     dotClass: "bg-sky-500",
   },
   biology: {
     label: "Sinh học",
-    badgeClass: "bg-emerald-50 text-emerald-800 border-emerald-200",
+    badgeClass: "bg-emerald-100 text-emerald-800 border-emerald-200",
     dotClass: "bg-emerald-500",
   },
 };

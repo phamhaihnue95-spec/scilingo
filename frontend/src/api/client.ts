@@ -18,6 +18,10 @@ import type {
   QuestionBankItem,
   SRSDueResponse,
   SRSReviewResult,
+  StudyPackOverview,
+  StudyPackQuiz,
+  StudyPackSearchResponse,
+  StudyPackUnitDetail,
   SubmissionResult,
   TT94ComplianceReport,
   TeacherResource,
@@ -102,6 +106,42 @@ export const api = {
 
   getIupacRules(): Promise<TerminologyRulebook> {
     return request<TerminologyRulebook>("/curriculum/rules/iupac");
+  },
+
+  getStudyPackOverview(): Promise<StudyPackOverview> {
+    return request<StudyPackOverview>("/study-packs/english-science");
+  },
+
+  getStudyPackUnit(unitNo: number): Promise<StudyPackUnitDetail> {
+    return request<StudyPackUnitDetail>(`/study-packs/english-science/units/${unitNo}`);
+  },
+
+  searchStudyPack(params: {
+    q?: string;
+    unitNo?: number;
+    limit?: number;
+    offset?: number;
+  }): Promise<StudyPackSearchResponse> {
+    const sp = new URLSearchParams();
+    if (params.q) sp.set("q", params.q);
+    if (params.unitNo) sp.set("unit_no", String(params.unitNo));
+    if (params.limit) sp.set("limit", String(params.limit));
+    if (params.offset) sp.set("offset", String(params.offset));
+    const qs = sp.toString();
+    return request<StudyPackSearchResponse>(
+      `/study-packs/english-science/search${qs ? `?${qs}` : ""}`
+    );
+  },
+
+  generateStudyPackQuiz(payload: {
+    unit_nos: number[];
+    mode: PracticeMode;
+    question_count: number;
+  }): Promise<StudyPackQuiz> {
+    return request<StudyPackQuiz>("/study-packs/english-science/quiz", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
   },
 
   register(payload: {
@@ -242,7 +282,8 @@ export const api = {
 
   generateExam(payload: {
     title: string;
-    lesson_nos: number[];
+    lesson_nos?: number[];
+    study_pack_unit_nos?: number[];
     classroom_id?: string | null;
     target_en_ratio: number;
     total_points: number;

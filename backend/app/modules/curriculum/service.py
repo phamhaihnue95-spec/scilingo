@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import math
+import random
 from functools import lru_cache
 from pathlib import Path
 
@@ -18,6 +20,14 @@ from app.modules.curriculum.schemas import (
     LessonDetailOut,
     LessonSummaryOut,
     LinkedLessonRefOut,
+    StudyPackItemOut,
+    StudyPackOverviewOut,
+    StudyPackQuizOut,
+    StudyPackQuizQuestionOut,
+    StudyPackQuizStartRequest,
+    StudyPackSearchResponse,
+    StudyPackUnitDetailOut,
+    StudyPackUnitSummaryOut,
     TermDetailOut,
     TerminologyRulebookOut,
     TermSearchResponse,
@@ -34,6 +44,40 @@ def _load_rulebook_payload(rules_path: str) -> TerminologyRulebookOut:
         exception_13_elements=raw["exception_13_elements"],
         deprecated_terms_to_flag=raw["deprecated_terms_to_flag"],
     )
+
+
+@lru_cache
+def _load_study_pack_raw(pack_path: str) -> dict:
+    return json.loads(Path(pack_path).read_text(encoding="utf-8"))
+
+
+def _flatten_study_pack_unit(
+    unit_raw: dict,
+) -> tuple[StudyPackUnitSummaryOut, list[StudyPackItemOut]]:
+    summary = StudyPackUnitSummaryOut(
+        unit_no=unit_raw["unit_no"],
+        title_en=unit_raw["title_en"],
+        title_vi=unit_raw["title_vi"],
+        discipline=unit_raw["discipline"],
+        kntt8_related_lessons=unit_raw["kntt8_related_lessons"],
+        item_count=unit_raw["item_count"],
+    )
+    items = [
+        StudyPackItemOut(
+            unit_no=unit_raw["unit_no"],
+            unit_title_en=unit_raw["title_en"],
+            unit_title_vi=unit_raw["title_vi"],
+            discipline=unit_raw["discipline"],
+            order_no=entry["order_no"],
+            term_en=entry["term_en"],
+            ipa=entry["ipa"],
+            pos=entry["pos"],
+            meaning_vi=entry["meaning_vi"],
+            iupac_note=entry.get("iupac_note"),
+        )
+        for entry in unit_raw["items"]
+    ]
+    return summary, items
 
 
 class CurriculumService:
@@ -188,3 +232,175 @@ class CurriculumService:
     def get_iupac_rulebook(self) -> TerminologyRulebookOut:
         rules_file = get_settings().data_dir / "terminology_rules.json"
         return _load_rulebook_payload(str(rules_file))
+
+    def _get_study_pack_raw(self) -> dict:
+        pack_file = get_settings().data_dir / "english_for_science_study_pack.json"
+        return _load_study_pack_raw(str(pack_file))
+
+    def get_english_science_pack_overview(self) -> StudyPackOverviewOut:
+        raw = self._get_study_pack_raw()
+        meta = raw["metadata"]
+        unit_summaries = [
+            StudyPackUnitSummaryOut(
+                unit_no=u["unit_no"],
+                title_en=u["title_en"],
+                title_vi=u["title_vi"],
+                discipline=u["discipline"],
+                kntt8_related_lessons=u["kntt8_related_lessons"],
+                item_count=u["item_count"],
+            )
+            for u in raw["units"]
+        ]
+        return StudyPackOverviewOut(
+            id=meta["id"],
+            title=meta["title"],
+            subtitle=meta["subtitle"],
+            author=meta["author"],
+            source_org=meta["source_org"],
+            school_context=meta["school_context"],
+            total_units=meta["total_units"],
+            total_items=meta["total_items"],
+            units=unit_summaries,
+        )
+
+    def get_english_science_unit(self, unit_no: int) -> StudyPackUnitDetailOut:
+        raw = self._get_study_pack_raw()
+        for u in raw["units"]:
+            if u["unit_no"] == unit_no:
+                summary, items = _flatten_study_pack_unit(u)
+                return StudyPackUnitDetailOut(unit=summary, items=items)
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Không tìm thấy Unit {unit_no} trong bộ The English Dictionary for SCIENCE.",
+        )
+
+    def search_english_science_items(
+        self,
+        *,
+        q: str | None = None,
+        unit_no: int | None = None,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> StudyPackSearchResponse:
+        raw = self._get_study_pack_raw()
+        all_items: list[StudyPackItemOut] = []
+        for u in raw["units"]:
+            if unit_no is not None and u["unit_no"] != unit_no:
+                continue
+            _, unit_items = _flatten_study_pack_unit(u)
+            all_items.extend(unit_items)
+
+        needle = q.strip().lower() if q else ""
+        if needle:
+            filtered = [
+                item
+                for item in all_items
+                if needle in item.term_en.lower()
+                or needle in item.meaning_vi.lower()
+                or needle in item.ipa.lower()
+            ]
+        else:
+            filtered = all_items
+
+        return StudyPackSearchResponse(
+            total=len(filtered),
+            items=filtered[offset : offset + limit],
+        )
+
+    def generate_study_pack_quiz(self, payload: StudyPackQuizStartRequest) -> StudyPackQuizOut:
+        unique_units = sorted(set(payload.unit_nos))
+        selected_items: list[StudyPackItemOut] = []
+        unit_titles: list[str] = []
+        for u_no in unique_units:
+            detail = self.get_english_science_unit(u_no)
+            unit_titles.append(f"Unit {u_no}: {detail.unit.title_en}")
+            selected_items.extend(detail.items)
+
+        all_pack_items = self.search_english_science_items(limit=1000).items
+        rng = random.Random()
+        pool = list(selected_items)
+        rng.shuffle(pool)
+        actual_count = min(payload.question_count, len(pool))
+        chosen = pool[:actual_count]
+
+        ratio_map = {"quiz_10": 0.10, "quiz_50": 0.50, "quiz_100": 1.00}
+        target_ratio = ratio_map[payload.mode]
+        en_count = min(actual_count, max(1, math.ceil(actual_count * target_ratio)))
+        base_pt = round(10.0 / actual_count, 2)
+        points_list = [base_pt for _ in range(actual_count)]
+        diff = round(10.0 - sum(points_list), 2)
+        if diff != 0:
+            points_list[0 if diff > 0 else -1] = round(points_list[0 if diff > 0 else -1] + diff, 2)
+
+        en_indices = set(range(actual_count - en_count, actual_count))
+        en_pool = [i.term_en for i in all_pack_items]
+        vi_pool = [i.meaning_vi for i in all_pack_items]
+
+        questions: list[StudyPackQuizQuestionOut] = []
+        en_points = 0.0
+        vi_points = 0.0
+        for idx, entry in enumerate(chosen):
+            pts = points_list[idx]
+            is_en = idx in en_indices
+            if is_en:
+                en_points += pts
+                correct_text = entry.term_en
+                distractors = [
+                    val
+                    for val in dict.fromkeys(rng.sample(en_pool, k=min(25, len(en_pool))))
+                    if val.lower() != correct_text.lower()
+                ][:3]
+                prompt = (
+                    f"[Unit {entry.unit_no} · {entry.pos}] Choose the English scientific term "
+                    f"for '{entry.meaning_vi}':"
+                )
+            else:
+                vi_points += pts
+                correct_text = entry.meaning_vi
+                distractors = [
+                    val
+                    for val in dict.fromkeys(rng.sample(vi_pool, k=min(25, len(vi_pool))))
+                    if val.lower() != correct_text.lower()
+                ][:3]
+                prompt = (
+                    f"[Unit {entry.unit_no}] Thuật ngữ '{entry.term_en}' {entry.ipa} ({entry.pos}) "
+                    f"mang nghĩa tiếng Việt nào sau đây?"
+                )
+
+            options = [correct_text, *distractors]
+            rng.shuffle(options)
+            correct_idx = options.index(correct_text)
+            note_suffix = f" | Lưu ý GDPT 2018: {entry.iupac_note}" if entry.iupac_note else ""
+            questions.append(
+                StudyPackQuizQuestionOut(
+                    index=idx,
+                    unit_no=entry.unit_no,
+                    language="en" if is_en else "vi",
+                    prompt_text=prompt,
+                    options=options,
+                    correct_index=correct_idx,
+                    points=pts,
+                    ipa=entry.ipa,
+                    iupac_note=entry.iupac_note,
+                    explanation_vi=(
+                        f"{entry.term_en} {entry.ipa} ({entry.pos}) = "
+                        f"{entry.meaning_vi}{note_suffix}."
+                    ),
+                )
+            )
+
+        en_points = round(en_points, 2)
+        vi_points = round(vi_points, 2)
+        title_label = ", ".join(unit_titles[:2]) + (
+            f" (+{len(unit_titles) - 2} Unit)" if len(unit_titles) > 2 else ""
+        )
+        return StudyPackQuizOut(
+            title=f"Bộ đề thực hành: {title_label}",
+            unit_nos=unique_units,
+            mode=payload.mode,
+            total_points=10.0,
+            en_points=en_points,
+            vi_points=vi_points,
+            english_ratio=round(en_points / 10.0, 4),
+            questions=questions,
+        )

@@ -38,7 +38,11 @@ def _resolve_unicode_font() -> tuple[Path | None, Path | None]:
     return None, None
 
 
-def export_exam_docx(exam: ExamDetailOut, school_name: str) -> bytes:
+def export_exam_docx(
+    exam: ExamDetailOut,
+    school_name: str,
+    teacher_name: str | None = None,
+) -> bytes:
     """Render an ExamDetailOut payload as a formatted Microsoft Word (.docx) document."""
     doc = Document()
 
@@ -51,6 +55,8 @@ def export_exam_docx(exam: ExamDetailOut, school_name: str) -> bytes:
     header_run.bold = True
     header_run.font.size = Pt(11)
     header_p.add_run("ĐỀ KIỂM TRA ĐỊNH KỲ MÔN KHOA HỌC TỰ NHIÊN 8 (KNTT)\n").bold = True
+    if teacher_name:
+        header_p.add_run(f"Giáo viên phụ trách: {teacher_name}\n").italic = True
 
     title_p = doc.add_paragraph()
     title_run = title_p.add_run(exam.title)
@@ -98,7 +104,11 @@ def export_exam_docx(exam: ExamDetailOut, school_name: str) -> bytes:
     return buf.getvalue()
 
 
-def export_exam_pdf(exam: ExamDetailOut, school_name: str) -> bytes:
+def export_exam_pdf(
+    exam: ExamDetailOut,
+    school_name: str,
+    teacher_name: str | None = None,
+) -> bytes:
     """Render an ExamDetailOut payload as a Unicode PDF preserving Vietnamese & H₂SO₄/kg/m³."""
     pdf = FPDF()
     pdf.set_auto_page_break(auto=True, margin=15)
@@ -135,6 +145,9 @@ def export_exam_pdf(exam: ExamDetailOut, school_name: str) -> bytes:
 
     pdf.set_font(font_family, style="B", size=11)
     _write_block(6, school_name.upper())
+    if teacher_name:
+        pdf.set_font(font_family, style="", size=10)
+        _write_block(5.5, f"Giáo viên phụ trách: {teacher_name}")
     pdf.set_font(font_family, style="B", size=14)
     _write_block(8, exam.title)
 

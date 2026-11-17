@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import date, datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 ClilMode = Literal["term_only", "bilingual_10", "bilingual_50", "full_english"]
 ResourceType = Literal["lesson_plan", "bilingual_slide", "worksheet", "glossary_card"]
@@ -90,12 +90,24 @@ class ExamGenerateRequest(BaseModel):
     """Matrix specification for Exam Builder (supports TT94 10% and 50% presets)."""
 
     title: str = Field(min_length=3, max_length=255)
-    lesson_nos: list[int] = Field(min_length=1)
+    lesson_nos: list[int] = Field(default_factory=list)
+    study_pack_unit_nos: list[int] = Field(default_factory=list)
     classroom_id: str | None = None
     target_en_ratio: float = Field(default=0.10, ge=0.0, le=1.0)
     total_points: float = Field(default=10.0, gt=0.0, le=100.0)
     question_count: int = Field(default=10, ge=2, le=40)
     duration_minutes: int = Field(default=45, ge=10, le=120)
+
+    @model_validator(mode="after")
+    def validate_sources(self) -> ExamGenerateRequest:
+        """Require at least one valid KNTT lesson (1..47) or Study Pack unit (1..16)."""
+        if not self.lesson_nos and not self.study_pack_unit_nos:
+            raise ValueError("Cần chọn ít nhất 1 bài học (1–47) hoặc 1 chuyên đề Unit (1–16).")
+        if any(not (1 <= n <= 47) for n in self.lesson_nos):
+            raise ValueError("Số bài học KNTT phải nằm trong khoảng 1–47.")
+        if any(not (1 <= u <= 16) for u in self.study_pack_unit_nos):
+            raise ValueError("Chuyên đề Bộ đề học phải nằm trong khoảng Unit 1–16.")
+        return self
 
 
 class ExamQuestionOut(BaseModel):
