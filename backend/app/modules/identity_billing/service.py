@@ -163,3 +163,11 @@ class IdentityService:
     def list_tenant_users(self, current_user: User) -> list[UserOut]:
         users = self.repo.list_users_for_tenant(current_user.tenant_id)
         return [UserOut.model_validate(u) for u in users]
+
+    def get_user_names_map(self, user_ids: list[str]) -> dict[str, str]:
+        users = self.repo.get_users_by_ids(user_ids)
+        return {uid: user.full_name for uid, user in users.items()}
+
+    def get_tenant_name(self, tenant_id: str) -> str:
+        tenant = self.repo.get_tenant_by_id(tenant_id)
+        return tenant.name if tenant else "Trường THCS"

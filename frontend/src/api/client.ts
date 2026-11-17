@@ -1,15 +1,27 @@
 import type {
+  AssignmentItem,
+  AssignmentTake,
   AuthSession,
+  Classroom,
+  ClassroomAnalytics,
+  ClilMode,
   CurriculumTreeResponse,
   Entitlements,
+  ExamDetail,
+  ExamSummary,
   GamificationSummary,
   LessonDetail,
   LessonMindmap,
   PracticeMode,
   PracticeResult,
   PracticeSession,
+  QuestionBankItem,
   SRSDueResponse,
   SRSReviewResult,
+  SubmissionResult,
+  TT94ComplianceReport,
+  TeacherResource,
+  TeachingSessionLog,
   TermDetail,
   TermSearchResponse,
   TerminologyRulebook,
@@ -171,5 +183,162 @@ export const api = {
 
   getGamification(): Promise<GamificationSummary> {
     return request<GamificationSummary>("/learning/gamification/me");
+  },
+
+  // --- Unit 3: Teacher Studio, LMS, Exam Builder & TT94 ---
+  listClassrooms(): Promise<Classroom[]> {
+    return request<Classroom[]>("/lms/classrooms");
+  },
+
+  createClassroom(payload: {
+    name: string;
+    grade: number;
+    academic_year?: string;
+    is_tt94_pilot_class?: boolean;
+  }): Promise<Classroom> {
+    return request<Classroom>("/lms/classrooms", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  joinClassroom(joinCode: string): Promise<Classroom> {
+    return request<Classroom>("/lms/classrooms/join", {
+      method: "POST",
+      body: JSON.stringify({ join_code: joinCode }),
+    });
+  },
+
+  getClassroomAnalytics(classroomId: string): Promise<ClassroomAnalytics> {
+    return request<ClassroomAnalytics>(
+      `/lms/classrooms/${encodeURIComponent(classroomId)}/analytics`
+    );
+  },
+
+  getLessonResources(lessonNo: number): Promise<TeacherResource[]> {
+    return request<TeacherResource[]>(`/lms/resources?lesson_no=${lessonNo}`);
+  },
+
+  listQuestions(lessonNo?: number): Promise<QuestionBankItem[]> {
+    const query = lessonNo ? `?lesson_no=${lessonNo}` : "";
+    return request<QuestionBankItem[]>(`/lms/questions${query}`);
+  },
+
+  createQuestion(payload: {
+    lesson_no: number;
+    language: "vi" | "en";
+    cognitive_level: "know" | "understand" | "apply";
+    discipline: string;
+    prompt_text: string;
+    options: string[];
+    correct_index: number;
+    explanation_vi: string;
+  }): Promise<QuestionBankItem> {
+    return request<QuestionBankItem>("/lms/questions", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  generateExam(payload: {
+    title: string;
+    lesson_nos: number[];
+    classroom_id?: string | null;
+    target_en_ratio: number;
+    total_points: number;
+    question_count: number;
+    duration_minutes: number;
+  }): Promise<ExamDetail> {
+    return request<ExamDetail>("/lms/exams/generate", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  listExams(): Promise<ExamSummary[]> {
+    return request<ExamSummary[]>("/lms/exams");
+  },
+
+  getExamDetail(examId: string): Promise<ExamDetail> {
+    return request<ExamDetail>(`/lms/exams/${encodeURIComponent(examId)}`);
+  },
+
+  async downloadExamFile(examId: string, format: "docx" | "pdf"): Promise<void> {
+    const token = getStoredAccessToken();
+    const res = await fetch(
+      `${API_BASE}/lms/exams/${encodeURIComponent(examId)}/export?format=${format}`,
+      { headers: token ? { Authorization: `Bearer ${token}` } : {} }
+    );
+    if (!res.ok) {
+      throw new Error(`Không thể xuất file ${format.toUpperCase()} (HTTP ${res.status})`);
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `scilingo-exam-${examId.slice(0, 8)}.${format}`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  },
+
+  assignExam(classroomId: string, examId: string, title?: string): Promise<AssignmentItem> {
+    return request<AssignmentItem>(
+      `/lms/classrooms/${encodeURIComponent(classroomId)}/assignments`,
+      {
+        method: "POST",
+        body: JSON.stringify({ exam_id: examId, title }),
+      }
+    );
+  },
+
+  listMyAssignments(): Promise<AssignmentItem[]> {
+    return request<AssignmentItem[]>("/lms/my-assignments");
+  },
+
+  takeAssignment(assignmentId: string): Promise<AssignmentTake> {
+    return request<AssignmentTake>(
+      `/lms/assignments/${encodeURIComponent(assignmentId)}/take`
+    );
+  },
+
+  submitAssignment(
+    assignmentId: string,
+    answers: Array<{ question_id: string; selected_index: number }>
+  ): Promise<SubmissionResult> {
+    return request<SubmissionResult>(
+      `/lms/assignments/${encodeURIComponent(assignmentId)}/submit`,
+      {
+        method: "POST",
+        body: JSON.stringify({ answers }),
+      }
+    );
+  },
+
+  logTeachingSession(payload: {
+    classroom_id: string;
+    lesson_no: number;
+    taught_date: string;
+    periods_count: number;
+    clil_mode: ClilMode;
+    english_minutes: number;
+    notes?: string;
+  }): Promise<TeachingSessionLog> {
+    return request<TeachingSessionLog>("/lms/sessions/log", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  listTeachingSessions(classroomId?: string): Promise<TeachingSessionLog[]> {
+    const query = classroomId ? `?classroom_id=${encodeURIComponent(classroomId)}` : "";
+    return request<TeachingSessionLog[]>(`/lms/sessions${query}`);
+  },
+
+  getTT94ComplianceReport(academicYear = "2026-2027"): Promise<TT94ComplianceReport> {
+    return request<TT94ComplianceReport>(
+      `/lms/reports/tt94-compliance?academic_year=${encodeURIComponent(academicYear)}`
+    );
   },
 };

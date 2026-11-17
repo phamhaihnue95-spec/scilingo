@@ -293,3 +293,183 @@ export interface GamificationSummary {
   last_study_date: string | null;
   recent_attempts: PracticeHistoryItem[];
 }
+
+export type ClilMode = "term_only" | "bilingual_10" | "bilingual_50" | "full_english";
+
+export interface Classroom {
+  id: string;
+  tenant_id: string;
+  teacher_id: string;
+  name: string;
+  grade: number;
+  academic_year: string;
+  join_code: string;
+  is_tt94_pilot_class: boolean;
+  created_at: string;
+  student_count: number;
+  logged_periods: number;
+}
+
+export interface TeacherResource {
+  id: string;
+  lesson_no: number;
+  title: string;
+  resource_type: "lesson_plan" | "bilingual_slide" | "worksheet" | "glossary_card";
+  clil_mode: ClilMode;
+  content_markdown: string;
+  is_official: boolean;
+}
+
+export interface QuestionBankItem {
+  id: string;
+  lesson_no: number;
+  language: "vi" | "en";
+  cognitive_level: string;
+  discipline: string;
+  prompt_text: string;
+  options: string[];
+  correct_answer: string;
+  explanation_vi: string;
+  linter_verified: boolean;
+}
+
+export interface ExamQuestion {
+  order_no: number;
+  question_id: string;
+  lesson_no: number;
+  language: "vi" | "en";
+  cognitive_level: string;
+  discipline: string;
+  points: number;
+  prompt_text: string;
+  options: string[];
+  correct_answer: string;
+  explanation_vi: string;
+}
+
+export interface ExamSummary {
+  id: string;
+  title: string;
+  classroom_id: string | null;
+  target_en_ratio: number;
+  achieved_en_ratio: number;
+  total_points: number;
+  duration_minutes: number;
+  question_count: number;
+  created_at: string;
+}
+
+export interface ExamDetail extends ExamSummary {
+  en_points: number;
+  vi_points: number;
+  meets_tt94_10: boolean;
+  meets_tt94_50: boolean;
+  questions: ExamQuestion[];
+}
+
+export interface AssignmentItem {
+  id: string;
+  classroom_id: string;
+  classroom_name: string;
+  exam_id: string;
+  title: string;
+  total_points: number;
+  achieved_en_ratio: number;
+  duration_minutes: number;
+  due_at: string | null;
+  created_at: string;
+  submitted: boolean;
+  student_score: number | null;
+}
+
+export interface AssignmentTake {
+  assignment_id: string;
+  title: string;
+  classroom_name: string;
+  total_points: number;
+  achieved_en_ratio: number;
+  duration_minutes: number;
+  questions: Array<{
+    order_no: number;
+    question_id: string;
+    language: "vi" | "en";
+    points: number;
+    prompt_text: string;
+    options: string[];
+  }>;
+}
+
+export interface SubmissionResult {
+  submission_id: string;
+  assignment_id: string;
+  score: number;
+  max_score: number;
+  vi_score: number;
+  en_score: number;
+  submitted_at: string;
+}
+
+export interface ClassroomAnalytics {
+  classroom_id: string;
+  classroom_name: string;
+  student_count: number;
+  submissions_count: number;
+  average_score: number;
+  average_en_score: number;
+  submissions: Array<{
+    student_id: string;
+    student_name: string;
+    assignment_title: string;
+    score: number;
+    max_score: number;
+    vi_score: number;
+    en_score: number;
+    submitted_at: string;
+  }>;
+  weak_questions: Array<{
+    question_id: string;
+    prompt_text: string;
+    language: string;
+    miss_count: number;
+    total_attempts: number;
+  }>;
+}
+
+export interface TeachingSessionLog {
+  id: string;
+  classroom_id: string;
+  teacher_id: string;
+  lesson_no: number;
+  taught_date: string;
+  periods_count: number;
+  clil_mode: ClilMode;
+  english_minutes: number;
+  notes: string | null;
+  created_at: string;
+}
+
+export interface TT94ComplianceReport {
+  tenant_id: string;
+  tenant_name: string;
+  academic_year: string;
+  total_classrooms: number;
+  classrooms_meeting_35_periods: number;
+  classrooms_meeting_105_periods: number;
+  total_periods_logged: number;
+  total_exams_generated: number;
+  exams_meeting_10_pct: number;
+  exams_meeting_50_pct: number;
+  estimated_tt94_level: number;
+  level_label: string;
+  next_level_gaps: string[];
+  classrooms: Array<{
+    classroom_id: string;
+    classroom_name: string;
+    is_tt94_pilot_class: boolean;
+    student_count: number;
+    total_periods_logged: number;
+    total_english_minutes: number;
+    meets_35_periods: boolean;
+    meets_105_periods: boolean;
+  }>;
+}

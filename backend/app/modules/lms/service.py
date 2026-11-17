@@ -1,0 +1,806 @@
+"""Business logic for Unit 3: Teacher Studio, LMS, Exam Builder & TT94 Compliance."""
+
+from __future__ import annotations
+
+import secrets
+import string
+from datetime import UTC, datetime
+
+from fastapi import HTTPException, status
+from sqlalchemy.orm import Session
+
+from app.modules.curriculum.service import CurriculumService
+from app.modules.identity_billing.models import User
+from app.modules.identity_billing.service import IdentityService
+from app.modules.lms.exam_engine import (
+    compute_exam_allocation,
+    synthesize_questions_from_curriculum,
+)
+from app.modules.lms.exporter import export_exam_docx, export_exam_pdf
+from app.modules.lms.models import (
+    Assignment,
+    Classroom,
+    ClassroomMember,
+    Exam,
+    ExamQuestion,
+    QuestionBankItem,
+    StudentSubmission,
+    TeachingSessionLog,
+)
+from app.modules.lms.repository import LMSRepository
+from app.modules.lms.resources_builder import build_lesson_clil_pack
+from app.modules.lms.schemas import (
+    AssignmentCreateRequest,
+    AssignmentOut,
+    AssignmentQuestionPublicOut,
+    AssignmentSubmitRequest,
+    AssignmentTakeOut,
+    ClassroomAnalyticsOut,
+    ClassroomCreateRequest,
+    ClassroomOut,
+    ClassroomTT94MetricsOut,
+    ExamDetailOut,
+    ExamGenerateRequest,
+    ExamQuestionOut,
+    ExamSummaryOut,
+    QuestionCreateRequest,
+    QuestionOut,
+    StudentSubmissionSummaryOut,
+    SubmissionResultOut,
+    TeacherResourceOut,
+    TeachingSessionCreateRequest,
+    TeachingSessionOut,
+    TT94ComplianceReportOut,
+    WeakQuestionOut,
+)
+
+
+def _generate_join_code(grade: int) -> str:
+    alphabet = string.ascii_uppercase + string.digits
+    suffix = "".join(secrets.choice(alphabet) for _ in range(4))
+    return f"KHTN{grade}-{suffix}"
+
+
+class LMSService:
+    """Coordinates classroom LMS, CLIL resources, Exam Builder, and TT94 reporting."""
+
+    def __init__(self, db: Session) -> None:
+        self.db = db
+        self.repo = LMSRepository(db)
+        self.curriculum = CurriculumService(db)
+        self.identity = IdentityService(db)
+
+    # --- Classrooms ---
+    def create_classroom(self, teacher: User, payload: ClassroomCreateRequest) -> ClassroomOut:
+        join_code = _generate_join_code(payload.grade)
+        while self.repo.get_classroom_by_join_code(join_code) is not None:
+            join_code = _generate_join_code(payload.grade)
+
+        classroom = Classroom(
+            tenant_id=teacher.tenant_id,
+            teacher_id=teacher.id,
+            name=payload.name.strip(),
+            grade=payload.grade,
+            academic_year=payload.academic_year.strip(),
+            join_code=join_code,
+            is_tt94_pilot_class=payload.is_tt94_pilot_class,
+        )
+        self.repo.create_classroom(classroom)
+        self.db.commit()
+        self.db.refresh(classroom)
+        return ClassroomOut(
+            id=classroom.id,
+            tenant_id=classroom.tenant_id,
+            teacher_id=classroom.teacher_id,
+            name=classroom.name,
+            grade=classroom.grade,
+            academic_year=classroom.academic_year,
+            join_code=classroom.join_code,
+            is_tt94_pilot_class=classroom.is_tt94_pilot_class,
+            created_at=classroom.created_at,
+            student_count=0,
+            logged_periods=0,
+        )
+
+    def list_classrooms(self, current_user: User) -> list[ClassroomOut]:
+        classrooms = self.repo.list_classrooms_for_tenant(current_user.tenant_id)
+        periods_map = self.repo.sum_periods_by_classroom(current_user.tenant_id)
+        return [
+            ClassroomOut(
+                id=c.id,
+                tenant_id=c.tenant_id,
+                teacher_id=c.teacher_id,
+                name=c.name,
+                grade=c.grade,
+                academic_year=c.academic_year,
+                join_code=c.join_code,
+                is_tt94_pilot_class=c.is_tt94_pilot_class,
+                created_at=c.created_at,
+                student_count=len(c.members),
+                logged_periods=periods_map.get(c.id, (0, 0))[0],
+            )
+            for c in classrooms
+        ]
+
+    def join_classroom(self, student: User, join_code: str) -> ClassroomOut:
+        classroom = self.repo.get_classroom_by_join_code(join_code)
+        if classroom is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Không tìm thấy lớp học với mã tham gia này.",
+            )
+        existing = self.repo.get_membership(classroom.id, student.id)
+        if existing is None:
+            self.repo.add_member(
+                ClassroomMember(classroom_id=classroom.id, student_id=student.id)
+            )
+            self.db.commit()
+            self.db.refresh(classroom, attribute_names=["members"])
+
+        periods_map = self.repo.sum_periods_by_classroom(classroom.tenant_id)
+        return ClassroomOut(
+            id=classroom.id,
+            tenant_id=classroom.tenant_id,
+            teacher_id=classroom.teacher_id,
+            name=classroom.name,
+            grade=classroom.grade,
+            academic_year=classroom.academic_year,
+            join_code=classroom.join_code,
+            is_tt94_pilot_class=classroom.is_tt94_pilot_class,
+            created_at=classroom.created_at,
+            student_count=len(classroom.members),
+            logged_periods=periods_map.get(classroom.id, (0, 0))[0],
+        )
+
+    # --- CLIL Resources ---
+    def get_resources_for_lesson(
+        self, current_user: User, lesson_no: int
+    ) -> list[TeacherResourceOut]:
+        lesson = self.curriculum.get_lesson_detail(lesson_no)
+        official_pack = build_lesson_clil_pack(lesson)
+        custom = self.repo.list_custom_resources(current_user.tenant_id, lesson_no=lesson_no)
+        custom_outs = [
+            TeacherResourceOut(
+                id=r.id,
+                lesson_no=r.lesson_no,
+                title=r.title,
+                resource_type=r.resource_type,  # type: ignore[arg-type]
+                clil_mode=r.clil_mode,  # type: ignore[arg-type]
+                content_markdown=r.content_markdown,
+                is_official=r.is_official,
+            )
+            for r in custom
+        ]
+        return [*official_pack, *custom_outs]
+
+    # --- Question Bank ---
+    def create_question(self, teacher: User, payload: QuestionCreateRequest) -> QuestionOut:
+        self.curriculum.get_lesson_detail(payload.lesson_no)
+        correct_answer = payload.options[payload.correct_index]
+        item = QuestionBankItem(
+            lesson_no=payload.lesson_no,
+            author_id=teacher.id,
+            tenant_id=teacher.tenant_id,
+            question_type="mcq",
+            language=payload.language,
+            cognitive_level=payload.cognitive_level,
+            discipline=payload.discipline,
+            prompt_text=payload.prompt_text.strip(),
+            options_json=payload.options,
+            correct_answer=correct_answer,
+            explanation_vi=payload.explanation_vi.strip(),
+            linked_term_ids_json=[],
+            linter_verified=True,
+        )
+        self.repo.create_question(item)
+        self.db.commit()
+        return QuestionOut(
+            id=item.id,
+            lesson_no=item.lesson_no,
+            language=item.language,
+            cognitive_level=item.cognitive_level,
+            discipline=item.discipline,
+            prompt_text=item.prompt_text,
+            options=item.options_json,
+            correct_answer=item.correct_answer,
+            explanation_vi=item.explanation_vi,
+            linter_verified=item.linter_verified,
+        )
+
+    def list_questions(
+        self, teacher: User, lesson_no: int | None = None, language: str | None = None
+    ) -> list[QuestionOut]:
+        items = self.repo.list_questions(
+            tenant_id=teacher.tenant_id,
+            lesson_nos=[lesson_no] if lesson_no else None,
+            language=language,
+        )
+        return [
+            QuestionOut(
+                id=q.id,
+                lesson_no=q.lesson_no,
+                language=q.language,
+                cognitive_level=q.cognitive_level,
+                discipline=q.discipline,
+                prompt_text=q.prompt_text,
+                options=q.options_json,
+                correct_answer=q.correct_answer,
+                explanation_vi=q.explanation_vi,
+                linter_verified=q.linter_verified,
+            )
+            for q in items
+        ]
+
+    # --- Exam Builder & Export ---
+    def _ensure_questions_for_language(
+        self,
+        *,
+        teacher: User,
+        lessons: list,
+        all_terms: list,
+        language: str,
+        needed: int,
+    ) -> list[QuestionBankItem]:
+        if needed <= 0:
+            return []
+        lesson_nos = [lesson.lesson_no for lesson in lessons]
+        existing = self.repo.list_questions(
+            tenant_id=teacher.tenant_id,
+            lesson_nos=lesson_nos,
+            language=language,
+        )
+        selected = existing[:needed]
+        shortfall = needed - len(selected)
+        if shortfall > 0:
+            synthesized = synthesize_questions_from_curriculum(
+                lessons=lessons,
+                all_terms=all_terms,
+                language=language,
+                needed=shortfall,
+            )
+            for q_dict in synthesized:
+                item = QuestionBankItem(
+                    lesson_no=q_dict["lesson_no"],
+                    author_id=teacher.id,
+                    tenant_id=teacher.tenant_id,
+                    question_type="mcq",
+                    language=q_dict["language"],
+                    cognitive_level=q_dict["cognitive_level"],
+                    discipline=q_dict["discipline"],
+                    prompt_text=q_dict["prompt_text"],
+                    options_json=q_dict["options"],
+                    correct_answer=q_dict["correct_answer"],
+                    explanation_vi=q_dict["explanation_vi"],
+                    linked_term_ids_json=q_dict["linked_term_ids"],
+                    linter_verified=True,
+                )
+                self.repo.create_question(item)
+                selected.append(item)
+        return selected[:needed]
+
+    def _to_exam_detail(self, exam: Exam) -> ExamDetailOut:
+        ordered = sorted(exam.exam_questions, key=lambda eq: eq.order_no)
+        q_outs: list[ExamQuestionOut] = []
+        en_points = 0.0
+        vi_points = 0.0
+        for eq in ordered:
+            q = eq.question
+            if q.language == "en":
+                en_points += eq.points
+            else:
+                vi_points += eq.points
+            q_outs.append(
+                ExamQuestionOut(
+                    order_no=eq.order_no,
+                    question_id=q.id,
+                    lesson_no=q.lesson_no,
+                    language=q.language,
+                    cognitive_level=q.cognitive_level,
+                    discipline=q.discipline,
+                    points=eq.points,
+                    prompt_text=q.prompt_text,
+                    options=q.options_json,
+                    correct_answer=q.correct_answer,
+                    explanation_vi=q.explanation_vi,
+                )
+            )
+        en_points = round(en_points, 2)
+        vi_points = round(vi_points, 2)
+        return ExamDetailOut(
+            id=exam.id,
+            title=exam.title,
+            classroom_id=exam.classroom_id,
+            target_en_ratio=exam.target_en_ratio,
+            achieved_en_ratio=exam.achieved_en_ratio,
+            total_points=exam.total_points,
+            duration_minutes=exam.duration_minutes,
+            question_count=len(ordered),
+            created_at=exam.created_at,
+            en_points=en_points,
+            vi_points=vi_points,
+            meets_tt94_10=exam.achieved_en_ratio >= 0.10,
+            meets_tt94_50=exam.achieved_en_ratio >= 0.50,
+            questions=q_outs,
+        )
+
+    def generate_exam(self, teacher: User, payload: ExamGenerateRequest) -> ExamDetailOut:
+        if payload.classroom_id:
+            classroom = self.repo.get_classroom(payload.classroom_id)
+            if classroom is None or classroom.tenant_id != teacher.tenant_id:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Không tìm thấy lớp học trong trường của bạn.",
+                )
+
+        lessons = [self.curriculum.get_lesson_detail(no) for no in sorted(set(payload.lesson_nos))]
+        all_terms = self.curriculum.search_terms(limit=200).items
+        plan = compute_exam_allocation(
+            question_count=payload.question_count,
+            total_points=payload.total_points,
+            target_en_ratio=payload.target_en_ratio,
+        )
+
+        vi_questions = self._ensure_questions_for_language(
+            teacher=teacher,
+            lessons=lessons,
+            all_terms=all_terms,
+            language="vi",
+            needed=plan.vi_count,
+        )
+        en_questions = self._ensure_questions_for_language(
+            teacher=teacher,
+            lessons=lessons,
+            all_terms=all_terms,
+            language="en",
+            needed=plan.en_count,
+        )
+
+        ordered_items = [*vi_questions, *en_questions]
+        links = [
+            ExamQuestion(
+                question_id=item.id,
+                order_no=idx + 1,
+                points=plan.points_per_question[idx],
+            )
+            for idx, item in enumerate(ordered_items)
+        ]
+
+        exam = Exam(
+            tenant_id=teacher.tenant_id,
+            teacher_id=teacher.id,
+            classroom_id=payload.classroom_id,
+            title=payload.title.strip(),
+            target_en_ratio=payload.target_en_ratio,
+            achieved_en_ratio=plan.achieved_en_ratio,
+            total_points=payload.total_points,
+            duration_minutes=payload.duration_minutes,
+            matrix_json={
+                "lesson_nos": [lesson.lesson_no for lesson in lessons],
+                "vi_count": plan.vi_count,
+                "en_count": plan.en_count,
+                "vi_points": plan.vi_points,
+                "en_points": plan.en_points,
+            },
+        )
+        self.repo.create_exam(exam, links)
+        self.db.commit()
+        loaded = self.repo.get_exam(exam.id)
+        assert loaded is not None
+        return self._to_exam_detail(loaded)
+
+    def list_exams(self, teacher: User) -> list[ExamSummaryOut]:
+        exams = self.repo.list_exams_for_tenant(teacher.tenant_id)
+        return [
+            ExamSummaryOut(
+                id=e.id,
+                title=e.title,
+                classroom_id=e.classroom_id,
+                target_en_ratio=e.target_en_ratio,
+                achieved_en_ratio=e.achieved_en_ratio,
+                total_points=e.total_points,
+                duration_minutes=e.duration_minutes,
+                question_count=len(e.exam_questions),
+                created_at=e.created_at,
+            )
+            for e in exams
+        ]
+
+    def get_exam_detail(self, teacher: User, exam_id: str) -> ExamDetailOut:
+        exam = self.repo.get_exam(exam_id)
+        if exam is None or exam.tenant_id != teacher.tenant_id:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Không tìm thấy đề kiểm tra.",
+            )
+        return self._to_exam_detail(exam)
+
+    def export_exam(self, teacher: User, exam_id: str, fmt: str) -> tuple[bytes, str, str]:
+        detail = self.get_exam_detail(teacher, exam_id)
+        school_name = self.identity.get_tenant_name(teacher.tenant_id)
+        if fmt == "docx":
+            content = export_exam_docx(detail, school_name)
+            media = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            filename = f"exam-{exam_id[:8]}.docx"
+            return content, media, filename
+        if fmt == "pdf":
+            content = export_exam_pdf(detail, school_name)
+            return content, "application/pdf", f"exam-{exam_id[:8]}.pdf"
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Định dạng xuất không hợp lệ (chỉ hỗ trợ docx hoặc pdf).",
+        )
+
+    # --- Assignments & Classroom Analytics ---
+    def assign_exam_to_classroom(
+        self, teacher: User, classroom_id: str, payload: AssignmentCreateRequest
+    ) -> AssignmentOut:
+        classroom = self.repo.get_classroom(classroom_id)
+        if classroom is None or classroom.tenant_id != teacher.tenant_id:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Không tìm thấy lớp học trong trường của bạn.",
+            )
+        exam = self.repo.get_exam(payload.exam_id)
+        if exam is None or exam.tenant_id != teacher.tenant_id:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Không tìm thấy đề kiểm tra trong trường của bạn.",
+            )
+        assignment = Assignment(
+            classroom_id=classroom.id,
+            exam_id=exam.id,
+            title=(payload.title or exam.title).strip(),
+            due_at=payload.due_at,
+        )
+        self.repo.create_assignment(assignment)
+        self.db.commit()
+        return AssignmentOut(
+            id=assignment.id,
+            classroom_id=classroom.id,
+            classroom_name=classroom.name,
+            exam_id=exam.id,
+            title=assignment.title,
+            total_points=exam.total_points,
+            achieved_en_ratio=exam.achieved_en_ratio,
+            duration_minutes=exam.duration_minutes,
+            due_at=assignment.due_at,
+            created_at=assignment.created_at,
+        )
+
+    def list_student_assignments(self, student: User) -> list[AssignmentOut]:
+        classroom_ids = self.repo.list_student_classroom_ids(student.id)
+        assignments = self.repo.list_assignments_for_classrooms(classroom_ids)
+        submissions = self.repo.list_submissions_for_student(student.id)
+        results: list[AssignmentOut] = []
+        for a in assignments:
+            sub = submissions.get(a.id)
+            results.append(
+                AssignmentOut(
+                    id=a.id,
+                    classroom_id=a.classroom_id,
+                    classroom_name=a.classroom.name,
+                    exam_id=a.exam_id,
+                    title=a.title,
+                    total_points=a.exam.total_points,
+                    achieved_en_ratio=a.exam.achieved_en_ratio,
+                    duration_minutes=a.exam.duration_minutes,
+                    due_at=a.due_at,
+                    created_at=a.created_at,
+                    submitted=sub is not None,
+                    student_score=sub.score if sub else None,
+                )
+            )
+        return results
+
+    def take_assignment(self, student: User, assignment_id: str) -> AssignmentTakeOut:
+        assignment = self.repo.get_assignment(assignment_id)
+        if assignment is None:
+            raise HTTPException(status_code=404, detail="Không tìm thấy bài tập được giao.")
+        if self.repo.get_membership(assignment.classroom_id, student.id) is None:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Bạn chưa tham gia lớp học chứa bài kiểm tra này.",
+            )
+        ordered = sorted(assignment.exam.exam_questions, key=lambda eq: eq.order_no)
+        questions = [
+            AssignmentQuestionPublicOut(
+                order_no=eq.order_no,
+                question_id=eq.question_id,
+                language=eq.question.language,
+                points=eq.points,
+                prompt_text=eq.question.prompt_text,
+                options=eq.question.options_json,
+            )
+            for eq in ordered
+        ]
+        return AssignmentTakeOut(
+            assignment_id=assignment.id,
+            title=assignment.title,
+            classroom_name=assignment.classroom.name,
+            total_points=assignment.exam.total_points,
+            achieved_en_ratio=assignment.exam.achieved_en_ratio,
+            duration_minutes=assignment.exam.duration_minutes,
+            questions=questions,
+        )
+
+    def submit_assignment(
+        self, student: User, assignment_id: str, payload: AssignmentSubmitRequest
+    ) -> SubmissionResultOut:
+        assignment = self.repo.get_assignment(assignment_id)
+        if assignment is None:
+            raise HTTPException(status_code=404, detail="Không tìm thấy bài tập.")
+        if self.repo.get_membership(assignment.classroom_id, student.id) is None:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Bạn chưa tham gia lớp học này.",
+            )
+        if self.repo.get_submission(assignment_id, student.id) is not None:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Bạn đã nộp bài kiểm tra này trước đó.",
+            )
+
+        answer_map = {item.question_id: item.selected_index for item in payload.answers}
+        vi_score = 0.0
+        en_score = 0.0
+        max_score = 0.0
+        graded_answers: list[dict] = []
+
+        for eq in assignment.exam.exam_questions:
+            q = eq.question
+            max_score += eq.points
+            sel_idx = answer_map.get(q.id)
+            chosen_text = (
+                q.options_json[sel_idx]
+                if sel_idx is not None and 0 <= sel_idx < len(q.options_json)
+                else None
+            )
+            is_correct = chosen_text is not None and chosen_text == q.correct_answer
+            if is_correct:
+                if q.language == "en":
+                    en_score += eq.points
+                else:
+                    vi_score += eq.points
+            graded_answers.append(
+                {
+                    "question_id": q.id,
+                    "selected_index": sel_idx,
+                    "is_correct": is_correct,
+                }
+            )
+
+        total_score = round(vi_score + en_score, 2)
+        submission = StudentSubmission(
+            assignment_id=assignment.id,
+            student_id=student.id,
+            score=total_score,
+            max_score=round(max_score, 2),
+            vi_score=round(vi_score, 2),
+            en_score=round(en_score, 2),
+            answers_json=graded_answers,
+            submitted_at=datetime.now(UTC),
+        )
+        self.repo.create_submission(submission)
+        self.db.commit()
+        return SubmissionResultOut(
+            submission_id=submission.id,
+            assignment_id=submission.assignment_id,
+            score=submission.score,
+            max_score=submission.max_score,
+            vi_score=submission.vi_score,
+            en_score=submission.en_score,
+            submitted_at=submission.submitted_at,
+        )
+
+    def get_classroom_analytics(self, teacher: User, classroom_id: str) -> ClassroomAnalyticsOut:
+        classroom = self.repo.get_classroom(classroom_id)
+        if classroom is None or classroom.tenant_id != teacher.tenant_id:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Không tìm thấy lớp học trong trường của bạn.",
+            )
+        rows = self.repo.list_submissions_for_classroom(classroom.id)
+        student_ids = [sub.student_id for sub, _ in rows]
+        names_map = self.identity.get_user_names_map(student_ids)
+
+        submissions_out: list[StudentSubmissionSummaryOut] = []
+        miss_stats: dict[str, dict] = {}
+        question_ids_to_lookup: set[str] = set()
+
+        for sub, assign_title in rows:
+            submissions_out.append(
+                StudentSubmissionSummaryOut(
+                    student_id=sub.student_id,
+                    student_name=names_map.get(sub.student_id, "Học sinh"),
+                    assignment_title=assign_title,
+                    score=sub.score,
+                    max_score=sub.max_score,
+                    vi_score=sub.vi_score,
+                    en_score=sub.en_score,
+                    submitted_at=sub.submitted_at,
+                )
+            )
+            for ans in sub.answers_json or []:
+                qid = str(ans.get("question_id", ""))
+                if not qid:
+                    continue
+                question_ids_to_lookup.add(qid)
+                entry = miss_stats.setdefault(qid, {"miss": 0, "total": 0})
+                entry["total"] += 1
+                if not ans.get("is_correct"):
+                    entry["miss"] += 1
+
+        q_map = {
+            q.id: q
+            for q in self.repo.list_questions(tenant_id=teacher.tenant_id)
+            if q.id in question_ids_to_lookup
+        }
+        weak_questions: list[WeakQuestionOut] = []
+        for qid, stats in sorted(
+            miss_stats.items(), key=lambda pair: pair[1]["miss"], reverse=True
+        )[:5]:
+            if stats["miss"] <= 0:
+                continue
+            q_obj = q_map.get(qid)
+            if q_obj is not None:
+                weak_questions.append(
+                    WeakQuestionOut(
+                        question_id=qid,
+                        prompt_text=q_obj.prompt_text,
+                        language=q_obj.language,
+                        miss_count=stats["miss"],
+                        total_attempts=stats["total"],
+                    )
+                )
+
+        count = len(submissions_out)
+        avg_score = round(sum(s.score for s in submissions_out) / count, 2) if count else 0.0
+        avg_en = round(sum(s.en_score for s in submissions_out) / count, 2) if count else 0.0
+
+        return ClassroomAnalyticsOut(
+            classroom_id=classroom.id,
+            classroom_name=classroom.name,
+            student_count=len(classroom.members),
+            submissions_count=count,
+            average_score=avg_score,
+            average_en_score=avg_en,
+            submissions=submissions_out,
+            weak_questions=weak_questions,
+        )
+
+    # --- Teaching Session Logs & TT94 Compliance Dashboard ---
+    def log_teaching_session(
+        self, teacher: User, payload: TeachingSessionCreateRequest
+    ) -> TeachingSessionOut:
+        classroom = self.repo.get_classroom(payload.classroom_id)
+        if classroom is None or classroom.tenant_id != teacher.tenant_id:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Không tìm thấy lớp học trong trường của bạn.",
+            )
+        self.curriculum.get_lesson_detail(payload.lesson_no)
+
+        log = TeachingSessionLog(
+            tenant_id=teacher.tenant_id,
+            classroom_id=classroom.id,
+            teacher_id=teacher.id,
+            lesson_no=payload.lesson_no,
+            taught_date=payload.taught_date,
+            periods_count=payload.periods_count,
+            clil_mode=payload.clil_mode,
+            english_minutes=payload.english_minutes,
+            notes=payload.notes,
+        )
+        self.repo.create_session_log(log)
+        self.db.commit()
+        self.db.refresh(log)
+        return TeachingSessionOut.model_validate(log)
+
+    def list_teaching_sessions(
+        self, teacher: User, classroom_id: str | None = None
+    ) -> list[TeachingSessionOut]:
+        logs = self.repo.list_session_logs(teacher.tenant_id, classroom_id=classroom_id)
+        return [TeachingSessionOut.model_validate(item) for item in logs]
+
+    def get_tt94_compliance_report(
+        self, caller: User, academic_year: str = "2026-2027"
+    ) -> TT94ComplianceReportOut:
+        tenant_name = self.identity.get_tenant_name(caller.tenant_id)
+        classrooms = [
+            c
+            for c in self.repo.list_classrooms_for_tenant(caller.tenant_id)
+            if c.academic_year == academic_year
+        ]
+        periods_map = self.repo.sum_periods_by_classroom(caller.tenant_id)
+        exams = self.repo.list_exams_for_tenant(caller.tenant_id)
+
+        classroom_metrics: list[ClassroomTT94MetricsOut] = []
+        total_periods = 0
+        meet_35 = 0
+        meet_105 = 0
+
+        for c in classrooms:
+            periods, minutes = periods_map.get(c.id, (0, 0))
+            total_periods += periods
+            is_35 = periods >= 35
+            is_105 = periods >= 105
+            if is_35:
+                meet_35 += 1
+            if is_105:
+                meet_105 += 1
+            classroom_metrics.append(
+                ClassroomTT94MetricsOut(
+                    classroom_id=c.id,
+                    classroom_name=c.name,
+                    is_tt94_pilot_class=c.is_tt94_pilot_class,
+                    student_count=len(c.members),
+                    total_periods_logged=periods,
+                    total_english_minutes=minutes,
+                    meets_35_periods=is_35,
+                    meets_105_periods=is_105,
+                )
+            )
+
+        exams_10 = sum(1 for e in exams if e.achieved_en_ratio >= 0.10)
+        exams_50 = sum(1 for e in exams if e.achieved_en_ratio >= 0.50)
+        total_cls = len(classrooms)
+        ratio_35 = (meet_35 / total_cls) if total_cls > 0 else 0.0
+
+        gaps: list[str] = []
+        if meet_35 >= 4 and ratio_35 >= 0.80 and total_periods >= 105 and exams_50 >= 1:
+            level = 3
+            label = "Mức độ 3 (Nâng cao toàn diện theo Thông tư 94/2026)"
+        elif meet_35 >= 1 and ratio_35 >= 0.50 and total_periods >= 105 and exams_10 >= 1:
+            level = 2
+            label = "Mức độ 2 (Mở rộng theo Thông tư 94/2026)"
+            if ratio_35 < 0.80:
+                gaps.append(
+                    "Cần đạt ít nhất 80% số lớp triển khai (≥ 35 tiết/năm) để lên Mức độ 3."
+                )
+            if exams_50 < 1:
+                gaps.append(
+                    "Cần có đề kiểm tra định kỳ đạt tối thiểu 50% (5/10 điểm) bằng tiếng Anh."
+                )
+        elif meet_35 >= 4 and exams_10 >= 1:
+            level = 1
+            label = "Mức độ 1 (Đạt yêu cầu cơ bản Thông tư 94/2026)"
+            if ratio_35 < 0.50:
+                gaps.append(
+                    "Cần mở rộng tối thiểu 50% tổng số lớp THCS đạt chuẩn triển khai "
+                    "để lên Mức độ 2."
+                )
+            if total_periods < 105:
+                gaps.append(
+                    f"Tổng số tiết hiện tại ({total_periods}/105 tiết) cần đạt 105 tiết/năm "
+                    "cho Mức độ 2."
+                )
+        else:
+            level = 0
+            label = "Chưa đạt Mức độ 1 (Đang trong giai đoạn khởi động)"
+            if meet_35 < 4:
+                gaps.append(
+                    "Cấp THCS cần tối thiểu 04 lớp đạt ≥ 35 tiết/năm có dạy nội dung bằng "
+                    f"tiếng Anh (hiện có {meet_35} lớp)."
+                )
+            if exams_10 < 1:
+                gaps.append(
+                    "Cần tạo ít nhất 01 đề kiểm tra định kỳ có tỷ trọng ≥ 10% (1/10 điểm) "
+                    "bằng tiếng Anh."
+                )
+
+        return TT94ComplianceReportOut(
+            tenant_id=caller.tenant_id,
+            tenant_name=tenant_name,
+            academic_year=academic_year,
+            total_classrooms=total_cls,
+            classrooms_meeting_35_periods=meet_35,
+            classrooms_meeting_105_periods=meet_105,
+            total_periods_logged=total_periods,
+            total_exams_generated=len(exams),
+            exams_meeting_10_pct=exams_10,
+            exams_meeting_50_pct=exams_50,
+            estimated_tt94_level=level,
+            level_label=label,
+            next_level_gaps=gaps,
+            classrooms=classroom_metrics,
+        )

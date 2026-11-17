@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Atom, BookOpen, BookText, Sparkles, UserCircle2 } from "lucide-react";
+import { Atom, BookOpen, BookText, GraduationCap, Sparkles, UserCircle2 } from "lucide-react";
 
 import { api, clearAuthTokens, getStoredAccessToken } from "./api/client";
 import type { AuthSession } from "./api/types";
@@ -8,11 +8,13 @@ import { CurriculumMapPage } from "./features/curriculum/CurriculumMapPage";
 import { GlossaryAndRulesPage } from "./features/curriculum/GlossaryAndRulesPage";
 import { LessonDetailPage } from "./features/curriculum/LessonDetailPage";
 import { LearningHubPage, type LearningSubTab } from "./features/learning/LearningHubPage";
+import { TeacherStudioPage } from "./features/lms/TeacherStudioPage";
 
 type View =
   | { kind: "map" }
   | { kind: "lesson"; lessonNo: number }
   | { kind: "learning"; tab: LearningSubTab; lessonNo?: number }
+  | { kind: "teacher" }
   | { kind: "glossary" }
   | { kind: "account" };
 
@@ -113,6 +115,19 @@ export function App() {
 
             <button
               type="button"
+              onClick={() => setView({ kind: "teacher" })}
+              className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold transition ${
+                view.kind === "teacher"
+                  ? "bg-teal-50 text-teal-800"
+                  : "text-slate-600 hover:bg-slate-100"
+              }`}
+            >
+              <GraduationCap className="h-4 w-4" />
+              <span className="hidden sm:inline">Teacher Studio</span>
+            </button>
+
+            <button
+              type="button"
               onClick={() => setView({ kind: "account" })}
               className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold transition ${
                 view.kind === "account"
@@ -147,6 +162,9 @@ export function App() {
             initialTab={view.tab}
             initialLessonNo={view.lessonNo}
           />
+        )}
+        {view.kind === "teacher" && (
+          <TeacherStudioPage session={session} onSessionChange={setSession} />
         )}
         {view.kind === "glossary" && <GlossaryAndRulesPage onSelectLesson={openLesson} />}
         {view.kind === "account" && (

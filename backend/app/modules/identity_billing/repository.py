@@ -37,6 +37,12 @@ class IdentityRepository:
         )
         return list(self.db.scalars(stmt).all())
 
+    def get_users_by_ids(self, user_ids: list[str]) -> dict[str, User]:
+        if not user_ids:
+            return {}
+        stmt = select(User).where(User.id.in_(user_ids))
+        return {u.id: u for u in self.db.scalars(stmt).all()}
+
     def get_active_subscription(self, tenant_id: str) -> Subscription | None:
         stmt = (
             select(Subscription)

@@ -14,6 +14,7 @@ SCHEMA_TRANSLATION_MAP: dict[str, str | None] = {
     "identity_billing": None,
     "curriculum": None,
     "learning": None,
+    "lms": None,
 }
 
 

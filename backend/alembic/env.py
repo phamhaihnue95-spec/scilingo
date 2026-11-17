@@ -12,6 +12,7 @@ from app.core.database import SCHEMA_TRANSLATION_MAP, Base, create_engine_for_ur
 from app.modules.curriculum import models as curriculum_models  # noqa: F401
 from app.modules.identity_billing import models as identity_models  # noqa: F401
 from app.modules.learning import models as learning_models  # noqa: F401
+from app.modules.lms import models as lms_models  # noqa: F401
 
 config = context.config
 

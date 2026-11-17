@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import re
 import unicodedata
+from datetime import date
 from pathlib import Path
 
 from sqlalchemy import select
@@ -15,6 +16,7 @@ from app.core.database import Base, get_engine, get_session_factory
 from app.core.security import hash_password
 from app.modules.curriculum.models import Chapter, Lesson, LessonTerm, Term
 from app.modules.identity_billing.models import Subscription, Tenant, User
+from app.modules.lms.models import Classroom, ClassroomMember, TeachingSessionLog
 
 
 def _slugify(value: str) -> str:
@@ -216,11 +218,66 @@ def seed_demo_tenants(db: Session) -> None:
     db.commit()
 
 
+def seed_demo_lms(db: Session) -> None:
+    """Create a demo KHTN 8 CLIL classroom and starter session logs idempotently."""
+    teacher = db.scalar(select(User).where(User.email == "minh.gv@demo.scilingo.vn"))
+    student = db.scalar(select(User).where(User.email == "an.hs8@demo.scilingo.vn"))
+    if teacher is None:
+        return
+
+    demo_code = "KHTN8-CVA8"
+    classroom = db.scalar(select(Classroom).where(Classroom.join_code == demo_code))
+    if classroom is None:
+        classroom = Classroom(
+            tenant_id=teacher.tenant_id,
+            teacher_id=teacher.id,
+            name="8A1 - KHTN Song ngữ (Thí điểm TT94)",
+            grade=8,
+            academic_year="2026-2027",
+            join_code=demo_code,
+            is_tt94_pilot_class=True,
+        )
+        db.add(classroom)
+        db.flush()
+
+        if student is not None:
+            db.add(ClassroomMember(classroom_id=classroom.id, student_id=student.id))
+
+        db.add_all(
+            [
+                TeachingSessionLog(
+                    tenant_id=teacher.tenant_id,
+                    classroom_id=classroom.id,
+                    teacher_id=teacher.id,
+                    lesson_no=8,
+                    taught_date=date(2026, 10, 12),
+                    periods_count=2,
+                    clil_mode="bilingual_10",
+                    english_minutes=30,
+                    notes="Giới thiệu danh pháp Acid (HCl, H₂SO₄) chuẩn IUPAC và liên hệ Bài 32.",
+                ),
+                TeachingSessionLog(
+                    tenant_id=teacher.tenant_id,
+                    classroom_id=classroom.id,
+                    teacher_id=teacher.id,
+                    lesson_no=15,
+                    taught_date=date(2026, 10, 26),
+                    periods_count=2,
+                    clil_mode="bilingual_50",
+                    english_minutes=45,
+                    notes="Thực hành tính Pressure (Pa = N/m²) bằng tiếng Anh 50%.",
+                ),
+            ]
+        )
+        db.commit()
+
+
 def seed_all(db: Session, data_dir: Path | None = None) -> tuple[int, int, int]:
-    """Run all Bolt 1 idempotent seeders."""
+    """Run all Bolt 1-3 idempotent seeders."""
     resolved_dir = data_dir or get_settings().data_dir
     counts = seed_curriculum(db, resolved_dir)
     seed_demo_tenants(db)
+    seed_demo_lms(db)
     return counts
 
 

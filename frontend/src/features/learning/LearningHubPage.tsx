@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useState } from "react";
-import { Award, Flame, GitBranch, Layers, Target, Trophy, UserCheck } from "lucide-react";
+import { Award, ClipboardCheck, Flame, GitBranch, Layers, Target, Trophy, UserCheck } from "lucide-react";
 
 import { api, saveAuthTokens } from "../../api/client";
 import type { AuthSession, GamificationSummary } from "../../api/types";
+import { StudentAssignmentsPanel } from "../lms/StudentAssignmentsPanel";
 import { FlashcardSRSView } from "./FlashcardSRSView";
 import { MindmapView } from "./MindmapView";
 import { PracticeQuizView } from "./PracticeQuizView";
 
-export type LearningSubTab = "srs" | "mindmap" | "quiz";
+export type LearningSubTab = "srs" | "mindmap" | "quiz" | "assignments";
 
 interface Props {
   session: AuthSession | null;
@@ -165,6 +166,19 @@ export function LearningHubPage({
           <Target className="h-4 w-4" />
           Luyện Quiz 10% / 50% / 100%
         </button>
+
+        <button
+          type="button"
+          onClick={() => setSubTab("assignments")}
+          className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition ${
+            subTab === "assignments"
+              ? "bg-teal-700 text-white shadow-sm"
+              : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+          }`}
+        >
+          <ClipboardCheck className="h-4 w-4" />
+          Bài tập Lớp học
+        </button>
       </div>
 
       {/* Sub-view */}
@@ -191,6 +205,15 @@ export function LearningHubPage({
         ) : (
           <div className="rounded-xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500">
             Vui lòng nhấn <strong>Dùng thử ngay (Học sinh An)</strong> ở phía trên để làm bài Quiz 10%–50% và lưu điểm.
+          </div>
+        ))}
+
+      {subTab === "assignments" &&
+        (session ? (
+          <StudentAssignmentsPanel />
+        ) : (
+          <div className="rounded-xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500">
+            Vui lòng nhấn <strong>Dùng thử ngay (Học sinh An)</strong> ở phía trên để vào lớp học bằng mã tham gia và nộp bài kiểm tra do giáo viên giao.
           </div>
         ))}
     </div>
