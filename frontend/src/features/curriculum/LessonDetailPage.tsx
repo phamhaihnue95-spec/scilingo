@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -9,12 +10,12 @@ import {
   Layers,
   Link2,
   Target,
-  Volume2,
 } from "lucide-react";
 
 import { api } from "../../api/client";
 import type { LessonDetail } from "../../api/types";
-import { speakEnglishTerm } from "../../utils/speech";
+import { SpeakButton, Tilt3DCard } from "../../components/motion/MotionPrimitives";
+import { playClickSound } from "../../utils/soundFx";
 import type { LearningSubTab } from "../learning/LearningHubPage";
 import { DisciplineBadge } from "./DisciplineBadge";
 
@@ -140,7 +141,7 @@ export function LessonDetailPage({
           <button
             type="button"
             onClick={() => onLaunchLearning("srs", lesson.lesson_no)}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-teal-700 px-3.5 py-2 text-xs font-bold text-white shadow-sm hover:bg-teal-800"
+            className="btn-tactile inline-flex items-center gap-1.5 rounded-xl border-indigo-800 bg-gradient-to-r from-indigo-600 to-sky-500 px-3.5 py-2 text-xs font-extrabold text-white shadow-sm hover:opacity-95"
           >
             <Layers className="h-3.5 w-3.5" />
             Ôn Flashcard SRS bài này
@@ -148,7 +149,7 @@ export function LessonDetailPage({
           <button
             type="button"
             onClick={() => onLaunchLearning("mindmap", lesson.lesson_no)}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-teal-300 bg-teal-50 px-3.5 py-2 text-xs font-bold text-teal-800 hover:bg-teal-100"
+            className="btn-tactile inline-flex items-center gap-1.5 rounded-xl border border-teal-400 bg-teal-50 px-3.5 py-2 text-xs font-extrabold text-teal-800 hover:bg-teal-100"
           >
             <GitBranch className="h-3.5 w-3.5" />
             Xem Mindmap Song ngữ
@@ -156,7 +157,7 @@ export function LessonDetailPage({
           <button
             type="button"
             onClick={() => onLaunchLearning("quiz", lesson.lesson_no)}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-amber-300 bg-amber-50 px-3.5 py-2 text-xs font-bold text-amber-900 hover:bg-amber-100"
+            className="btn-tactile inline-flex items-center gap-1.5 rounded-xl border border-amber-400 bg-amber-50 px-3.5 py-2 text-xs font-extrabold text-amber-900 hover:bg-amber-100"
           >
             <Target className="h-3.5 w-3.5" />
             Làm Quiz 10% / 50% EN
@@ -201,12 +202,15 @@ export function LessonDetailPage({
 
           <button
             type="button"
-            onClick={() => setHideVietnamese((prev) => !prev)}
-            className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            onClick={() => {
+              playClickSound();
+              setHideVietnamese((prev) => !prev);
+            }}
+            className="inline-flex items-center gap-2 rounded-xl border border-sky-200 bg-white px-3.5 py-1.5 text-sm font-semibold text-slate-700 shadow-sm hover:bg-sky-50"
           >
             {hideVietnamese ? (
               <>
-                <Eye className="h-4 w-4 text-teal-700" />
+                <Eye className="h-4 w-4 text-indigo-600" />
                 Hiện nghĩa Tiếng Việt
               </>
             ) : (
@@ -220,9 +224,14 @@ export function LessonDetailPage({
 
         <div className="grid gap-4 md:grid-cols-2">
           {lesson.terms.map((term) => (
-            <article
+            <Tilt3DCard
               key={term.id}
-              className="flex flex-col justify-between rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-teal-300"
+              holographic={term.is_13_exception_element}
+              className={`flex h-full flex-col justify-between rounded-2xl border bg-white p-5 shadow-sm transition hover:shadow-md ${
+                term.is_13_exception_element
+                  ? "border-amber-300 bg-gradient-to-br from-amber-50/40 via-white to-sky-50/40 hover:border-amber-400"
+                  : "border-slate-200 hover:border-indigo-300"
+              }`}
             >
               <div className="space-y-2.5">
                 <div className="flex items-start justify-between gap-3">
@@ -233,28 +242,39 @@ export function LessonDetailPage({
                     )}
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => speakEnglishTerm(term.term_en, term.audio_url)}
-                    title="Nghe phát âm tiếng Anh"
-                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-teal-50 text-teal-700 transition hover:bg-teal-100"
-                  >
-                    <Volume2 className="h-4 w-4" />
-                  </button>
+                  <SpeakButton termEn={term.term_en} audioUrl={term.audio_url} />
                 </div>
 
-                <div className="rounded-lg bg-slate-50 px-3 py-2">
-                  {hideVietnamese ? (
-                    <span className="text-sm italic text-slate-400">
-                      (Đã che nghĩa tiếng Việt — nhẩm nghĩa rồi bấm Hiện để kiểm tra)
-                    </span>
-                  ) : (
-                    <span className="text-sm font-semibold text-slate-800">{term.term_vi}</span>
-                  )}
+                <div className="overflow-hidden rounded-xl bg-slate-50 px-3 py-2">
+                  <AnimatePresence mode="wait" initial={false}>
+                    {hideVietnamese ? (
+                      <motion.span
+                        key="hidden"
+                        initial={{ opacity: 0, y: 4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -4 }}
+                        transition={{ duration: 0.16 }}
+                        className="block text-sm italic text-slate-400"
+                      >
+                        (Đã che nghĩa tiếng Việt — nhẩm nghĩa rồi bấm Hiện để kiểm tra)
+                      </motion.span>
+                    ) : (
+                      <motion.span
+                        key="visible"
+                        initial={{ opacity: 0, y: 4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -4 }}
+                        transition={{ duration: 0.16 }}
+                        className="block text-sm font-semibold text-slate-800"
+                      >
+                        {term.term_vi}
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
                 </div>
 
                 {term.formula_or_symbol && (
-                  <div className="inline-block rounded-md border border-sky-200 bg-sky-50 px-2.5 py-1 text-xs font-semibold text-sky-900 formula-pill">
+                  <div className="formula-pill inline-block rounded-md border border-sky-200 bg-sky-50 px-2.5 py-1 text-xs font-semibold text-sky-900">
                     {term.formula_or_symbol}
                   </div>
                 )}
@@ -271,7 +291,7 @@ export function LessonDetailPage({
                   </span>
                 </div>
               )}
-            </article>
+            </Tilt3DCard>
           ))}
         </div>
       </section>

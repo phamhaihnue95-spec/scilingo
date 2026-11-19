@@ -1,9 +1,21 @@
 import { useEffect, useState } from "react";
-import { Award, CheckCircle2, RotateCcw, Sparkles, Volume2 } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Award, CheckCircle2, Flame, RotateCcw, Sparkles } from "lucide-react";
 
 import { api } from "../../api/client";
 import type { SRSDueCard, SRSReviewResult } from "../../api/types";
-import { speakEnglishTerm } from "../../utils/speech";
+import {
+  FlipCard3D,
+  FloatingXPBurst,
+  SpeakButton,
+} from "../../components/motion/MotionPrimitives";
+import { fireSuccessSpark, fireVictoryCelebration } from "../../utils/confetti";
+import {
+  playCelebrationSound,
+  playClickSound,
+  playSuccessSound,
+  playWrongSound,
+} from "../../utils/soundFx";
 import { DisciplineBadge } from "../curriculum/DisciplineBadge";
 
 interface Props {
@@ -12,10 +24,10 @@ interface Props {
 }
 
 const RATING_BUTTONS = [
-  { quality: 1, label: "Chưa nhớ", hint: "Ôn lại sau 10 phút", cls: "border-rose-300 bg-rose-50 text-rose-800 hover:bg-rose-100" },
-  { quality: 3, label: "Hơi khó", hint: "+10 XP", cls: "border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100" },
-  { quality: 4, label: "Nhớ tốt", hint: "+10 XP", cls: "border-teal-300 bg-teal-50 text-teal-800 hover:bg-teal-100" },
-  { quality: 5, label: "Rất dễ", hint: "Giãn lịch dài hơn", cls: "border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100" },
+  { quality: 1, label: "Chưa nhớ", hint: "Ôn lại sau 10 phút", cls: "border-rose-300 border-b-rose-400 bg-rose-50 text-rose-800 hover:bg-rose-100" },
+  { quality: 3, label: "Hơi khó", hint: "+10 XP", cls: "border-amber-300 border-b-amber-400 bg-amber-50 text-amber-800 hover:bg-amber-100" },
+  { quality: 4, label: "Nhớ tốt", hint: "+10 XP", cls: "border-sky-300 border-b-sky-400 bg-sky-50 text-sky-900 hover:bg-sky-100" },
+  { quality: 5, label: "Rất dễ", hint: "Giãn lịch dài hơn", cls: "border-emerald-300 border-b-emerald-400 bg-emerald-50 text-emerald-800 hover:bg-emerald-100" },
 ];
 
 export function FlashcardSRSView({ lessonNo, onProgressUpdated }: Props) {
@@ -25,6 +37,12 @@ export function FlashcardSRSView({ lessonNo, onProgressUpdated }: Props) {
   const [totalNew, setTotalNew] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [lastResult, setLastResult] = useState<SRSReviewResult | null>(null);
+  const [combo, setCombo] = useState(0);
+  const [lastDir, setLastDir] = useState<1 | -1>(1);
+  const [burst, setBurst] = useState<{ id: number; text: string; subtext?: string }>({
+    id: 0,
+    text: "+10 XP",
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -60,9 +78,31 @@ export function FlashcardSRSView({ lessonNo, onProgressUpdated }: Props) {
 
   const handleRate = async (quality: number) => {
     if (!currentCard) return;
+    setLastDir(quality >= 3 ? 1 : -1);
+    const wasLastCard = cards.length === 1;
     try {
       const res = await api.reviewFlashcard({ term_id: currentCard.term_id, quality });
       setLastResult(res);
+      if (quality >= 3) {
+        const nextCombo = combo + 1;
+        setCombo(nextCombo);
+        playSuccessSound(nextCombo);
+        setBurst((prev) => ({
+          id: prev.id + 1,
+          text: `+${res.xp_earned} XP`,
+          subtext: nextCombo >= 3 ? `Combo x${nextCombo}!` : undefined,
+        }));
+        if (nextCombo >= 3) {
+          fireSuccessSpark();
+        }
+      } else {
+        setCombo(0);
+        playWrongSound();
+      }
+      if (res.newly_unlocked_badges.length > 0 || wasLastCard) {
+        fireVictoryCelebration();
+        playCelebrationSound();
+      }
       setCards((prev) => prev.slice(1));
       setFlipped(false);
       onProgressUpdated();
@@ -73,15 +113,16 @@ export function FlashcardSRSView({ lessonNo, onProgressUpdated }: Props) {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-sky-100 bg-white p-4 shadow-sm">
         <div className="flex items-center gap-3">
           <label className="text-xs font-semibold uppercase text-slate-500">Phạm vi thẻ:</label>
           <select
             value={selectedLesson}
-            onChange={(e) =>
-              setSelectedLesson(e.target.value ? Number(e.target.value) : "")
-            }
-            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-800"
+            onChange={(e) => {
+              playClickSound();
+              setSelectedLesson(e.target.value ? Number(e.target.value) : "");
+            }}
+            className="rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-800"
           >
             <option value="">Toàn bộ 47 bài KHTN 8</option>
             {Array.from({ length: 47 }, (_, i) => i + 1).map((n) => (
@@ -92,11 +133,22 @@ export function FlashcardSRSView({ lessonNo, onProgressUpdated }: Props) {
           </select>
         </div>
 
-        <div className="flex items-center gap-3 text-xs font-semibold">
-          <span className="rounded-md bg-amber-50 px-2.5 py-1 text-amber-800">
+        <div className="flex flex-wrap items-center gap-2 text-xs font-semibold">
+          {combo >= 2 && (
+            <motion.span
+              key={combo}
+              initial={{ scale: 0.85 }}
+              animate={{ scale: 1 }}
+              className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-orange-500 to-rose-500 px-2.5 py-1 font-extrabold text-white shadow-sm"
+            >
+              <Flame className="h-3.5 w-3.5 text-amber-200" />
+              Combo x{combo}
+            </motion.span>
+          )}
+          <span className="rounded-lg bg-amber-50 px-2.5 py-1 text-amber-800">
             Đến hạn: {totalDue}
           </span>
-          <span className="rounded-md bg-teal-50 px-2.5 py-1 text-teal-800">
+          <span className="rounded-lg bg-indigo-50 px-2.5 py-1 text-indigo-800">
             Thẻ mới: {totalNew}
           </span>
         </div>
@@ -131,80 +183,104 @@ export function FlashcardSRSView({ lessonNo, onProgressUpdated }: Props) {
       )}
 
       {!loading && !error && currentCard && (
-        <div className="mx-auto max-w-2xl space-y-4">
-          <div
-            onClick={() => setFlipped((prev) => !prev)}
-            className="cursor-pointer rounded-2xl border-2 border-teal-200 bg-white p-8 shadow-sm transition hover:border-teal-400"
-          >
-            <div className="flex items-center justify-between gap-2">
-              <DisciplineBadge discipline={currentCard.discipline} />
-              <span className="rounded-md bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-600">
-                {currentCard.is_new
-                  ? "Thẻ mới"
-                  : `Đã lặp ${currentCard.repetitions} lần · EF ${currentCard.ease_factor}`}
-              </span>
-            </div>
+        <div className="relative mx-auto max-w-2xl space-y-4">
+          <FloatingXPBurst
+            burstKey={burst.id}
+            text={burst.text}
+            subtext={burst.subtext}
+            className="right-3 top-2"
+          />
 
-            <div className="my-8 text-center">
-              <div className="flex items-center justify-center gap-3">
-                <h2 className="text-3xl font-extrabold text-slate-900">{currentCard.term_en}</h2>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    speakEnglishTerm(currentCard.term_en);
-                  }}
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-teal-50 text-teal-700 hover:bg-teal-100"
-                >
-                  <Volume2 className="h-5 w-5" />
-                </button>
-              </div>
-              {currentCard.ipa && (
-                <p className="formula-pill mt-2 text-sm text-slate-500">{currentCard.ipa}</p>
-              )}
-              {currentCard.formula_or_symbol && (
-                <div className="formula-pill mt-3 inline-block rounded-lg bg-sky-50 px-3 py-1 text-sm font-bold text-sky-900">
-                  {currentCard.formula_or_symbol}
-                </div>
-              )}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentCard.term_id}
+              initial={{ opacity: 0, x: lastDir * 40, scale: 0.97 }}
+              animate={{ opacity: 1, x: 0, scale: 1 }}
+              exit={{ opacity: 0, x: lastDir * -60, scale: 0.95 }}
+              transition={{ duration: 0.22, ease: "easeOut" }}
+            >
+              <FlipCard3D
+                flipped={flipped}
+                onToggle={() => setFlipped((prev) => !prev)}
+                front={
+                  <div className="flex h-full flex-col justify-between">
+                    <div className="flex items-center justify-between gap-2">
+                      <DisciplineBadge discipline={currentCard.discipline} />
+                      <span className="rounded-lg bg-white/90 px-2.5 py-0.5 text-xs font-semibold text-slate-600 shadow-sm">
+                        {currentCard.is_new
+                          ? "Thẻ mới"
+                          : `Đã lặp ${currentCard.repetitions} lần · EF ${currentCard.ease_factor}`}
+                      </span>
+                    </div>
 
-              {flipped ? (
-                <div className="mt-6 space-y-2 border-t border-slate-100 pt-6">
-                  <div className="text-xl font-bold text-teal-800">{currentCard.term_vi}</div>
-                  {currentCard.iupac_note && (
-                    <p className="text-xs text-amber-800">{currentCard.iupac_note}</p>
-                  )}
-                </div>
-              ) : (
-                <p className="mt-8 text-xs font-medium text-slate-400">
-                  Nhấn vào thẻ để lật xem nghĩa Tiếng Việt và ghi chú IUPAC/SI
-                </p>
-              )}
-            </div>
-          </div>
+                    <div className="my-6 text-center">
+                      <h2 className="text-3xl font-extrabold text-slate-900 sm:text-4xl">
+                        {currentCard.term_en}
+                      </h2>
+                      {currentCard.ipa && (
+                        <p className="formula-pill mt-2 text-sm text-sky-700">{currentCard.ipa}</p>
+                      )}
+                      {currentCard.formula_or_symbol && (
+                        <div className="formula-pill mt-3 inline-block rounded-lg bg-sky-100 px-3 py-1 text-sm font-bold text-sky-900">
+                          {currentCard.formula_or_symbol}
+                        </div>
+                      )}
+                      <div className="mt-4 flex justify-center">
+                        <SpeakButton termEn={currentCard.term_en} label="Nghe phát âm" />
+                      </div>
+                    </div>
+
+                    <p className="text-center text-xs font-medium text-indigo-600">
+                      Nhấn vào thẻ để lật 3D xem nghĩa Tiếng Việt và ghi chú IUPAC/SI
+                    </p>
+                  </div>
+                }
+                back={
+                  <div className="flex h-full flex-col items-center justify-center space-y-3 text-center">
+                    <span className="rounded-full bg-white/25 px-3 py-0.5 text-xs font-bold text-white">
+                      Nghĩa Tiếng Việt chuẩn KHTN 8 (Bấm để lật lại)
+                    </span>
+                    <div className="text-3xl font-extrabold">{currentCard.term_vi}</div>
+                    <div className="text-sm font-semibold text-emerald-50">
+                      {currentCard.term_en}
+                      {currentCard.ipa ? ` · ${currentCard.ipa}` : ""}
+                      {currentCard.formula_or_symbol ? ` [${currentCard.formula_or_symbol}]` : ""}
+                    </div>
+                    {currentCard.iupac_note && (
+                      <div className="mx-auto max-w-md rounded-2xl bg-white/20 px-4 py-2 text-xs text-amber-50 backdrop-blur-sm">
+                        {currentCard.iupac_note}
+                      </div>
+                    )}
+                  </div>
+                }
+              />
+            </motion.div>
+          </AnimatePresence>
 
           {flipped ? (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               {RATING_BUTTONS.map((btn) => (
-                <button
+                <motion.button
                   key={btn.quality}
                   type="button"
+                  whileTap={{ scale: 0.96 }}
                   onClick={() => void handleRate(btn.quality)}
-                  className={`rounded-xl border px-3 py-3 text-center transition ${btn.cls}`}
+                  className={`btn-tactile rounded-2xl border px-3 py-3 text-center transition ${btn.cls}`}
                 >
                   <div className="text-sm font-bold">{btn.label}</div>
                   <div className="mt-0.5 text-[11px] opacity-80">{btn.hint}</div>
-                </button>
+                </motion.button>
               ))}
             </div>
           ) : (
-            <button
+            <motion.button
               type="button"
+              whileTap={{ scale: 0.97 }}
               onClick={() => setFlipped(true)}
-              className="w-full rounded-xl bg-teal-700 py-3 text-sm font-bold text-white hover:bg-teal-800"
+              className="btn-tactile w-full rounded-2xl border-indigo-800 bg-gradient-to-r from-indigo-600 to-sky-500 py-3 text-sm font-extrabold text-white shadow hover:opacity-95"
             >
-              Lật thẻ xem đáp án
-            </button>
+              Lật thẻ 3D xem đáp án
+            </motion.button>
           )}
         </div>
       )}

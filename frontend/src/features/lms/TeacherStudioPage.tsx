@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import {
   BarChart3,
   BookOpenCheck,
@@ -27,6 +28,8 @@ import type {
   TeacherResource,
   TeachingSessionLog,
 } from "../../api/types";
+import { ScienceAmbientParticles } from "../../components/motion/MotionPrimitives";
+import { playClickSound } from "../../utils/soundFx";
 
 interface Props {
   session: AuthSession | null;
@@ -348,6 +351,7 @@ export function TeacherStudioPage({ session, onSessionChange }: Props) {
     <div className="space-y-6">
       {/* Studio Header */}
       <section className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-indigo-700 via-blue-600 to-teal-500 p-6 text-white shadow-lg">
+        <ScienceAmbientParticles />
         <div className="pointer-events-none absolute -right-12 -top-12 h-48 w-48 rounded-full bg-white/15 blur-2xl" />
         <div className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -390,15 +394,25 @@ export function TeacherStudioPage({ session, onSessionChange }: Props) {
             <button
               key={item.id}
               type="button"
-              onClick={() => setTab(item.id)}
-              className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition ${
+              onClick={() => {
+                playClickSound();
+                setTab(item.id);
+              }}
+              className={`relative inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition-colors ${
                 active
-                  ? "bg-gradient-to-r from-indigo-600 to-sky-500 text-white shadow-sm"
+                  ? "text-white"
                   : "border border-slate-200 bg-white text-slate-700 hover:bg-sky-50"
               }`}
             >
-              <Icon className="h-4 w-4" />
-              {item.label}
+              {active && (
+                <motion.span
+                  layoutId="teacher-subtab-pill"
+                  transition={{ type: "spring", stiffness: 420, damping: 32 }}
+                  className="absolute inset-0 rounded-xl bg-gradient-to-r from-indigo-600 to-sky-500 shadow-sm"
+                />
+              )}
+              <Icon className="relative z-10 h-4 w-4" />
+              <span className="relative z-10">{item.label}</span>
             </button>
           );
         })}

@@ -22,3 +22,100 @@
 .card-pop {
   @apply transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md;
 }
+
+/* Stage 1: Motion, 3D Cards, Holographic Sheen & Equalizer Waves */
+.perspective-1200 {
+  perspective: 1200px;
+}
+
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+
+.backface-hidden {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.holo-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.holo-card::after {
+  content: "";
+  position: absolute;
+  inset: -40% -80%;
+  pointer-events: none;
+  background: linear-gradient(
+    115deg,
+    transparent 35%,
+    rgba(255, 255, 255, 0.45) 48%,
+    rgba(186, 230, 253, 0.35) 52%,
+    transparent 65%
+  );
+  transform: translateX(-100%) rotate(8deg);
+  transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.holo-card:hover::after {
+  transform: translateX(100%) rotate(8deg);
+}
+
+.btn-tactile {
+  @apply border-b-[3px] transition-all duration-100 active:translate-y-[2px] active:border-b-0;
+}
+
+@keyframes xpShimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.xp-liquid-bar {
+  background-size: 200% 100%;
+  animation: xpShimmer 3s linear infinite;
+}
+
+@keyframes soundWaveBar {
+  0%,
+  100% {
+    transform: scaleY(0.35);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+.sound-wave-bar {
+  display: inline-block;
+  width: 2.5px;
+  height: 14px;
+  border-radius: 9999px;
+  background-color: currentColor;
+  transform-origin: center bottom;
+  animation: soundWaveBar 0.55s ease-in-out infinite;
+}
+
+.sound-wave-bar:nth-child(2) {
+  animation-delay: 0.14s;
+}
+
+.sound-wave-bar:nth-child(3) {
+  animation-delay: 0.28s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .holo-card::after,
+  .xp-liquid-bar,
+  .sound-wave-bar {
+    animation: none !important;
+    transition: none !important;
+  }
+  .holo-card::after {
+    display: none;
+  }
+}

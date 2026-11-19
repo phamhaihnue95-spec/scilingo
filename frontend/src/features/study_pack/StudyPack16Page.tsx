@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   AlertTriangle,
   BookOpen,
@@ -12,7 +13,6 @@ import {
   Shuffle,
   Sparkles,
   Target,
-  Volume2,
   XCircle,
 } from "lucide-react";
 
@@ -25,7 +25,19 @@ import type {
   StudyPackQuiz,
   StudyPackUnitDetail,
 } from "../../api/types";
-import { speakEnglishTerm } from "../../utils/speech";
+import {
+  AnimatedScoreCounter,
+  FlipCard3D,
+  FloatingXPBurst,
+  ScienceAmbientParticles,
+  SpeakButton,
+} from "../../components/motion/MotionPrimitives";
+import { fireSuccessSpark, fireVictoryCelebration } from "../../utils/confetti";
+import {
+  playCelebrationSound,
+  playClickSound,
+  playSuccessSound,
+} from "../../utils/soundFx";
 import { DisciplineBadge } from "../curriculum/DisciplineBadge";
 
 interface Props {
@@ -69,6 +81,8 @@ export function StudyPack16Page({ onSelectLesson }: Props) {
   const [fcIndex, setFcIndex] = useState(0);
   const [fcFlipped, setFcFlipped] = useState(false);
   const [fcOrder, setFcOrder] = useState<number[]>([]);
+  const [fcDir, setFcDir] = useState<1 | -1>(1);
+  const [fcBurstKey, setFcBurstKey] = useState(0);
   const [masteredKeys, setMasteredKeys] = useState<Record<string, boolean>>({});
 
   // Quiz state
@@ -160,7 +174,33 @@ export function StudyPack16Page({ onSelectLesson }: Props) {
 
   const handleToggleMastered = (item: StudyPackItem) => {
     const key = `${item.unit_no}-${item.order_no}`;
-    setMasteredKeys((prev) => ({ ...prev, [key]: !prev[key] }));
+    const wasMastered = Boolean(masteredKeys[key]);
+    setMasteredKeys((prev) => ({ ...prev, [key]: !wasMastered }));
+    if (!wasMastered) {
+      playSuccessSound(2);
+      setFcBurstKey((k) => k + 1);
+      fireSuccessSpark();
+    } else {
+      playClickSound();
+    }
+  };
+
+  const handleSubmitStudyQuiz = () => {
+    if (!quizData) return;
+    let totalScore = 0;
+    for (const q of quizData.questions) {
+      if (quizAnswers[q.index] === q.correct_index) {
+        totalScore += q.points;
+      }
+    }
+    const rounded = Math.round(totalScore * 100) / 100;
+    setQuizSubmitted(true);
+    if (rounded >= 7) {
+      fireVictoryCelebration();
+      playCelebrationSound();
+    } else {
+      playSuccessSound(1);
+    }
   };
 
   const handleToggleQuizUnit = (unitNo: number) => {
@@ -218,6 +258,7 @@ export function StudyPack16Page({ onSelectLesson }: Props) {
     <div className="space-y-6">
       {/* Hero Banner */}
       <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 via-sky-500 to-emerald-500 p-6 text-white shadow-lg sm:p-7">
+        <ScienceAmbientParticles />
         <div className="pointer-events-none absolute -right-12 -top-12 h-56 w-56 rounded-full bg-white/15 blur-2xl" />
         <div className="pointer-events-none absolute -bottom-16 left-1/3 h-48 w-48 rounded-full bg-amber-300/20 blur-2xl" />
 
@@ -370,15 +411,25 @@ export function StudyPack16Page({ onSelectLesson }: Props) {
                       <button
                         key={item.id}
                         type="button"
-                        onClick={() => setMode(item.id)}
-                        className={`inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold transition sm:text-sm ${
+                        onClick={() => {
+                          playClickSound();
+                          setMode(item.id);
+                        }}
+                        className={`relative inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold transition-colors sm:text-sm ${
                           active
-                            ? "bg-gradient-to-r from-indigo-600 to-sky-500 text-white shadow-sm"
+                            ? "text-white"
                             : "border border-slate-200 bg-white text-slate-700 hover:bg-sky-50"
                         }`}
                       >
-                        <Icon className="h-4 w-4" />
-                        {item.label}
+                        {active && (
+                          <motion.span
+                            layoutId="studypack-mode-pill"
+                            transition={{ type: "spring", stiffness: 420, damping: 32 }}
+                            className="absolute inset-0 rounded-xl bg-gradient-to-r from-indigo-600 to-sky-500 shadow-sm"
+                          />
+                        )}
+                        <Icon className="relative z-10 h-4 w-4" />
+                        <span className="relative z-10">{item.label}</span>
                       </button>
                     );
                   })}
@@ -451,14 +502,11 @@ export function StudyPack16Page({ onSelectLesson }: Props) {
                           <span className="rounded-full bg-fuchsia-100 px-2 py-0.5 text-[11px] font-bold text-fuchsia-800">
                             ({item.pos})
                           </span>
-                          <button
-                            type="button"
-                            onClick={() => speakEnglishTerm(item.term_en)}
+                          <SpeakButton
+                            termEn={item.term_en}
                             title={`Phát âm: ${item.term_en}`}
-                            className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-sky-100 text-sky-700 transition hover:bg-sky-600 hover:text-white"
-                          >
-                            <Volume2 className="h-3.5 w-3.5" />
-                          </button>
+                            className="h-7 w-7"
+                          />
                         </div>
                         <div className="text-sm font-semibold text-slate-700">
                           {item.meaning_vi}
@@ -483,132 +531,168 @@ export function StudyPack16Page({ onSelectLesson }: Props) {
 
             {/* MODE 2: INTERACTIVE FLASHCARDS */}
             {mode === "flashcards" && activeFlashcard && unitDetail && (
-              <section className="space-y-4 rounded-2xl border border-sky-100 bg-white/95 p-5 shadow-sm">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="text-xs font-bold text-slate-600">
-                    Thẻ {fcIndex + 1} / {unitDetail.items.length} · Đã thuộc:{" "}
-                    <span className="text-emerald-700">
-                      {masteredCountInUnit}/{unitDetail.items.length}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={handleShuffleFlashcards}
-                      className="inline-flex items-center gap-1 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-bold text-indigo-800 hover:bg-indigo-100"
-                    >
-                      <Shuffle className="h-3.5 w-3.5" />
-                      Trộn thẻ
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setFcOrder(unitDetail.items.map((_, i) => i));
-                        setFcIndex(0);
-                        setFcFlipped(false);
-                      }}
-                      className="inline-flex items-center gap-1 rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
-                    >
-                      <RotateCcw className="h-3.5 w-3.5" />
-                      Từ đầu
-                    </button>
-                  </div>
-                </div>
+              <section className="relative space-y-4 rounded-2xl border border-sky-100 bg-white/95 p-5 shadow-sm">
+                <FloatingXPBurst
+                  burstKey={fcBurstKey}
+                  text="Đã thuộc!"
+                  subtext="Unit Mastery"
+                  className="right-6 top-12"
+                />
 
-                <div
-                  onClick={() => setFcFlipped((prev) => !prev)}
-                  className={`flex min-h-[260px] cursor-pointer flex-col items-center justify-center rounded-3xl p-8 text-center transition-all ${
-                    fcFlipped
-                      ? "bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 text-white shadow-lg"
-                      : "border-2 border-indigo-200 bg-gradient-to-br from-indigo-50 via-white to-sky-50 text-slate-900 shadow-sm hover:border-indigo-400"
-                  }`}
-                >
-                  <span
-                    className={`rounded-full px-3 py-0.5 text-xs font-bold ${
-                      fcFlipped ? "bg-white/25 text-white" : "bg-indigo-100 text-indigo-800"
-                    }`}
-                  >
-                    {fcFlipped
-                      ? "Nghĩa tiếng Việt (Bấm để lật lại)"
-                      : `Unit ${activeFlashcard.unit_no} #${activeFlashcard.order_no} · (${activeFlashcard.pos}) — Bấm để xem nghĩa`}
-                  </span>
-
-                  {!fcFlipped ? (
-                    <div className="mt-4 space-y-3">
-                      <div className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
-                        {activeFlashcard.term_en}
-                      </div>
-                      <div className="font-mono text-base text-sky-700">
-                        {activeFlashcard.ipa}
-                      </div>
+                <div className="space-y-2">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="text-xs font-bold text-slate-600">
+                      Thẻ {fcIndex + 1} / {unitDetail.items.length} · Đã thuộc:{" "}
+                      <span className="text-emerald-700">
+                        {masteredCountInUnit}/{unitDetail.items.length}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
                       <button
                         type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          speakEnglishTerm(activeFlashcard.term_en);
+                        onClick={() => {
+                          playClickSound();
+                          handleShuffleFlashcards();
                         }}
-                        className="inline-flex items-center gap-1.5 rounded-full bg-indigo-600 px-4 py-1.5 text-xs font-bold text-white shadow hover:bg-indigo-700"
+                        className="inline-flex items-center gap-1 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-bold text-indigo-800 hover:bg-indigo-100"
                       >
-                        <Volume2 className="h-4 w-4" />
-                        Nghe phát âm
+                        <Shuffle className="h-3.5 w-3.5" />
+                        Trộn thẻ
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          playClickSound();
+                          setFcOrder(unitDetail.items.map((_, i) => i));
+                          setFcDir(-1);
+                          setFcIndex(0);
+                          setFcFlipped(false);
+                        }}
+                        className="inline-flex items-center gap-1 rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                      >
+                        <RotateCcw className="h-3.5 w-3.5" />
+                        Từ đầu
                       </button>
                     </div>
-                  ) : (
-                    <div className="mt-4 space-y-3">
-                      <div className="text-3xl font-extrabold">{activeFlashcard.meaning_vi}</div>
-                      <div className="text-sm font-medium text-emerald-50">
-                        {activeFlashcard.term_en} {activeFlashcard.ipa} ({activeFlashcard.pos})
-                      </div>
-                      {activeFlashcard.iupac_note && (
-                        <div className="mx-auto max-w-md rounded-xl bg-white/20 px-3 py-2 text-xs text-amber-50 backdrop-blur-sm">
-                          {activeFlashcard.iupac_note}
-                        </div>
-                      )}
-                    </div>
-                  )}
+                  </div>
+
+                  {/* Animated Mastery Progress Bar */}
+                  <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{
+                        width: `${Math.round(
+                          (masteredCountInUnit / Math.max(1, unitDetail.items.length)) * 100
+                        )}%`,
+                      }}
+                      transition={{ type: "spring", stiffness: 150, damping: 22 }}
+                      className="xp-liquid-bar h-full rounded-full bg-gradient-to-r from-emerald-500 via-teal-400 to-sky-500"
+                    />
+                  </div>
                 </div>
 
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={`${activeFlashcard.unit_no}-${activeFlashcard.order_no}`}
+                    initial={{ opacity: 0, x: fcDir * 36, scale: 0.97 }}
+                    animate={{ opacity: 1, x: 0, scale: 1 }}
+                    exit={{ opacity: 0, x: fcDir * -40, scale: 0.95 }}
+                    transition={{ duration: 0.2, ease: "easeOut" }}
+                  >
+                    <FlipCard3D
+                      flipped={fcFlipped}
+                      onToggle={() => setFcFlipped((prev) => !prev)}
+                      front={
+                        <div className="flex h-full flex-col items-center justify-center text-center">
+                          <span className="rounded-full bg-indigo-100 px-3 py-0.5 text-xs font-bold text-indigo-800">
+                            Unit {activeFlashcard.unit_no} #{activeFlashcard.order_no} · (
+                            {activeFlashcard.pos}) — Bấm để lật 3D
+                          </span>
+                          <div className="mt-4 space-y-3">
+                            <div className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
+                              {activeFlashcard.term_en}
+                            </div>
+                            <div className="font-mono text-base text-sky-700">
+                              {activeFlashcard.ipa}
+                            </div>
+                            <div className="flex justify-center">
+                              <SpeakButton termEn={activeFlashcard.term_en} label="Nghe phát âm" />
+                            </div>
+                          </div>
+                        </div>
+                      }
+                      back={
+                        <div className="flex h-full flex-col items-center justify-center text-center">
+                          <span className="rounded-full bg-white/25 px-3 py-0.5 text-xs font-bold text-white">
+                            Nghĩa tiếng Việt (Bấm để lật lại)
+                          </span>
+                          <div className="mt-4 space-y-3">
+                            <div className="text-3xl font-extrabold">
+                              {activeFlashcard.meaning_vi}
+                            </div>
+                            <div className="text-sm font-medium text-emerald-50">
+                              {activeFlashcard.term_en} {activeFlashcard.ipa} ({activeFlashcard.pos})
+                            </div>
+                            {activeFlashcard.iupac_note && (
+                              <div className="mx-auto max-w-md rounded-xl bg-white/20 px-3 py-2 text-xs text-amber-50 backdrop-blur-sm">
+                                {activeFlashcard.iupac_note}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      }
+                    />
+                  </motion.div>
+                </AnimatePresence>
+
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                  <button
+                  <motion.button
                     type="button"
+                    whileTap={{ scale: 0.96 }}
                     disabled={fcIndex === 0}
                     onClick={() => {
+                      playClickSound();
+                      setFcDir(-1);
                       setFcIndex((i) => Math.max(0, i - 1));
                       setFcFlipped(false);
                     }}
-                    className="inline-flex items-center gap-1 rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-40"
+                    className="btn-tactile inline-flex items-center gap-1 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-40"
                   >
                     <ChevronLeft className="h-4 w-4" />
                     Thẻ trước
-                  </button>
+                  </motion.button>
 
-                  <button
+                  <motion.button
                     type="button"
+                    whileTap={{ scale: 0.95 }}
                     onClick={() => handleToggleMastered(activeFlashcard)}
-                    className={`inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-bold transition ${
+                    className={`btn-tactile inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-bold transition ${
                       masteredKeys[`${activeFlashcard.unit_no}-${activeFlashcard.order_no}`]
-                        ? "bg-emerald-600 text-white"
-                        : "border border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
+                        ? "border border-emerald-800 bg-emerald-600 text-white"
+                        : "border border-emerald-300 border-b-emerald-400 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
                     }`}
                   >
                     <CheckCircle2 className="h-4 w-4" />
                     {masteredKeys[`${activeFlashcard.unit_no}-${activeFlashcard.order_no}`]
                       ? "Đã thuộc thẻ này"
                       : "Đánh dấu đã thuộc"}
-                  </button>
+                  </motion.button>
 
-                  <button
+                  <motion.button
                     type="button"
+                    whileTap={{ scale: 0.96 }}
                     disabled={fcIndex >= unitDetail.items.length - 1}
                     onClick={() => {
+                      playClickSound();
+                      setFcDir(1);
                       setFcIndex((i) => Math.min(unitDetail.items.length - 1, i + 1));
                       setFcFlipped(false);
                     }}
-                    className="inline-flex items-center gap-1 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white hover:bg-indigo-700 disabled:opacity-40"
+                    className="btn-tactile inline-flex items-center gap-1 rounded-xl border-indigo-800 bg-indigo-600 px-4 py-2 text-sm font-bold text-white hover:bg-indigo-700 disabled:opacity-40"
                   >
                     Thẻ tiếp
                     <ChevronRight className="h-4 w-4" />
-                  </button>
+                  </motion.button>
                 </div>
               </section>
             )}
@@ -687,8 +771,12 @@ export function StudyPack16Page({ onSelectLesson }: Props) {
                           Kết quả Chấm điểm ({quizData.title})
                         </div>
                         <div className="mt-1 text-2xl font-extrabold text-slate-900">
-                          {quizScoreSummary.totalScore} / 10 điểm (Đúng{" "}
-                          {quizScoreSummary.correctCount}/{quizData.questions.length} câu)
+                          <AnimatedScoreCounter
+                            value={quizScoreSummary.totalScore}
+                            className="text-indigo-700"
+                          />{" "}
+                          / 10 điểm (Đúng {quizScoreSummary.correctCount}/{quizData.questions.length}{" "}
+                          câu)
                         </div>
                         <div className="text-xs text-slate-700">
                           Phần Tiếng Việt: <strong>{quizScoreSummary.viScore}đ</strong> · Phần Tiếng
@@ -696,14 +784,18 @@ export function StudyPack16Page({ onSelectLesson }: Props) {
                           <strong className="text-indigo-700">{quizScoreSummary.enScore}đ</strong>
                         </div>
                       </div>
-                      <button
+                      <motion.button
                         type="button"
-                        onClick={() => void handleStartQuiz()}
-                        className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white hover:bg-indigo-700"
+                        whileTap={{ scale: 0.96 }}
+                        onClick={() => {
+                          playClickSound();
+                          void handleStartQuiz();
+                        }}
+                        className="btn-tactile inline-flex items-center gap-1.5 rounded-xl border-indigo-800 bg-indigo-600 px-4 py-2 text-xs font-bold text-white hover:bg-indigo-700"
                       >
                         <RotateCcw className="h-3.5 w-3.5" />
                         Sinh đề mới khác câu
-                      </button>
+                      </motion.button>
                     </div>
                   </div>
                 )}
@@ -786,14 +878,15 @@ export function StudyPack16Page({ onSelectLesson }: Props) {
                     })}
 
                     {!quizSubmitted && (
-                      <button
+                      <motion.button
                         type="button"
-                        onClick={() => setQuizSubmitted(true)}
-                        className="w-full rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 py-3 text-sm font-extrabold text-white shadow hover:opacity-95"
+                        whileTap={{ scale: 0.97 }}
+                        onClick={handleSubmitStudyQuiz}
+                        className="btn-tactile w-full rounded-2xl border-emerald-800 bg-gradient-to-r from-emerald-600 to-teal-600 py-3 text-sm font-extrabold text-white shadow hover:opacity-95"
                       >
                         Nộp Bài & Xem Điểm Chi Tiết ({Object.keys(quizAnswers).length}/
                         {quizData.questions.length} câu đã chọn)
-                      </button>
+                      </motion.button>
                     )}
                   </div>
                 ) : (

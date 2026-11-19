@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { Award, ClipboardCheck, Flame, GitBranch, Layers, Target, Trophy, UserCheck } from "lucide-react";
 
 import { api, saveAuthTokens } from "../../api/client";
 import type { AuthSession, GamificationSummary } from "../../api/types";
+import { ScienceAmbientParticles } from "../../components/motion/MotionPrimitives";
+import { playClickSound } from "../../utils/soundFx";
 import { StudentAssignmentsPanel } from "../lms/StudentAssignmentsPanel";
 import { FlashcardSRSView } from "./FlashcardSRSView";
 import { MindmapView } from "./MindmapView";
@@ -64,24 +67,41 @@ export function LearningHubPage({
     <div className="space-y-6">
       {/* Gamification Strip */}
       {session && gamification ? (
-        <section className="rounded-3xl bg-gradient-to-r from-violet-600 via-fuchsia-500 to-orange-500 p-6 text-white shadow-lg">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div>
+        <section className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-violet-600 via-fuchsia-500 to-orange-500 p-6 text-white shadow-lg">
+          <ScienceAmbientParticles />
+          <div className="relative flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="flex-1">
               <div className="text-xs font-bold text-amber-100">
                 Hồ sơ Học tập · {session.user.full_name} · Trường THCS Cầu Giấy B
               </div>
               <div className="mt-1 flex flex-wrap items-center gap-4">
                 <span className="inline-flex items-center gap-1.5 text-lg font-extrabold">
-                  <Flame className="h-5 w-5 text-amber-400" />
+                  <Flame className="h-5 w-5 text-amber-300" />
                   {gamification.current_streak} ngày Streak
                 </span>
                 <span className="inline-flex items-center gap-1.5 text-lg font-extrabold">
                   <Trophy className="h-5 w-5 text-emerald-300" />
                   Level {gamification.level} ({gamification.total_xp} XP)
                 </span>
-                <span className="text-xs text-teal-100">
+                <span className="text-xs font-semibold text-white/90">
                   Đã thuộc vững: {gamification.cards_mastered} thẻ
                 </span>
+              </div>
+
+              {/* Liquid XP Progress to next level */}
+              <div className="mt-3 max-w-md space-y-1">
+                <div className="flex items-center justify-between text-[11px] font-bold text-amber-100">
+                  <span>Tiến độ Level {gamification.level + 1}</span>
+                  <span>{gamification.total_xp % 100} / 100 XP</span>
+                </div>
+                <div className="h-2.5 w-full overflow-hidden rounded-full bg-white/25">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${Math.max(6, gamification.total_xp % 100)}%` }}
+                    transition={{ type: "spring", stiffness: 120, damping: 20 }}
+                    className="xp-liquid-bar h-full rounded-full bg-gradient-to-r from-amber-300 via-yellow-200 to-emerald-300"
+                  />
+                </div>
               </div>
             </div>
 
@@ -90,14 +110,14 @@ export function LearningHubPage({
                 gamification.badges.map((badge) => (
                   <span
                     key={badge}
-                    className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2.5 py-1 text-xs font-semibold text-amber-200"
+                    className="inline-flex items-center gap-1 rounded-full bg-white/20 px-2.5 py-1 text-xs font-semibold text-amber-100 backdrop-blur-sm"
                   >
                     <Award className="h-3.5 w-3.5" />
                     {badge}
                   </span>
                 ))
               ) : (
-                <span className="text-xs text-teal-100">
+                <span className="text-xs text-white/90">
                   Ôn 1 thẻ Flashcard để mở khóa huy hiệu đầu tiên!
                 </span>
               )}
@@ -118,7 +138,7 @@ export function LearningHubPage({
             type="button"
             disabled={loggingInDemo}
             onClick={() => void handleQuickStudentLogin()}
-            className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-teal-700 px-4 py-2 text-sm font-bold text-white hover:bg-teal-800 disabled:opacity-50"
+            className="btn-tactile inline-flex shrink-0 items-center gap-2 rounded-xl border-teal-900 bg-teal-700 px-4 py-2 text-sm font-bold text-white hover:bg-teal-800 disabled:opacity-50"
           >
             <UserCheck className="h-4 w-4" />
             {loggingInDemo ? "Đang đăng nhập..." : "Dùng thử ngay (Học sinh An)"}
@@ -128,57 +148,42 @@ export function LearningHubPage({
 
       {/* Sub-navigation Tabs */}
       <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
-          onClick={() => setSubTab("srs")}
-          className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition ${
-            subTab === "srs"
-              ? "bg-gradient-to-r from-indigo-600 to-sky-500 text-white shadow-sm"
-              : "border border-slate-200 bg-white text-slate-700 hover:bg-sky-50"
-          }`}
-        >
-          <Layers className="h-4 w-4" />
-          Flashcard SRS
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setSubTab("mindmap")}
-          className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition ${
-            subTab === "mindmap"
-              ? "bg-gradient-to-r from-indigo-600 to-sky-500 text-white shadow-sm"
-              : "border border-slate-200 bg-white text-slate-700 hover:bg-sky-50"
-          }`}
-        >
-          <GitBranch className="h-4 w-4" />
-          Mindmap Song ngữ
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setSubTab("quiz")}
-          className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition ${
-            subTab === "quiz"
-              ? "bg-gradient-to-r from-indigo-600 to-sky-500 text-white shadow-sm"
-              : "border border-slate-200 bg-white text-slate-700 hover:bg-sky-50"
-          }`}
-        >
-          <Target className="h-4 w-4" />
-          Luyện Quiz 10% / 50% / 100%
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setSubTab("assignments")}
-          className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition ${
-            subTab === "assignments"
-              ? "bg-gradient-to-r from-indigo-600 to-sky-500 text-white shadow-sm"
-              : "border border-slate-200 bg-white text-slate-700 hover:bg-sky-50"
-          }`}
-        >
-          <ClipboardCheck className="h-4 w-4" />
-          Bài tập Lớp học
-        </button>
+        {(
+          [
+            { id: "srs", label: "Flashcard SRS", icon: Layers },
+            { id: "mindmap", label: "Mindmap Song ngữ", icon: GitBranch },
+            { id: "quiz", label: "Luyện Quiz 10% / 50% / 100%", icon: Target },
+            { id: "assignments", label: "Bài tập Lớp học", icon: ClipboardCheck },
+          ] as const
+        ).map((item) => {
+          const Icon = item.icon;
+          const active = subTab === item.id;
+          return (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => {
+                playClickSound();
+                setSubTab(item.id);
+              }}
+              className={`relative inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition-colors ${
+                active
+                  ? "text-white"
+                  : "border border-slate-200 bg-white text-slate-700 hover:bg-sky-50"
+              }`}
+            >
+              {active && (
+                <motion.span
+                  layoutId="learning-subtab-pill"
+                  transition={{ type: "spring", stiffness: 420, damping: 32 }}
+                  className="absolute inset-0 rounded-xl bg-gradient-to-r from-indigo-600 to-sky-500 shadow-sm"
+                />
+              )}
+              <Icon className="relative z-10 h-4 w-4" />
+              <span className="relative z-10">{item.label}</span>
+            </button>
+          );
+        })}
       </div>
 
       {/* Sub-view */}

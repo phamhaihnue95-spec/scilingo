@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
+import { motion } from "framer-motion";
 import { ArrowRight, BookOpen, FlaskConical, Library, Link2, Search, Sparkles } from "lucide-react";
 
 import { api } from "../../api/client";
 import type { CurriculumTreeResponse, Discipline } from "../../api/types";
+import { ScienceAmbientParticles } from "../../components/motion/MotionPrimitives";
+import { playClickSound } from "../../utils/soundFx";
 import { DisciplineBadge } from "./DisciplineBadge";
 
 interface Props {
@@ -92,6 +95,7 @@ export function CurriculumMapPage({ onSelectLesson, onOpenStudyPack }: Props) {
     <div className="space-y-6">
       {/* Hero Summary Card */}
       <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 via-sky-500 to-teal-400 p-6 text-white shadow-lg sm:p-7">
+        <ScienceAmbientParticles />
         <div className="pointer-events-none absolute -right-10 -top-12 h-52 w-52 rounded-full bg-white/15 blur-2xl" />
         <div className="pointer-events-none absolute -bottom-14 left-1/3 h-44 w-44 rounded-full bg-amber-300/25 blur-2xl" />
 
@@ -111,24 +115,31 @@ export function CurriculumMapPage({ onSelectLesson, onOpenStudyPack }: Props) {
           </div>
 
           <div className="grid grid-cols-3 gap-3 text-center">
-            <div className="rounded-2xl bg-white/20 px-4 py-3 backdrop-blur-sm">
-              <div className="text-2xl font-extrabold">{tree?.total_lessons ?? 47}</div>
-              <div className="text-xs font-medium text-sky-50">Bài học</div>
-            </div>
-            <div className="rounded-2xl bg-white/20 px-4 py-3 backdrop-blur-sm">
-              <div className="text-2xl font-extrabold">16</div>
-              <div className="text-xs font-medium text-sky-50">Chuyên đề</div>
-            </div>
-            <div className="rounded-2xl bg-white/20 px-4 py-3 backdrop-blur-sm">
-              <div className="text-2xl font-extrabold">920+</div>
-              <div className="text-xs font-medium text-sky-50">Từ vựng IPA</div>
-            </div>
+            {[
+              { value: tree?.total_lessons ?? 47, label: "Bài học" },
+              { value: "16", label: "Chuyên đề" },
+              { value: "920+", label: "Từ vựng IPA" },
+            ].map((stat) => (
+              <motion.div
+                key={stat.label}
+                whileHover={{ y: -4, scale: 1.04 }}
+                transition={{ type: "spring", stiffness: 360, damping: 22 }}
+                className="rounded-2xl bg-white/20 px-4 py-3 backdrop-blur-sm"
+              >
+                <div className="text-2xl font-extrabold">{stat.value}</div>
+                <div className="text-xs font-medium text-sky-50">{stat.label}</div>
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>
 
       {onOpenStudyPack && (
-        <section className="flex flex-col items-start justify-between gap-4 rounded-2xl border border-fuchsia-200 bg-gradient-to-r from-fuchsia-50 via-indigo-50 to-sky-50 p-4 shadow-sm sm:flex-row sm:items-center sm:px-5">
+        <motion.section
+          whileHover={{ y: -2 }}
+          transition={{ type: "spring", stiffness: 320, damping: 24 }}
+          className="holo-card flex flex-col items-start justify-between gap-4 rounded-2xl border border-fuchsia-200 bg-gradient-to-r from-fuchsia-50 via-indigo-50 to-sky-50 p-4 shadow-sm sm:flex-row sm:items-center sm:px-5"
+        >
           <div className="flex items-start gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-fuchsia-600 to-indigo-600 text-white shadow">
               <Library className="h-5 w-5" />
@@ -148,15 +159,16 @@ export function CurriculumMapPage({ onSelectLesson, onOpenStudyPack }: Props) {
               </p>
             </div>
           </div>
-          <button
+          <motion.button
             type="button"
+            whileTap={{ scale: 0.96 }}
             onClick={onOpenStudyPack}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-gradient-to-r from-fuchsia-600 to-indigo-600 px-4 py-2 text-xs font-extrabold text-white shadow hover:opacity-95 sm:text-sm"
+            className="btn-tactile inline-flex shrink-0 items-center gap-1.5 rounded-xl border-indigo-800 bg-gradient-to-r from-fuchsia-600 to-indigo-600 px-4 py-2 text-xs font-extrabold text-white shadow hover:opacity-95 sm:text-sm"
           >
             Mở Bộ Đề 16 Units
             <ArrowRight className="h-4 w-4" />
-          </button>
-        </section>
+          </motion.button>
+        </motion.section>
       )}
 
       {/* Filter & Quick Jump Controls */}
@@ -168,14 +180,22 @@ export function CurriculumMapPage({ onSelectLesson, onOpenStudyPack }: Props) {
               <button
                 key={tab.id}
                 type="button"
-                onClick={() => setDiscipline(tab.id)}
-                className={`rounded-xl px-3.5 py-1.5 text-sm font-bold transition ${
-                  active
-                    ? "bg-gradient-to-r from-indigo-600 to-sky-500 text-white shadow-sm"
-                    : "bg-slate-100 text-slate-700 hover:bg-sky-50"
+                onClick={() => {
+                  playClickSound();
+                  setDiscipline(tab.id);
+                }}
+                className={`relative rounded-xl px-3.5 py-1.5 text-sm font-bold transition-colors ${
+                  active ? "text-white" : "bg-slate-100 text-slate-700 hover:bg-sky-50"
                 }`}
               >
-                {tab.label}
+                {active && (
+                  <motion.span
+                    layoutId="discipline-tab-pill"
+                    transition={{ type: "spring", stiffness: 420, damping: 32 }}
+                    className="absolute inset-0 rounded-xl bg-gradient-to-r from-indigo-600 to-sky-500 shadow-sm"
+                  />
+                )}
+                <span className="relative z-10">{tab.label}</span>
               </button>
             );
           })}
@@ -228,14 +248,19 @@ export function CurriculumMapPage({ onSelectLesson, onOpenStudyPack }: Props) {
                 </div>
 
                 <div className="grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {chapter.lessons.map((lesson) => {
+                  {chapter.lessons.map((lesson, idx) => {
                     const cardAccent = CHAPTER_ACCENT[lesson.discipline] ?? accent;
                     return (
-                      <button
+                      <motion.button
                         key={lesson.id}
                         type="button"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.2, delay: Math.min(idx * 0.02, 0.2) }}
+                        whileHover={{ y: -4, scale: 1.015 }}
+                        whileTap={{ scale: 0.985 }}
                         onClick={() => onSelectLesson(lesson.lesson_no)}
-                        className={`card-pop group flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-4 text-left ${cardAccent.cardHover}`}
+                        className={`group flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition-colors hover:shadow-md ${cardAccent.cardHover}`}
                       >
                         <div className="space-y-1.5">
                           <div className="flex items-center justify-between gap-2">
@@ -267,7 +292,7 @@ export function CurriculumMapPage({ onSelectLesson, onOpenStudyPack }: Props) {
                             </span>
                           )}
                         </div>
-                      </button>
+                      </motion.button>
                     );
                   })}
                 </div>
