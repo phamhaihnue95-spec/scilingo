@@ -84,6 +84,12 @@ class LearningRepository:
             self.db.flush()
         return profile
 
+    def list_gamification_for_students(self, student_ids: list[str]) -> list[StudentGamification]:
+        if not student_ids:
+            return []
+        stmt = select(StudentGamification).where(StudentGamification.student_id.in_(student_ids))
+        return list(self.db.scalars(stmt).all())
+
     def count_srs_stats(self, student_id: str) -> tuple[int, int]:
         cards = self.get_srs_cards_for_student(student_id)
         now = datetime.now(UTC)

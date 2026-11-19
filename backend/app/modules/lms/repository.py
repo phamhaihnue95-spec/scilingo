@@ -73,15 +73,44 @@ class LMSRepository:
         )
         return list(self.db.scalars(stmt).all())
 
+    def list_classrooms_for_student(self, student_id: str) -> list[Classroom]:
+        stmt = (
+            select(Classroom)
+            .join(ClassroomMember, ClassroomMember.classroom_id == Classroom.id)
+            .options(selectinload(Classroom.members))
+            .where(ClassroomMember.student_id == student_id)
+            .order_by(Classroom.created_at.desc())
+        )
+        return list(self.db.scalars(stmt).all())
+
     # --- Resources ---
+    def create_teacher_resource(self, resource: TeacherResource) -> TeacherResource:
+        self.db.add(resource)
+        self.db.flush()
+        return resource
+
     def list_custom_resources(
         self, tenant_id: str, lesson_no: int | None = None
     ) -> list[TeacherResource]:
         stmt = select(TeacherResource).where(
-            or_(TeacherResource.tenant_id.is_(None), TeacherResource.tenant_id == tenant_id)
+            or_(TeacherResource.tenant_id.is_(None), TeacherResource.tenant_id == tenant_id),
+            TeacherResource.resource_type != "game_challenge",
         )
         if lesson_no is not None:
             stmt = stmt.where(TeacherResource.lesson_no == lesson_no)
+        return list(self.db.scalars(stmt).all())
+
+    def list_game_challenges_for_tenants(self, tenant_ids: list[str]) -> list[TeacherResource]:
+        if not tenant_ids:
+            return []
+        stmt = (
+            select(TeacherResource)
+            .where(
+                TeacherResource.tenant_id.in_(tenant_ids),
+                TeacherResource.resource_type == "game_challenge",
+            )
+            .order_by(TeacherResource.created_at.desc())
+        )
         return list(self.db.scalars(stmt).all())
 
     # --- Question Bank ---

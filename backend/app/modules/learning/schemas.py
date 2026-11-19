@@ -8,7 +8,7 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 PracticeMode = Literal["quiz_10", "quiz_50", "quiz_100"]
-GameType = Literal["lightning_match", "iupac_lab"]
+GameType = Literal["lightning_match", "iupac_lab", "sequence_lab"]
 
 
 class SRSDueCardOut(BaseModel):
@@ -212,6 +212,7 @@ class GameRewardRequest(BaseModel):
     total_attempts: int = Field(ge=1, le=160)
     max_combo: int = Field(default=0, ge=0, le=80)
     discipline: Literal["general_lab", "chemistry", "physics", "biology"] = "chemistry"
+    study_pack_unit_no: int | None = Field(default=None, ge=1, le=16)
 
 
 class GameRewardOut(BaseModel):

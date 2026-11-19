@@ -1,17 +1,34 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowRight, BookOpen, FlaskConical, Gamepad2, Library, Link2, Search, Sparkles, Zap } from "lucide-react";
+import {
+  ArrowRight,
+  BookOpen,
+  Compass,
+  FlaskConical,
+  Gamepad2,
+  LayoutGrid,
+  Library,
+  Link2,
+  ListOrdered,
+  Search,
+  Sparkles,
+  Zap,
+} from "lucide-react";
 
 import { api } from "../../api/client";
-import type { CurriculumTreeResponse, Discipline } from "../../api/types";
+import type { AuthSession, CurriculumTreeResponse, Discipline } from "../../api/types";
 import { ScienceAmbientParticles } from "../../components/motion/MotionPrimitives";
 import { playClickSound } from "../../utils/soundFx";
+import { CurriculumQuestMap } from "./CurriculumQuestMap";
 import { DisciplineBadge } from "./DisciplineBadge";
 
 interface Props {
+  session?: AuthSession | null;
   onSelectLesson: (lessonNo: number) => void;
   onOpenStudyPack?: () => void;
-  onOpenGames?: (game?: "lightning" | "iupac") => void;
+  onOpenGames?: (
+    game?: "lightning" | "iupac" | "sequence" | "scidex" | "leaderboard"
+  ) => void;
 }
 
 const CHAPTER_ACCENT: Record<Discipline, { headerBg: string; cardHover: string; badge: string }> = {
@@ -45,12 +62,47 @@ const DISCIPLINE_TABS: Array<{ id: "all" | Discipline; label: string }> = [
   { id: "biology", label: "Sinh học" },
 ];
 
-export function CurriculumMapPage({ onSelectLesson, onOpenStudyPack, onOpenGames }: Props) {
+export function CurriculumMapPage({
+  session,
+  onSelectLesson,
+  onOpenStudyPack,
+  onOpenGames,
+}: Props) {
   const [tree, setTree] = useState<CurriculumTreeResponse | null>(null);
   const [discipline, setDiscipline] = useState<"all" | Discipline>("all");
+  const [viewMode, setViewMode] = useState<"quest" | "grid">("quest");
+  const [lessonStars, setLessonStars] = useState<Record<number, number>>({});
   const [filterText, setFilterText] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!session) {
+      setLessonStars({});
+      return;
+    }
+    let active = true;
+    api
+      .getGamification()
+      .then((summary) => {
+        if (!active) return;
+        const stars: Record<number, number> = {};
+        for (const attempt of summary.recent_attempts) {
+          const ratio = Math.min(1, Math.max(0, attempt.score / 10));
+          const earned = ratio >= 0.85 ? 3 : ratio >= 0.65 ? 2 : attempt.score > 0 ? 1 : 0;
+          if (earned > (stars[attempt.lesson_no] ?? 0)) {
+            stars[attempt.lesson_no] = earned;
+          }
+        }
+        setLessonStars(stars);
+      })
+      .catch(() => {
+        if (active) setLessonStars({});
+      });
+    return () => {
+      active = false;
+    };
+  }, [session]);
 
   useEffect(() => {
     let active = true;
@@ -188,7 +240,7 @@ export function CurriculumMapPage({ onSelectLesson, onOpenStudyPack, onOpenGames
                   Trò chơi mới
                 </span>
                 <h2 className="text-sm font-extrabold text-slate-900 sm:text-base">
-                  Đấu Trường Trò Chơi KHTN 8 (Chớp Nhoáng 60s &amp; Bắt Lỗi IUPAC)
+                  Đấu Trường Trò Chơi KHTN 8 (Chớp Nhoáng 60s, IUPAC, Tháp Sắp Xếp &amp; SciDex 16)
                 </h2>
               </div>
               <p className="mt-0.5 text-xs text-slate-600">
@@ -216,12 +268,30 @@ export function CurriculumMapPage({ onSelectLesson, onOpenStudyPack, onOpenGames
               <FlaskConical className="h-3.5 w-3.5" />
               Phòng Pha Chế IUPAC
             </motion.button>
+            <motion.button
+              type="button"
+              whileTap={{ scale: 0.96 }}
+              onClick={() => onOpenGames("sequence")}
+              className="btn-tactile inline-flex shrink-0 items-center gap-1.5 rounded-xl border-emerald-700 bg-gradient-to-r from-emerald-500 to-teal-600 px-3.5 py-2 text-xs font-extrabold text-white shadow hover:opacity-95"
+            >
+              <ListOrdered className="h-3.5 w-3.5" />
+              Tháp Sắp Xếp
+            </motion.button>
+            <motion.button
+              type="button"
+              whileTap={{ scale: 0.96 }}
+              onClick={() => onOpenGames("scidex")}
+              className="btn-tactile inline-flex shrink-0 items-center gap-1.5 rounded-xl border-indigo-700 bg-gradient-to-r from-indigo-600 to-violet-600 px-3.5 py-2 text-xs font-extrabold text-white shadow hover:opacity-95"
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              SciDex 16
+            </motion.button>
           </div>
         </motion.section>
       )}
 
       {/* Filter & Quick Jump Controls */}
-      <div className="flex flex-col gap-3 rounded-2xl border border-sky-100 bg-white/95 p-4 shadow-sm md:flex-row md:items-center md:justify-between">
+      <div className="flex flex-col gap-3 rounded-2xl border border-sky-100 bg-white/95 p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-wrap gap-2">
           {DISCIPLINE_TABS.map((tab) => {
             const active = discipline === tab.id;
@@ -250,15 +320,53 @@ export function CurriculumMapPage({ onSelectLesson, onOpenStudyPack, onOpenGames
           })}
         </div>
 
-        <div className="relative w-full md:w-72">
-          <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-sky-500" />
-          <input
-            type="text"
-            value={filterText}
-            onChange={(e) => setFilterText(e.target.value)}
-            placeholder="Tìm số bài (vd: 8) hoặc tên bài..."
-            className="w-full rounded-xl border border-sky-200 bg-sky-50/40 py-1.5 pl-9 pr-3 text-sm focus:border-sky-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/20"
-          />
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          {/* View Mode Toggle: Quest Map SVG vs Classic Grid */}
+          <div className="inline-flex rounded-xl border border-slate-200 bg-slate-100 p-1">
+            {(
+              [
+                { id: "quest" as const, label: "Phiêu lưu SVG", icon: Compass },
+                { id: "grid" as const, label: "Danh sách Lưới", icon: LayoutGrid },
+              ] as const
+            ).map((mode) => {
+              const Icon = mode.icon;
+              const active = viewMode === mode.id;
+              return (
+                <button
+                  key={mode.id}
+                  type="button"
+                  onClick={() => {
+                    playClickSound();
+                    setViewMode(mode.id);
+                  }}
+                  className={`relative inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-extrabold transition-colors ${
+                    active ? "text-white" : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  {active && (
+                    <motion.span
+                      layoutId="map-view-pill"
+                      transition={{ type: "spring", stiffness: 420, damping: 32 }}
+                      className="absolute inset-0 rounded-lg bg-gradient-to-r from-indigo-600 to-sky-500 shadow-sm"
+                    />
+                  )}
+                  <Icon className="relative z-10 h-3.5 w-3.5" />
+                  <span className="relative z-10">{mode.label}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="relative w-full sm:w-64">
+            <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-sky-500" />
+            <input
+              type="text"
+              value={filterText}
+              onChange={(e) => setFilterText(e.target.value)}
+              placeholder="Tìm số bài (vd: 8) hoặc tên bài..."
+              className="w-full rounded-xl border border-sky-200 bg-sky-50/40 py-1.5 pl-9 pr-3 text-sm focus:border-sky-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/20"
+            />
+          </div>
         </div>
       </div>
 
@@ -276,8 +384,16 @@ export function CurriculumMapPage({ onSelectLesson, onOpenStudyPack, onOpenGames
         </div>
       )}
 
-      {/* Chapter Cards */}
-      {!loading && !error && (
+      {/* Quest Map or Chapter Grid */}
+      {!loading && !error && viewMode === "quest" && (
+        <CurriculumQuestMap
+          chapters={filteredChapters}
+          lessonStars={lessonStars}
+          onSelectLesson={onSelectLesson}
+        />
+      )}
+
+      {!loading && !error && viewMode === "grid" && (
         <div className="space-y-5">
           {filteredChapters.map((chapter) => {
             const accent = CHAPTER_ACCENT[chapter.discipline] ?? CHAPTER_ACCENT.general_lab;

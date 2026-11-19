@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 from app.modules.curriculum.service import CurriculumService
 from app.modules.identity_billing.models import User
 from app.modules.identity_billing.service import IdentityService
+from app.modules.learning.service import LearningService
 from app.modules.lms.exam_engine import (
     compute_exam_allocation,
     synthesize_questions_from_curriculum,
@@ -26,6 +27,7 @@ from app.modules.lms.models import (
     ExamQuestion,
     QuestionBankItem,
     StudentSubmission,
+    TeacherResource,
     TeachingSessionLog,
 )
 from app.modules.lms.repository import LMSRepository
@@ -38,12 +40,16 @@ from app.modules.lms.schemas import (
     AssignmentTakeOut,
     ClassroomAnalyticsOut,
     ClassroomCreateRequest,
+    ClassroomLeaderboardOut,
     ClassroomOut,
     ClassroomTT94MetricsOut,
     ExamDetailOut,
     ExamGenerateRequest,
     ExamQuestionOut,
     ExamSummaryOut,
+    GameChallengeCreateRequest,
+    GameChallengeOut,
+    LeaderboardEntryOut,
     QuestionCreateRequest,
     QuestionOut,
     StudentSubmissionSummaryOut,
@@ -70,6 +76,7 @@ class LMSService:
         self.repo = LMSRepository(db)
         self.curriculum = CurriculumService(db)
         self.identity = IdentityService(db)
+        self.learning = LearningService(db)
 
     # --- Classrooms ---
     def create_classroom(self, teacher: User, payload: ClassroomCreateRequest) -> ClassroomOut:
@@ -152,6 +159,178 @@ class LMSService:
             student_count=len(classroom.members),
             logged_periods=periods_map.get(classroom.id, (0, 0))[0],
         )
+
+    def list_student_classrooms(self, student: User) -> list[ClassroomOut]:
+        classrooms = self.repo.list_classrooms_for_student(student.id)
+        tenant_ids = {c.tenant_id for c in classrooms}
+        periods_map: dict[str, tuple[int, int]] = {}
+        for tid in tenant_ids:
+            periods_map.update(self.repo.sum_periods_by_classroom(tid))
+        return [
+            ClassroomOut(
+                id=c.id,
+                tenant_id=c.tenant_id,
+                teacher_id=c.teacher_id,
+                name=c.name,
+                grade=c.grade,
+                academic_year=c.academic_year,
+                join_code=c.join_code,
+                is_tt94_pilot_class=c.is_tt94_pilot_class,
+                created_at=c.created_at,
+                student_count=len(c.members),
+                logged_periods=periods_map.get(c.id, (0, 0))[0],
+            )
+            for c in classrooms
+        ]
+
+    def _ensure_classroom_access(self, caller: User, classroom_id: str) -> Classroom:
+        classroom = self.repo.get_classroom(classroom_id)
+        if classroom is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Không tìm thấy lớp học.",
+            )
+        if caller.role in ("teacher", "school_admin", "platform_admin"):
+            if classroom.tenant_id != caller.tenant_id:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Không tìm thấy lớp học trong trường của bạn.",
+                )
+        else:
+            if self.repo.get_membership(classroom.id, caller.id) is None:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Bạn chưa tham gia lớp học này.",
+                )
+        return classroom
+
+    def get_classroom_leaderboard(
+        self, caller: User, classroom_id: str
+    ) -> ClassroomLeaderboardOut:
+        classroom = self._ensure_classroom_access(caller, classroom_id)
+        member_ids = [m.student_id for m in classroom.members]
+        names_map = self.identity.get_user_names_map(member_ids)
+        gamif_map = self.learning.get_students_gamification_map(member_ids)
+
+        sub_scores: dict[str, list[float]] = {}
+        for sub, _ in self.repo.list_submissions_for_classroom(classroom.id):
+            sub_scores.setdefault(sub.student_id, []).append(float(sub.score))
+
+        raw_entries: list[LeaderboardEntryOut] = []
+        for sid in member_ids:
+            stats = gamif_map.get(sid, {})
+            badges = list(stats.get("badges", []))
+            scidex_count = sum(1 for b in badges if str(b).startswith("SciDex: Unit "))
+            scores = sub_scores.get(sid, [])
+            avg_score = round(sum(scores) / len(scores), 2) if scores else None
+            raw_entries.append(
+                LeaderboardEntryOut(
+                    rank=0,
+                    student_id=sid,
+                    student_name=names_map.get(sid, "Học sinh"),
+                    total_xp=int(stats.get("total_xp", 0)),
+                    level=int(stats.get("level", 1)),
+                    current_streak=int(stats.get("current_streak", 0)),
+                    badges_count=len(badges),
+                    scidex_count=scidex_count,
+                    badges=badges,
+                    avg_assignment_score=avg_score,
+                )
+            )
+
+        raw_entries.sort(
+            key=lambda e: (-e.total_xp, -e.current_streak, e.student_name.lower())
+        )
+        ranked = [
+            entry.model_copy(update={"rank": idx + 1}) for idx, entry in enumerate(raw_entries)
+        ]
+        return ClassroomLeaderboardOut(
+            classroom_id=classroom.id,
+            classroom_name=classroom.name,
+            join_code=classroom.join_code,
+            total_students=len(ranked),
+            entries=ranked,
+        )
+
+    def _to_game_challenge_out(
+        self, res: TeacherResource, classroom_names: dict[str, str]
+    ) -> GameChallengeOut:
+        meta = dict(res.metadata_json or {})
+        cid = str(meta.get("classroom_id", ""))
+        unit_raw = meta.get("unit_no")
+        unit_no = int(unit_raw) if unit_raw is not None else None
+        return GameChallengeOut(
+            id=res.id,
+            classroom_id=cid,
+            classroom_name=classroom_names.get(cid, "Lớp KHTN 8"),
+            title=res.title,
+            game_type=str(meta.get("game_type", "lightning_match")),  # type: ignore[arg-type]
+            unit_no=unit_no,
+            target_score=int(meta.get("target_score", 80)),
+            duration_minutes=int(meta.get("duration_minutes", 5)),
+            instructions=res.content_markdown,
+            created_by_name=str(meta.get("created_by_name", "Giáo viên")),
+            created_at=res.created_at,
+        )
+
+    def create_game_challenge(
+        self, teacher: User, classroom_id: str, payload: GameChallengeCreateRequest
+    ) -> GameChallengeOut:
+        classroom = self.repo.get_classroom(classroom_id)
+        if classroom is None or classroom.tenant_id != teacher.tenant_id:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Không tìm thấy lớp học trong trường của bạn.",
+            )
+        instructions = payload.instructions.strip() or (
+            f"Hoàn thành thử thách {payload.duration_minutes} phút cho lớp {classroom.name}."
+        )
+        res = TeacherResource(
+            lesson_no=payload.unit_no or 1,
+            tenant_id=teacher.tenant_id,
+            title=payload.title.strip(),
+            resource_type="game_challenge",
+            clil_mode="bilingual_50",
+            content_markdown=instructions,
+            metadata_json={
+                "classroom_id": classroom.id,
+                "game_type": payload.game_type,
+                "unit_no": payload.unit_no,
+                "target_score": payload.target_score,
+                "duration_minutes": payload.duration_minutes,
+                "created_by_name": teacher.full_name,
+            },
+            is_official=False,
+        )
+        self.repo.create_teacher_resource(res)
+        self.db.commit()
+        self.db.refresh(res)
+        return self._to_game_challenge_out(res, {classroom.id: classroom.name})
+
+    def list_classroom_game_challenges(
+        self, caller: User, classroom_id: str
+    ) -> list[GameChallengeOut]:
+        classroom = self._ensure_classroom_access(caller, classroom_id)
+        rows = self.repo.list_game_challenges_for_tenants([classroom.tenant_id])
+        cnames = {classroom.id: classroom.name}
+        return [
+            self._to_game_challenge_out(r, cnames)
+            for r in rows
+            if (r.metadata_json or {}).get("classroom_id") == classroom.id
+        ]
+
+    def list_student_game_challenges(self, student: User) -> list[GameChallengeOut]:
+        classrooms = self.repo.list_classrooms_for_student(student.id)
+        if not classrooms:
+            return []
+        classroom_names = {c.id: c.name for c in classrooms}
+        tenant_ids = list({c.tenant_id for c in classrooms})
+        rows = self.repo.list_game_challenges_for_tenants(tenant_ids)
+        return [
+            self._to_game_challenge_out(r, classroom_names)
+            for r in rows
+            if (r.metadata_json or {}).get("classroom_id") in classroom_names
+        ]
 
     # --- CLIL Resources ---
     def get_resources_for_lesson(

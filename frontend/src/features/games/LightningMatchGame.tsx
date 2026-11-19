@@ -26,6 +26,7 @@ import {
   SpeakButton,
 } from "../../components/motion/MotionPrimitives";
 import { fireSuccessSpark, fireVictoryCelebration } from "../../utils/confetti";
+import { unlockLocalSciDexUnit } from "../../utils/scidex";
 import {
   playCelebrationSound,
   playClickSound,
@@ -238,6 +239,10 @@ export function LightningMatchGame({ session, initialUnitNo, onRewardRecorded }:
       setIsNewBest(true);
     }
 
+    if (selectedUnit !== "all" && matchedTotal >= 6) {
+      unlockLocalSciDexUnit(selectedUnit);
+    }
+
     if (!session || totalAttempts === 0) return;
 
     const unitDiscipline: Discipline =
@@ -252,6 +257,7 @@ export function LightningMatchGame({ session, initialUnitNo, onRewardRecorded }:
         total_attempts: Math.max(1, totalAttempts),
         max_combo: maxCombo,
         discipline: unitDiscipline,
+        study_pack_unit_no: selectedUnit === "all" ? undefined : selectedUnit,
       })
       .then((res) => {
         setRewardResult(res);

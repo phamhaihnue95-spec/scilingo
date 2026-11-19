@@ -9,9 +9,11 @@ import {
   Download,
   FileSpreadsheet,
   FileText,
+  Gamepad2,
   Plus,
   Send,
   ShieldAlert,
+  Sparkles,
   UserCheck,
   Users,
 } from "lucide-react";
@@ -21,15 +23,19 @@ import type {
   AuthSession,
   Classroom,
   ClassroomAnalytics,
+  ClassroomGameChallenge,
+  ClassroomLeaderboard,
   ClilMode,
   ExamDetail,
   ExamSummary,
+  GameType,
   TT94ComplianceReport,
   TeacherResource,
   TeachingSessionLog,
 } from "../../api/types";
 import { ScienceAmbientParticles } from "../../components/motion/MotionPrimitives";
-import { playClickSound } from "../../utils/soundFx";
+import { playClickSound, playSuccessSound } from "../../utils/soundFx";
+import { ClassroomLeaderboardPanel } from "../games/ClassroomLeaderboardPanel";
 
 interface Props {
   session: AuthSession | null;
@@ -73,7 +79,19 @@ export function TeacherStudioPage({ session, onSessionChange }: Props) {
   // Classrooms & Analytics
   const [classrooms, setClassrooms] = useState<Classroom[]>([]);
   const [newClassName, setNewClassName] = useState("");
+  const [selectedClassroomId, setSelectedClassroomId] = useState<string>("");
   const [analytics, setAnalytics] = useState<ClassroomAnalytics | null>(null);
+  const [leaderboard, setLeaderboard] = useState<ClassroomLeaderboard | null>(null);
+  const [challenges, setChallenges] = useState<ClassroomGameChallenge[]>([]);
+  const [challengeTitle, setChallengeTitle] = useState(
+    "Thử thách 5 phút: Chinh phục từ vựng KHTN 8"
+  );
+  const [challengeGameType, setChallengeGameType] = useState<GameType>("lightning_match");
+  const [challengeUnitNo, setChallengeUnitNo] = useState<number>(1);
+  const [challengeTargetScore, setChallengeTargetScore] = useState<number>(120);
+  const [challengeNotes, setChallengeNotes] = useState<string>(
+    "Hoàn thành trò chơi để ghi danh lên Bảng Vàng Lớp 8A1 nhé! — Cô Phạm Thị Hải"
+  );
 
   // TT94 Logging & Report
   const [report, setReport] = useState<TT94ComplianceReport | null>(null);
@@ -95,6 +113,22 @@ export function TeacherStudioPage({ session, onSessionChange }: Props) {
     session?.user.role === "school_admin" ||
     session?.user.role === "platform_admin";
 
+  const loadClassroomDetails = async (cid: string) => {
+    setSelectedClassroomId(cid);
+    try {
+      const [anData, lbData, chList] = await Promise.all([
+        api.getClassroomAnalytics(cid),
+        api.getClassroomLeaderboard(cid),
+        api.listClassroomGameChallenges(cid),
+      ]);
+      setAnalytics(anData);
+      setLeaderboard(lbData);
+      setChallenges(chList);
+    } catch (err) {
+      setErrorMsg(err instanceof Error ? err.message : "Không tải được dữ liệu lớp.");
+    }
+  };
+
   const loadTeacherWorkspace = async () => {
     if (!isTeacherOrAdmin) return;
     try {
@@ -111,6 +145,11 @@ export function TeacherStudioPage({ session, onSessionChange }: Props) {
       if (clsList.length > 0) {
         setAssignClassroomId((prev) => prev || clsList[0].id);
         setLogClassroomId((prev) => prev || clsList[0].id);
+        const targetId =
+          selectedClassroomId && clsList.some((c) => c.id === selectedClassroomId)
+            ? selectedClassroomId
+            : clsList[0].id;
+        void loadClassroomDetails(targetId);
       }
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : "Không tải được dữ liệu LMS.");
@@ -305,6 +344,32 @@ export function TeacherStudioPage({ session, onSessionChange }: Props) {
       await loadTeacherWorkspace();
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : "Không thể tạo lớp mới.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleCreateGameChallenge = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedClassroomId || !challengeTitle.trim()) return;
+    setBusy(true);
+    setErrorMsg(null);
+    setStatusMsg(null);
+    try {
+      const created = await api.createGameChallenge(selectedClassroomId, {
+        title: challengeTitle.trim(),
+        game_type: challengeGameType,
+        unit_no: challengeGameType === "lightning_match" ? challengeUnitNo : undefined,
+        target_score: challengeTargetScore,
+        duration_minutes: 5,
+        instructions: challengeNotes.trim(),
+      });
+      playSuccessSound(2);
+      setStatusMsg(`Đã giao thử thách "${created.title}" tới lớp ${created.classroom_name}.`);
+      const chList = await api.listClassroomGameChallenges(selectedClassroomId);
+      setChallenges(chList);
+    } catch (err) {
+      setErrorMsg(err instanceof Error ? err.message : "Không giao được thử thách mini-game.");
     } finally {
       setBusy(false);
     }
@@ -885,101 +950,246 @@ export function TeacherStudioPage({ session, onSessionChange }: Props) {
             </form>
 
             <div className="space-y-2.5">
-              {classrooms.map((c) => (
-                <div
-                  key={c.id}
-                  onClick={() => void api.getClassroomAnalytics(c.id).then(setAnalytics)}
-                  className="cursor-pointer rounded-xl border border-slate-200 p-4 transition hover:border-teal-500 hover:bg-teal-50/20"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-slate-900">{c.name}</span>
-                    <span className="formula-pill rounded bg-teal-100 px-2 py-0.5 text-xs font-bold text-teal-900">
-                      {c.join_code}
-                    </span>
+              {classrooms.map((c) => {
+                const isSelected = selectedClassroomId === c.id;
+                return (
+                  <div
+                    key={c.id}
+                    onClick={() => void loadClassroomDetails(c.id)}
+                    className={`cursor-pointer rounded-xl border p-4 transition ${
+                      isSelected
+                        ? "border-indigo-500 bg-indigo-50/40 ring-2 ring-indigo-100"
+                        : "border-slate-200 hover:border-teal-500 hover:bg-teal-50/20"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-slate-900">{c.name}</span>
+                      <span className="formula-pill rounded bg-teal-100 px-2 py-0.5 text-xs font-bold text-teal-900">
+                        {c.join_code}
+                      </span>
+                    </div>
+                    <div className="mt-1.5 flex items-center justify-between text-xs text-slate-500">
+                      <span>{c.student_count} học sinh</span>
+                      <span>{c.logged_periods} tiết song ngữ đã dạy</span>
+                    </div>
                   </div>
-                  <div className="mt-1.5 flex items-center justify-between text-xs text-slate-500">
-                    <span>{c.student_count} học sinh</span>
-                    <span>{c.logged_periods} tiết song ngữ đã dạy</span>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </section>
 
-          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-3">
-            {analytics ? (
-              <div className="space-y-5">
-                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
-                  <div>
-                    <h3 className="text-lg font-bold text-slate-900">{analytics.classroom_name}</h3>
-                    <p className="text-xs text-slate-500">
-                      {analytics.student_count} học sinh · {analytics.submissions_count} bài đã nộp
+          <section className="space-y-5 lg:col-span-3">
+            {/* Formal TT 94 Analytics Card */}
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              {analytics ? (
+                <div className="space-y-5">
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                    <div>
+                      <h3 className="text-lg font-bold text-slate-900">{analytics.classroom_name}</h3>
+                      <p className="text-xs text-slate-500">
+                        {analytics.student_count} học sinh · {analytics.submissions_count} bài đã nộp
+                      </p>
+                    </div>
+                    <div className="flex gap-3 text-center text-xs">
+                      <div className="rounded-lg bg-slate-100 px-3 py-1.5">
+                        <div className="font-bold text-slate-900">{analytics.average_score}</div>
+                        <div className="text-slate-500">Điểm TB</div>
+                      </div>
+                      <div className="rounded-lg bg-teal-50 px-3 py-1.5">
+                        <div className="font-bold text-teal-900">{analytics.average_en_score}</div>
+                        <div className="text-teal-700">TB phần EN</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {analytics.submissions.length > 0 ? (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-sm">
+                        <thead>
+                          <tr className="border-b border-slate-200 text-xs uppercase text-slate-500">
+                            <th className="py-2">Học sinh</th>
+                            <th className="py-2">Đề kiểm tra</th>
+                            <th className="py-2">Điểm VI</th>
+                            <th className="py-2">Điểm EN</th>
+                            <th className="py-2">Tổng</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {analytics.submissions.map((s, idx) => (
+                            <tr key={`${s.student_id}-${idx}`}>
+                              <td className="py-2 font-medium text-slate-900">{s.student_name}</td>
+                              <td className="py-2 text-xs text-slate-600">{s.assignment_title}</td>
+                              <td className="py-2 text-xs">{s.vi_score}</td>
+                              <td className="py-2 text-xs font-semibold text-teal-800">{s.en_score}</td>
+                              <td className="py-2 font-bold text-slate-900">
+                                {s.score}/{s.max_score}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-slate-500">
+                      Chưa có học sinh nộp bài kiểm tra định kỳ nào trong lớp này.
                     </p>
-                  </div>
-                  <div className="flex gap-3 text-center text-xs">
-                    <div className="rounded-lg bg-slate-100 px-3 py-1.5">
-                      <div className="font-bold text-slate-900">{analytics.average_score}</div>
-                      <div className="text-slate-500">Điểm TB</div>
+                  )}
+
+                  {analytics.weak_questions.length > 0 && (
+                    <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                      <div className="mb-2 text-xs font-bold uppercase text-amber-900">
+                        Câu hỏi / Thuật ngữ học sinh sai nhiều nhất
+                      </div>
+                      <div className="space-y-1.5 text-xs text-slate-800">
+                        {analytics.weak_questions.map((wq) => (
+                          <div key={wq.question_id} className="flex justify-between gap-2">
+                            <span>{wq.prompt_text}</span>
+                            <span className="shrink-0 font-bold text-rose-700">
+                              Sai {wq.miss_count}/{wq.total_attempts}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                    <div className="rounded-lg bg-teal-50 px-3 py-1.5">
-                      <div className="font-bold text-teal-900">{analytics.average_en_score}</div>
-                      <div className="text-teal-700">TB phần EN</div>
-                    </div>
-                  </div>
+                  )}
+                </div>
+              ) : (
+                <div className="py-10 text-center text-sm text-slate-500">
+                  Chọn một lớp bên trái để xem bảng điểm (VI vs EN), bảng xếp hạng và giao thử thách.
+                </div>
+              )}
+            </div>
+
+            {/* Classroom Gamification Leaderboard Card */}
+            {leaderboard && (
+              <div className="rounded-2xl border border-amber-200 bg-white p-5 shadow-sm">
+                <ClassroomLeaderboardPanel leaderboard={leaderboard} compact />
+              </div>
+            )}
+
+            {/* Teacher 5-Minute Mini-Game Challenge Card */}
+            {selectedClassroomId && (
+              <div className="space-y-4 rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-50/50 via-white to-sky-50/40 p-5 shadow-sm">
+                <div className="flex items-center justify-between gap-2">
+                  <h3 className="flex items-center gap-2 text-base font-extrabold text-slate-900">
+                    <Gamepad2 className="h-5 w-5 text-indigo-600" />
+                    Giao Thử Thách Mini-Game 5 phút cho Lớp
+                  </h3>
+                  <span className="inline-flex items-center gap-1 rounded-full bg-indigo-100 px-2.5 py-0.5 text-[11px] font-bold text-indigo-800">
+                    <Sparkles className="h-3 w-3" />
+                    Tương tác Gamification
+                  </span>
                 </div>
 
-                {analytics.submissions.length > 0 ? (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm">
-                      <thead>
-                        <tr className="border-b border-slate-200 text-xs uppercase text-slate-500">
-                          <th className="py-2">Học sinh</th>
-                          <th className="py-2">Đề kiểm tra</th>
-                          <th className="py-2">Điểm VI</th>
-                          <th className="py-2">Điểm EN</th>
-                          <th className="py-2">Tổng</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {analytics.submissions.map((s, idx) => (
-                          <tr key={`${s.student_id}-${idx}`}>
-                            <td className="py-2 font-medium text-slate-900">{s.student_name}</td>
-                            <td className="py-2 text-xs text-slate-600">{s.assignment_title}</td>
-                            <td className="py-2 text-xs">{s.vi_score}</td>
-                            <td className="py-2 text-xs font-semibold text-teal-800">{s.en_score}</td>
-                            <td className="py-2 font-bold text-slate-900">
-                              {s.score}/{s.max_score}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                <form onSubmit={(e) => void handleCreateGameChallenge(e)} className="space-y-3 text-sm">
+                  <div>
+                    <label className="mb-1 block text-xs font-bold text-slate-600">
+                      Tên thử thách gửi học sinh
+                    </label>
+                    <input
+                      required
+                      value={challengeTitle}
+                      onChange={(e) => setChallengeTitle(e.target.value)}
+                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium"
+                    />
                   </div>
-                ) : (
-                  <p className="text-sm text-slate-500">Chưa có học sinh nộp bài kiểm tra nào trong lớp này.</p>
-                )}
 
-                {analytics.weak_questions.length > 0 && (
-                  <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-                    <div className="mb-2 text-xs font-bold uppercase text-amber-900">
-                      Câu hỏi / Thuật ngữ học sinh sai nhiều nhất
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <div>
+                      <label className="mb-1 block text-xs font-bold text-slate-600">
+                        Trò chơi KHTN
+                      </label>
+                      <select
+                        value={challengeGameType}
+                        onChange={(e) => setChallengeGameType(e.target.value as GameType)}
+                        className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold"
+                      >
+                        <option value="lightning_match">Chớp Nhoáng Nối Cặp 60s</option>
+                        <option value="iupac_lab">Phòng Pha Chế IUPAC</option>
+                        <option value="sequence_lab">Tháp Sắp Xếp Quy Trình</option>
+                      </select>
                     </div>
-                    <div className="space-y-1.5 text-xs text-slate-800">
-                      {analytics.weak_questions.map((wq) => (
-                        <div key={wq.question_id} className="flex justify-between gap-2">
-                          <span>{wq.prompt_text}</span>
-                          <span className="shrink-0 font-bold text-rose-700">
-                            Sai {wq.miss_count}/{wq.total_attempts}
-                          </span>
-                        </div>
-                      ))}
+                    <div>
+                      <label className="mb-1 block text-xs font-bold text-slate-600">
+                        Chuyên đề Unit (1–16)
+                      </label>
+                      <input
+                        type="number"
+                        min={1}
+                        max={16}
+                        disabled={challengeGameType !== "lightning_match"}
+                        value={challengeUnitNo}
+                        onChange={(e) => setChallengeUnitNo(Number(e.target.value))}
+                        className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold disabled:bg-slate-100"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-xs font-bold text-slate-600">
+                        Mục tiêu điểm
+                      </label>
+                      <input
+                        type="number"
+                        min={20}
+                        max={2000}
+                        step={10}
+                        value={challengeTargetScore}
+                        onChange={(e) => setChallengeTargetScore(Number(e.target.value))}
+                        className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold"
+                      />
                     </div>
                   </div>
+
+                  <div>
+                    <label className="mb-1 block text-xs font-bold text-slate-600">
+                      Lời nhắn của giáo viên
+                    </label>
+                    <input
+                      value={challengeNotes}
+                      onChange={(e) => setChallengeNotes(e.target.value)}
+                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs"
+                    />
+                  </div>
+
+                  <div className="flex justify-end">
+                    <button
+                      type="submit"
+                      disabled={busy}
+                      className="btn-tactile inline-flex items-center gap-2 rounded-xl border-indigo-900 bg-gradient-to-r from-indigo-600 to-fuchsia-600 px-4 py-2 text-xs font-extrabold text-white shadow disabled:opacity-50"
+                    >
+                      <Send className="h-3.5 w-3.5" />
+                      Giao Thử Thách cho Lớp
+                    </button>
+                  </div>
+                </form>
+
+                {challenges.length > 0 && (
+                  <div className="space-y-2 border-t border-indigo-100 pt-3">
+                    <div className="text-xs font-extrabold uppercase text-slate-500">
+                      Thử thách đang mở ({challenges.length})
+                    </div>
+                    {challenges.map((ch) => (
+                      <div
+                        key={ch.id}
+                        className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs"
+                      >
+                        <div>
+                          <div className="font-bold text-slate-900">{ch.title}</div>
+                          <div className="text-slate-500">
+                            {ch.game_type === "lightning_match"
+                              ? `Nối Cặp 60s · Unit ${ch.unit_no ?? 1}`
+                              : ch.game_type === "iupac_lab"
+                                ? "Phòng Pha Chế IUPAC"
+                                : "Tháp Sắp Xếp"}{" "}
+                            · Mục tiêu {ch.target_score}đ · {ch.duration_minutes} phút
+                          </div>
+                        </div>
+                        <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 font-bold text-emerald-800">
+                          Đã gửi lớp
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 )}
-              </div>
-            ) : (
-              <div className="py-12 text-center text-sm text-slate-500">
-                Chọn một lớp bên trái để xem bảng điểm (VI vs EN) và thống kê câu sai nhiều.
               </div>
             )}
           </section>

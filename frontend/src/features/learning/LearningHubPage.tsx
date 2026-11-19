@@ -18,6 +18,10 @@ interface Props {
   onSessionChange: (session: AuthSession) => void;
   initialTab?: LearningSubTab;
   initialLessonNo?: number;
+  onLaunchGameChallenge?: (
+    game: "lightning" | "iupac" | "sequence",
+    unitNo?: number
+  ) => void;
 }
 
 export function LearningHubPage({
@@ -25,6 +29,7 @@ export function LearningHubPage({
   onSessionChange,
   initialTab = "srs",
   initialLessonNo,
+  onLaunchGameChallenge,
 }: Props) {
   const [subTab, setSubTab] = useState<LearningSubTab>(initialTab);
   const [gamification, setGamification] = useState<GamificationSummary | null>(null);
@@ -215,7 +220,7 @@ export function LearningHubPage({
 
       {subTab === "assignments" &&
         (session ? (
-          <StudentAssignmentsPanel />
+          <StudentAssignmentsPanel onLaunchGameChallenge={onLaunchGameChallenge} />
         ) : (
           <div className="rounded-xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500">
             Vui lòng nhấn <strong>Dùng thử ngay (Học sinh An)</strong> ở phía trên để vào lớp học bằng mã tham gia và nộp bài kiểm tra do giáo viên giao.

@@ -1,19 +1,41 @@
 import { useCallback, useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Award, Flame, FlaskConical, Gamepad2, Trophy, UserCheck, Zap } from "lucide-react";
+import {
+  Award,
+  Flame,
+  FlaskConical,
+  Gamepad2,
+  KeyRound,
+  ListOrdered,
+  Sparkles,
+  Trophy,
+  UserCheck,
+  Zap,
+} from "lucide-react";
 
 import { api, saveAuthTokens } from "../../api/client";
-import type { AuthSession, GamificationSummary } from "../../api/types";
+import type {
+  AuthSession,
+  Classroom,
+  ClassroomLeaderboard,
+  GamificationSummary,
+} from "../../api/types";
 import { ScienceAmbientParticles } from "../../components/motion/MotionPrimitives";
 import { playClickSound } from "../../utils/soundFx";
+import { ClassroomLeaderboardPanel } from "./ClassroomLeaderboardPanel";
 import { IupacLabGame } from "./IupacLabGame";
 import { LightningMatchGame } from "./LightningMatchGame";
+import { SciDexAlbumView } from "./SciDexAlbumView";
+import { SequenceLabGame } from "./SequenceLabGame";
+
+export type ArenaTab = "lightning" | "iupac" | "sequence" | "scidex" | "leaderboard";
 
 interface Props {
   session: AuthSession | null;
   onSessionChange: (session: AuthSession) => void;
-  initialGame?: "lightning" | "iupac";
+  initialGame?: ArenaTab;
   initialUnitNo?: number;
+  onOpenStudyPackUnit?: (unitNo: number) => void;
 }
 
 export function GameArenaPage({
@@ -21,14 +43,28 @@ export function GameArenaPage({
   onSessionChange,
   initialGame = "lightning",
   initialUnitNo,
+  onOpenStudyPackUnit,
 }: Props) {
-  const [activeGame, setActiveGame] = useState<"lightning" | "iupac">(initialGame);
+  const [activeGame, setActiveGame] = useState<ArenaTab>(initialGame);
+  const [unitOverride, setUnitOverride] = useState<number | undefined>(initialUnitNo);
   const [gamification, setGamification] = useState<GamificationSummary | null>(null);
   const [loggingInDemo, setLoggingInDemo] = useState(false);
+
+  // Classroom leaderboard state
+  const [classrooms, setClassrooms] = useState<Classroom[]>([]);
+  const [selectedClassroomId, setSelectedClassroomId] = useState<string>("");
+  const [leaderboard, setLeaderboard] = useState<ClassroomLeaderboard | null>(null);
+  const [lbLoading, setLbLoading] = useState(false);
+  const [joinCode, setJoinCode] = useState("");
+  const [lbError, setLbError] = useState<string | null>(null);
 
   useEffect(() => {
     setActiveGame(initialGame);
   }, [initialGame]);
+
+  useEffect(() => {
+    setUnitOverride(initialUnitNo);
+  }, [initialUnitNo]);
 
   const refreshGamification = useCallback(() => {
     if (!session) {
@@ -45,6 +81,57 @@ export function GameArenaPage({
     refreshGamification();
   }, [refreshGamification]);
 
+  const loadLeaderboardClassrooms = useCallback(() => {
+    if (!session) {
+      setClassrooms([]);
+      setSelectedClassroomId("");
+      setLeaderboard(null);
+      return;
+    }
+    const isStaff = session.user.role !== "student";
+    const fetcher = isStaff ? api.listClassrooms() : api.listMyClassrooms();
+    fetcher
+      .then((list) => {
+        setClassrooms(list);
+        setSelectedClassroomId((prev) =>
+          list.some((c) => c.id === prev) ? prev : (list[0]?.id ?? "")
+        );
+        setLbError(null);
+      })
+      .catch((err: Error) => setLbError(err.message));
+  }, [session]);
+
+  useEffect(() => {
+    if (activeGame === "leaderboard") {
+      loadLeaderboardClassrooms();
+    }
+  }, [activeGame, loadLeaderboardClassrooms]);
+
+  useEffect(() => {
+    if (activeGame !== "leaderboard" || !session || !selectedClassroomId) {
+      return;
+    }
+    let active = true;
+    setLbLoading(true);
+    api
+      .getClassroomLeaderboard(selectedClassroomId)
+      .then((data) => {
+        if (active) {
+          setLeaderboard(data);
+          setLbError(null);
+        }
+      })
+      .catch((err: Error) => {
+        if (active) setLbError(err.message);
+      })
+      .finally(() => {
+        if (active) setLbLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [activeGame, session, selectedClassroomId]);
+
   const handleQuickStudentLogin = async () => {
     setLoggingInDemo(true);
     try {
@@ -56,6 +143,20 @@ export function GameArenaPage({
       onSessionChange(next);
     } finally {
       setLoggingInDemo(false);
+    }
+  };
+
+  const handleJoinClassForLeaderboard = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!joinCode.trim()) return;
+    setLbError(null);
+    try {
+      const joined = await api.joinClassroom(joinCode.trim());
+      setJoinCode("");
+      await loadLeaderboardClassrooms();
+      setSelectedClassroomId(joined.id);
+    } catch (err) {
+      setLbError(err instanceof Error ? err.message : "Không thể tham gia lớp.");
     }
   };
 
@@ -77,8 +178,8 @@ export function GameArenaPage({
               Đấu Trường Trò Chơi KHTN 8
             </h1>
             <p className="max-w-2xl text-sm text-amber-50">
-              Vừa chơi vừa chinh phục 920 thuật ngữ IPA, công thức Hóa học chuẩn IUPAC (TT 32/2018)
-              và đơn vị Vật lí SI. Thu thập XP, nâng Level và mở khóa huy hiệu hiếm!
+              Vừa chơi vừa chinh phục 920 thuật ngữ IPA, công thức Hóa học chuẩn IUPAC (TT 32/2018),
+              dây chuyền quy trình KHTN, sưu tầm 16 huy hiệu 3D SciDex và đua Top Bảng Vàng Lớp!
             </p>
           </div>
 
@@ -120,8 +221,11 @@ export function GameArenaPage({
       <div className="flex flex-wrap gap-2">
         {(
           [
-            { id: "lightning" as const, label: "Chớp Nhoáng Nối Cặp 60s", icon: Zap },
-            { id: "iupac" as const, label: "Phòng Pha Chế & Bắt Lỗi IUPAC", icon: FlaskConical },
+            { id: "lightning" as const, label: "Chớp Nhoáng 60s", icon: Zap },
+            { id: "iupac" as const, label: "Phòng Pha Chế IUPAC", icon: FlaskConical },
+            { id: "sequence" as const, label: "Tháp Sắp Xếp", icon: ListOrdered },
+            { id: "scidex" as const, label: "Sổ Tay SciDex 16", icon: Sparkles },
+            { id: "leaderboard" as const, label: "Bảng Vàng Lớp", icon: Trophy },
           ] as const
         ).map((tab) => {
           const Icon = tab.icon;
@@ -154,7 +258,7 @@ export function GameArenaPage({
         })}
       </div>
 
-      {/* Active Mini-Game */}
+      {/* Active Mode Content */}
       <AnimatePresence mode="wait">
         <motion.div
           key={activeGame}
@@ -163,14 +267,114 @@ export function GameArenaPage({
           exit={{ opacity: 0, y: -8 }}
           transition={{ duration: 0.2 }}
         >
-          {activeGame === "lightning" ? (
+          {activeGame === "lightning" && (
             <LightningMatchGame
               session={session}
-              initialUnitNo={initialUnitNo}
+              initialUnitNo={unitOverride}
               onRewardRecorded={refreshGamification}
             />
-          ) : (
+          )}
+
+          {activeGame === "iupac" && (
             <IupacLabGame session={session} onRewardRecorded={refreshGamification} />
+          )}
+
+          {activeGame === "sequence" && (
+            <SequenceLabGame session={session} onRewardRecorded={refreshGamification} />
+          )}
+
+          {activeGame === "scidex" && (
+            <SciDexAlbumView
+              gamification={gamification}
+              onPlayUnitLightning={(unitNo) => {
+                setUnitOverride(unitNo);
+                setActiveGame("lightning");
+              }}
+              onOpenStudyPackUnit={onOpenStudyPackUnit}
+            />
+          )}
+
+          {activeGame === "leaderboard" && (
+            <div className="space-y-4 rounded-3xl border border-indigo-200 bg-white/95 p-5 shadow-sm sm:p-6">
+              {!session ? (
+                <div className="py-8 text-center">
+                  <Trophy className="mx-auto h-10 w-10 text-amber-500" />
+                  <h2 className="mt-2 text-lg font-extrabold text-slate-900">
+                    Đăng nhập để xem Bảng Vàng Thi Đua Lớp 8A1
+                  </h2>
+                  <p className="mt-1 text-xs text-slate-600">
+                    Bảng xếp hạng được cô lập riêng theo từng lớp học &amp; trường để đảm bảo an toàn dữ liệu học sinh THCS.
+                  </p>
+                  <button
+                    type="button"
+                    disabled={loggingInDemo}
+                    onClick={() => void handleQuickStudentLogin()}
+                    className="btn-tactile mt-4 inline-flex items-center gap-2 rounded-2xl border-indigo-900 bg-indigo-600 px-5 py-2.5 text-sm font-extrabold text-white shadow"
+                  >
+                    <UserCheck className="h-4 w-4" />
+                    {loggingInDemo ? "Đang đăng nhập..." : "Dùng thử Học sinh An (Lớp 8A1)"}
+                  </button>
+                </div>
+              ) : (
+                <>
+                  {classrooms.length > 0 && (
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                      <span className="text-xs font-extrabold uppercase text-slate-500">
+                        Chọn lớp đang tham gia
+                      </span>
+                      <select
+                        value={selectedClassroomId}
+                        onChange={(e) => setSelectedClassroomId(e.target.value)}
+                        className="rounded-xl border border-indigo-200 bg-indigo-50/50 px-3 py-1.5 text-sm font-bold text-slate-900"
+                      >
+                        {classrooms.map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {c.name} ({c.join_code})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {classrooms.length === 0 && !lbError && (
+                    <form
+                      onSubmit={(e) => void handleJoinClassForLeaderboard(e)}
+                      className="flex flex-col gap-3 rounded-2xl border border-sky-200 bg-sky-50/60 p-4 sm:flex-row sm:items-center"
+                    >
+                      <div className="flex items-center gap-2 text-xs font-extrabold text-slate-800">
+                        <KeyRound className="h-4 w-4 text-indigo-600" />
+                        Bạn chưa vào lớp nào. Nhập mã lớp (vd: KHTN8-CGB8):
+                      </div>
+                      <input
+                        type="text"
+                        value={joinCode}
+                        onChange={(e) => setJoinCode(e.target.value)}
+                        placeholder="KHTN8-CGB8"
+                        className="flex-1 rounded-xl border border-sky-200 bg-white px-3 py-1.5 text-sm uppercase"
+                      />
+                      <button
+                        type="submit"
+                        className="rounded-xl bg-indigo-600 px-4 py-1.5 text-xs font-extrabold text-white"
+                      >
+                        Vào lớp
+                      </button>
+                    </form>
+                  )}
+
+                  {lbError && (
+                    <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs text-rose-700">
+                      {lbError}
+                    </div>
+                  )}
+
+                  <ClassroomLeaderboardPanel
+                    leaderboard={leaderboard}
+                    currentUserId={session.user.id}
+                    loading={lbLoading}
+                  />
+                </>
+              )}
+            </div>
           )}
         </motion.div>
       </AnimatePresence>

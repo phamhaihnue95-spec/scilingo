@@ -19,6 +19,7 @@ import {
 
 import { api } from "../../api/client";
 import type {
+  AuthSession,
   Discipline,
   PracticeMode,
   StudyPackItem,
@@ -34,6 +35,7 @@ import {
   SpeakButton,
 } from "../../components/motion/MotionPrimitives";
 import { fireSuccessSpark, fireVictoryCelebration } from "../../utils/confetti";
+import { unlockLocalSciDexUnit } from "../../utils/scidex";
 import {
   playCelebrationSound,
   playClickSound,
@@ -42,6 +44,8 @@ import {
 import { DisciplineBadge } from "../curriculum/DisciplineBadge";
 
 interface Props {
+  session?: AuthSession | null;
+  initialUnitNo?: number;
   onSelectLesson: (lessonNo: number) => void;
   onLaunchLightningUnit?: (unitNo: number) => void;
 }
@@ -67,9 +71,14 @@ const DISC_CARD_STYLE: Record<Discipline, { active: string; chip: string }> = {
   },
 };
 
-export function StudyPack16Page({ onSelectLesson, onLaunchLightningUnit }: Props) {
+export function StudyPack16Page({
+  session,
+  initialUnitNo,
+  onSelectLesson,
+  onLaunchLightningUnit,
+}: Props) {
   const [overview, setOverview] = useState<StudyPackOverview | null>(null);
-  const [activeUnitNo, setActiveUnitNo] = useState<number>(1);
+  const [activeUnitNo, setActiveUnitNo] = useState<number>(initialUnitNo ?? 1);
   const [unitDetail, setUnitDetail] = useState<StudyPackUnitDetail | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<StudyPackItem[] | null>(null);
@@ -88,13 +97,21 @@ export function StudyPack16Page({ onSelectLesson, onLaunchLightningUnit }: Props
   const [masteredKeys, setMasteredKeys] = useState<Record<string, boolean>>({});
 
   // Quiz state
-  const [quizUnits, setQuizUnits] = useState<number[]>([1]);
+  const [quizUnits, setQuizUnits] = useState<number[]>([initialUnitNo ?? 1]);
   const [quizMode, setQuizMode] = useState<PracticeMode>("quiz_50");
   const [quizCount, setQuizCount] = useState<number>(10);
   const [quizData, setQuizData] = useState<StudyPackQuiz | null>(null);
   const [quizAnswers, setQuizAnswers] = useState<Record<number, number>>({});
   const [quizSubmitted, setQuizSubmitted] = useState(false);
   const [quizBusy, setQuizBusy] = useState(false);
+  const [unlockedSciDexUnit, setUnlockedSciDexUnit] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (initialUnitNo !== undefined) {
+      setActiveUnitNo(initialUnitNo);
+      setQuizUnits([initialUnitNo]);
+    }
+  }, [initialUnitNo]);
 
   useEffect(() => {
     setLoading(true);
@@ -190,9 +207,11 @@ export function StudyPack16Page({ onSelectLesson, onLaunchLightningUnit }: Props
   const handleSubmitStudyQuiz = () => {
     if (!quizData) return;
     let totalScore = 0;
+    let correctCount = 0;
     for (const q of quizData.questions) {
       if (quizAnswers[q.index] === q.correct_index) {
         totalScore += q.points;
+        correctCount += 1;
       }
     }
     const rounded = Math.round(totalScore * 100) / 100;
@@ -200,6 +219,27 @@ export function StudyPack16Page({ onSelectLesson, onLaunchLightningUnit }: Props
     if (rounded >= 7) {
       fireVictoryCelebration();
       playCelebrationSound();
+      if (quizData.unit_nos.length === 1) {
+        const uNo = quizData.unit_nos[0];
+        unlockLocalSciDexUnit(uNo);
+        setUnlockedSciDexUnit(uNo);
+        if (session) {
+          const disc =
+            overview?.units.find((u) => u.unit_no === uNo)?.discipline ??
+            unitDetail?.unit.discipline ??
+            "physics";
+          void api
+            .recordGameReward({
+              game_type: "lightning_match",
+              correct_count: correctCount,
+              total_attempts: Math.max(1, quizData.questions.length),
+              max_combo: 1,
+              discipline: disc,
+              study_pack_unit_no: uNo,
+            })
+            .catch(() => undefined);
+        }
+      }
     } else {
       playSuccessSound(1);
     }
@@ -218,6 +258,7 @@ export function StudyPack16Page({ onSelectLesson, onLaunchLightningUnit }: Props
     setQuizBusy(true);
     setQuizSubmitted(false);
     setQuizAnswers({});
+    setUnlockedSciDexUnit(null);
     try {
       const unitsToUse = quizUnits.length > 0 ? quizUnits : [activeUnitNo];
       const generated = await api.generateStudyPackQuiz({
@@ -795,6 +836,12 @@ export function StudyPack16Page({ onSelectLesson, onLaunchLightningUnit }: Props
                           Anh:{" "}
                           <strong className="text-indigo-700">{quizScoreSummary.enScore}đ</strong>
                         </div>
+                        {unlockedSciDexUnit !== null && (
+                          <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-amber-300 px-3 py-1 text-xs font-extrabold text-amber-950 shadow-sm">
+                            <Sparkles className="h-3.5 w-3.5" />
+                            Đã mở khóa Huy hiệu 3D SciDex: Unit {unlockedSciDexUnit}!
+                          </div>
+                        )}
                       </div>
                       <motion.button
                         type="button"

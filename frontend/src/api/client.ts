@@ -4,11 +4,14 @@ import type {
   AuthSession,
   Classroom,
   ClassroomAnalytics,
+  ClassroomGameChallenge,
+  ClassroomLeaderboard,
   ClilMode,
   CurriculumTreeResponse,
   Entitlements,
   ExamDetail,
   ExamSummary,
+  GameChallengeCreatePayload,
   GameRewardPayload,
   GameRewardResult,
   GamificationSummary,
@@ -262,6 +265,39 @@ export const api = {
     return request<ClassroomAnalytics>(
       `/lms/classrooms/${encodeURIComponent(classroomId)}/analytics`
     );
+  },
+
+  listMyClassrooms(): Promise<Classroom[]> {
+    return request<Classroom[]>("/lms/my-classrooms");
+  },
+
+  getClassroomLeaderboard(classroomId: string): Promise<ClassroomLeaderboard> {
+    return request<ClassroomLeaderboard>(
+      `/lms/classrooms/${encodeURIComponent(classroomId)}/leaderboard`
+    );
+  },
+
+  createGameChallenge(
+    classroomId: string,
+    payload: GameChallengeCreatePayload
+  ): Promise<ClassroomGameChallenge> {
+    return request<ClassroomGameChallenge>(
+      `/lms/classrooms/${encodeURIComponent(classroomId)}/game-challenges`,
+      {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }
+    );
+  },
+
+  listClassroomGameChallenges(classroomId: string): Promise<ClassroomGameChallenge[]> {
+    return request<ClassroomGameChallenge[]>(
+      `/lms/classrooms/${encodeURIComponent(classroomId)}/game-challenges`
+    );
+  },
+
+  listMyGameChallenges(): Promise<ClassroomGameChallenge[]> {
+    return request<ClassroomGameChallenge[]>("/lms/my-game-challenges");
   },
 
   getLessonResources(lessonNo: number): Promise<TeacherResource[]> {

@@ -16,7 +16,13 @@ from app.core.database import Base, get_engine, get_session_factory
 from app.core.security import hash_password
 from app.modules.curriculum.models import Chapter, Lesson, LessonTerm, Term
 from app.modules.identity_billing.models import Subscription, Tenant, User
-from app.modules.lms.models import Classroom, ClassroomMember, TeachingSessionLog
+from app.modules.learning.models import StudentGamification
+from app.modules.lms.models import (
+    Classroom,
+    ClassroomMember,
+    TeacherResource,
+    TeachingSessionLog,
+)
 
 
 def _slugify(value: str) -> str:
@@ -210,6 +216,8 @@ def seed_demo_tenants(db: Session) -> None:
 
     demo_accounts = [
         (cgb.id, "an.hs8@demo.scilingo.vn", "Student123!", "Nguyễn Minh An", "student", 8),
+        (cgb.id, "linh.hs8@demo.scilingo.vn", "Student123!", "Trần Khánh Linh", "student", 8),
+        (cgb.id, "khoi.hs8@demo.scilingo.vn", "Student123!", "Lê Minh Khôi", "student", 8),
         (cgb.id, "hai.gv@demo.scilingo.vn", "Teacher123!", "Phạm Thị Hải", "teacher", None),
         (
             cgb.id,
@@ -242,7 +250,6 @@ def seed_demo_tenants(db: Session) -> None:
 def seed_demo_lms(db: Session) -> None:
     """Create a demo KHTN 8 CLIL classroom and starter session logs idempotently."""
     teacher = db.scalar(select(User).where(User.email == "hai.gv@demo.scilingo.vn"))
-    student = db.scalar(select(User).where(User.email == "an.hs8@demo.scilingo.vn"))
     if teacher is None:
         return
 
@@ -252,50 +259,142 @@ def seed_demo_lms(db: Session) -> None:
         legacy_cls = db.scalar(select(Classroom).where(Classroom.join_code == "KHTN8-CVA8"))
         if legacy_cls is not None:
             legacy_cls.join_code = demo_code
-            db.commit()
-            return
-        classroom = Classroom(
-            tenant_id=teacher.tenant_id,
-            teacher_id=teacher.id,
-            name="8A1 - KHTN Song ngữ (Thí điểm TT94)",
-            grade=8,
-            academic_year="2026-2027",
-            join_code=demo_code,
-            is_tt94_pilot_class=True,
-        )
-        db.add(classroom)
-        db.flush()
+            db.flush()
+            classroom = legacy_cls
+        else:
+            classroom = Classroom(
+                tenant_id=teacher.tenant_id,
+                teacher_id=teacher.id,
+                name="8A1 - KHTN Song ngữ (Thí điểm TT94)",
+                grade=8,
+                academic_year="2026-2027",
+                join_code=demo_code,
+                is_tt94_pilot_class=True,
+            )
+            db.add(classroom)
+            db.flush()
+            db.add_all(
+                [
+                    TeachingSessionLog(
+                        tenant_id=teacher.tenant_id,
+                        classroom_id=classroom.id,
+                        teacher_id=teacher.id,
+                        lesson_no=8,
+                        taught_date=date(2026, 10, 12),
+                        periods_count=2,
+                        clil_mode="bilingual_10",
+                        english_minutes=30,
+                        notes=(
+                            "Giới thiệu danh pháp Acid (HCl, H₂SO₄) chuẩn IUPAC "
+                            "và liên hệ Bài 32."
+                        ),
+                    ),
+                    TeachingSessionLog(
+                        tenant_id=teacher.tenant_id,
+                        classroom_id=classroom.id,
+                        teacher_id=teacher.id,
+                        lesson_no=15,
+                        taught_date=date(2026, 10, 26),
+                        periods_count=2,
+                        clil_mode="bilingual_50",
+                        english_minutes=45,
+                        notes="Thực hành tính Pressure (Pa = N/m²) bằng tiếng Anh 50%.",
+                    ),
+                ]
+            )
 
-        if student is not None:
-            db.add(ClassroomMember(classroom_id=classroom.id, student_id=student.id))
-
-        db.add_all(
-            [
-                TeachingSessionLog(
-                    tenant_id=teacher.tenant_id,
-                    classroom_id=classroom.id,
-                    teacher_id=teacher.id,
-                    lesson_no=8,
-                    taught_date=date(2026, 10, 12),
-                    periods_count=2,
-                    clil_mode="bilingual_10",
-                    english_minutes=30,
-                    notes="Giới thiệu danh pháp Acid (HCl, H₂SO₄) chuẩn IUPAC và liên hệ Bài 32.",
-                ),
-                TeachingSessionLog(
-                    tenant_id=teacher.tenant_id,
-                    classroom_id=classroom.id,
-                    teacher_id=teacher.id,
-                    lesson_no=15,
-                    taught_date=date(2026, 10, 26),
-                    periods_count=2,
-                    clil_mode="bilingual_50",
-                    english_minutes=45,
-                    notes="Thực hành tính Pressure (Pa = N/m²) bằng tiếng Anh 50%.",
-                ),
-            ]
+    # Ensure demo students are enrolled in 8A1 idempotently
+    for email in (
+        "an.hs8@demo.scilingo.vn",
+        "linh.hs8@demo.scilingo.vn",
+        "khoi.hs8@demo.scilingo.vn",
+    ):
+        stu = db.scalar(select(User).where(User.email == email))
+        if stu is None:
+            continue
+        existing_member = db.scalar(
+            select(ClassroomMember).where(
+                ClassroomMember.classroom_id == classroom.id,
+                ClassroomMember.student_id == stu.id,
+            )
         )
-        db.commit()
+        if existing_member is None:
+            db.add(ClassroomMember(classroom_id=classroom.id, student_id=stu.id))
+
+    # Starter leaderboard profiles ONLY for classmates Linh & Khoi
+    # (Keep an.hs8 clean for SRS/quiz baseline tests)
+    classmate_profiles = [
+        (
+            "linh.hs8@demo.scilingo.vn",
+            260,
+            4,
+            5,
+            ["First Spark", "Tia Chớp Nối Cặp", "SciDex: Unit 1", "SciDex: Unit 7"],
+        ),
+        (
+            "khoi.hs8@demo.scilingo.vn",
+            190,
+            3,
+            4,
+            ["First Spark", "Hiệp Sĩ IUPAC", "SciDex: Unit 2"],
+        ),
+    ]
+    for email, xp, cur_streak, max_streak, badges in classmate_profiles:
+        stu = db.scalar(select(User).where(User.email == email))
+        if stu is None:
+            continue
+        existing_gamif = db.scalar(
+            select(StudentGamification).where(StudentGamification.student_id == stu.id)
+        )
+        if existing_gamif is None:
+            db.add(
+                StudentGamification(
+                    student_id=stu.id,
+                    total_xp=xp,
+                    current_streak=cur_streak,
+                    longest_streak=max_streak,
+                    badges_json=badges,
+                    discipline_xp_json={
+                        "general_lab": 40,
+                        "chemistry": 80,
+                        "physics": 70,
+                        "biology": xp - 190,
+                    },
+                )
+            )
+
+    # Ensure 1 starter 5-minute mini-game challenge exists for 8A1
+    existing_challenge = db.scalar(
+        select(TeacherResource).where(
+            TeacherResource.tenant_id == teacher.tenant_id,
+            TeacherResource.resource_type == "game_challenge",
+        )
+    )
+    if existing_challenge is None:
+        db.add(
+            TeacherResource(
+                lesson_no=1,
+                tenant_id=teacher.tenant_id,
+                title="Thử thách 5 phút: Nối nhanh 920 từ vựng Unit 1 (Astronomy)",
+                resource_type="game_challenge",
+                clil_mode="bilingual_50",
+                content_markdown=(
+                    "Các em hoàn thành tối thiểu 120 điểm ở Chế độ Nối Cặp 60s (Unit 1) "
+                    "để mở khóa huy hiệu 3D SciDex Unit 1 nhé! — Cô Phạm Thị Hải"
+                ),
+                metadata_json={
+                    "classroom_id": classroom.id,
+                    "game_type": "lightning_match",
+                    "unit_no": 1,
+                    "target_score": 120,
+                    "duration_minutes": 5,
+                    "created_by_name": teacher.full_name,
+                },
+                is_official=False,
+            )
+        )
+
+    db.commit()
 
 
 def seed_all(db: Session, data_dir: Path | None = None) -> tuple[int, int, int]:

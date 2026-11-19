@@ -103,3 +103,38 @@ def evaluate_badges(
 
     existing_set = set(existing_badges)
     return list(dict.fromkeys(badge for badge in candidates if badge not in existing_set))
+
+
+def compute_level(total_xp: int) -> int:
+    """Compute student level (1-based, 100 XP per level)."""
+    return max(1, (max(0, total_xp) // 100) + 1)
+
+
+def evaluate_game_badges(
+    *,
+    game_type: str,
+    correct_count: int,
+    total_attempts: int,
+    max_combo: int,
+    study_pack_unit_no: int | None = None,
+) -> list[str]:
+    """Evaluate mini-game milestone badges and SciDex 16-Unit collectibles."""
+    accuracy = min(1.0, correct_count / max(1, total_attempts))
+    badges: list[str] = []
+
+    if game_type == "lightning_match" and (correct_count >= 10 or max_combo >= 5):
+        badges.append("Tia Chớp Nối Cặp")
+    if game_type == "iupac_lab" and correct_count >= 8 and accuracy >= 0.75:
+        badges.append("Hiệp Sĩ IUPAC")
+    if game_type == "sequence_lab" and correct_count >= 5 and accuracy >= 0.75:
+        badges.append("Bậc Thầy Hệ Thống")
+    if max_combo >= 5:
+        badges.append("Siêu Combo Khoa Học")
+    if (
+        study_pack_unit_no is not None
+        and 1 <= study_pack_unit_no <= 16
+        and (correct_count >= 6 or (total_attempts > 0 and accuracy >= 0.70))
+    ):
+        badges.append(f"SciDex: Unit {study_pack_unit_no}")
+
+    return list(dict.fromkeys(badges))

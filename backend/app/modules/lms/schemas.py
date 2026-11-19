@@ -318,3 +318,58 @@ class TT94ComplianceReportOut(BaseModel):
     level_label: str
     next_level_gaps: list[str]
     classrooms: list[ClassroomTT94MetricsOut]
+
+
+GameChallengeType = Literal["lightning_match", "iupac_lab", "sequence_lab"]
+
+
+class LeaderboardEntryOut(BaseModel):
+    """Student row on a classroom gamification leaderboard."""
+
+    rank: int
+    student_id: str
+    student_name: str
+    total_xp: int
+    level: int
+    current_streak: int
+    badges_count: int
+    scidex_count: int
+    badges: list[str]
+    avg_assignment_score: float | None = None
+
+
+class ClassroomLeaderboardOut(BaseModel):
+    """Classroom-scoped gamification leaderboard isolated to members/teachers."""
+
+    classroom_id: str
+    classroom_name: str
+    join_code: str
+    total_students: int
+    entries: list[LeaderboardEntryOut]
+
+
+class GameChallengeCreateRequest(BaseModel):
+    """Teacher-assigned 5-minute mini-game challenge for a classroom."""
+
+    title: str = Field(min_length=3, max_length=200)
+    game_type: GameChallengeType
+    unit_no: int | None = Field(default=None, ge=1, le=16)
+    target_score: int = Field(default=80, ge=10, le=5000)
+    duration_minutes: int = Field(default=5, ge=1, le=30)
+    instructions: str = Field(default="", max_length=600)
+
+
+class GameChallengeOut(BaseModel):
+    """Serialized classroom mini-game challenge."""
+
+    id: str
+    classroom_id: str
+    classroom_name: str
+    title: str
+    game_type: GameChallengeType
+    unit_no: int | None = None
+    target_score: int
+    duration_minutes: int
+    instructions: str
+    created_by_name: str
+    created_at: datetime

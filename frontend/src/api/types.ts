@@ -542,7 +542,7 @@ export interface StudyPackQuiz {
   questions: StudyPackQuizQuestion[];
 }
 
-export type GameType = "lightning_match" | "iupac_lab";
+export type GameType = "lightning_match" | "iupac_lab" | "sequence_lab";
 
 export interface GameRewardPayload {
   game_type: GameType;
@@ -550,6 +550,7 @@ export interface GameRewardPayload {
   total_attempts: number;
   max_combo: number;
   discipline: Discipline;
+  study_pack_unit_no?: number;
 }
 
 export interface GameRewardResult {
@@ -559,4 +560,48 @@ export interface GameRewardResult {
   level: number;
   current_streak: number;
   newly_unlocked_badges: string[];
+}
+
+export interface LeaderboardEntry {
+  rank: number;
+  student_id: string;
+  student_name: string;
+  total_xp: number;
+  level: number;
+  current_streak: number;
+  badges_count: number;
+  scidex_count: number;
+  badges: string[];
+  avg_assignment_score: number | null;
+}
+
+export interface ClassroomLeaderboard {
+  classroom_id: string;
+  classroom_name: string;
+  join_code: string;
+  total_students: number;
+  entries: LeaderboardEntry[];
+}
+
+export interface GameChallengeCreatePayload {
+  title: string;
+  game_type: GameType;
+  unit_no?: number | null;
+  target_score?: number;
+  duration_minutes?: number;
+  instructions?: string;
+}
+
+export interface ClassroomGameChallenge {
+  id: string;
+  classroom_id: string;
+  classroom_name: string;
+  title: string;
+  game_type: GameType;
+  unit_no: number | null;
+  target_score: number;
+  duration_minutes: number;
+  instructions: string;
+  created_by_name: string;
+  created_at: string;
 }

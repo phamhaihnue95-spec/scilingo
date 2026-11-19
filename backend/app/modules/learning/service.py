@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from typing import Any
 
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
@@ -31,7 +32,13 @@ from app.modules.learning.schemas import (
     SRSReviewRequest,
     SRSReviewResultOut,
 )
-from app.modules.learning.srs import compute_sm2, evaluate_badges, update_streak
+from app.modules.learning.srs import (
+    compute_level,
+    compute_sm2,
+    evaluate_badges,
+    evaluate_game_badges,
+    update_streak,
+)
 
 
 def _as_utc(dt: datetime) -> datetime:
@@ -477,14 +484,13 @@ class LearningService:
                 80, 15 + payload.correct_count * 3 + min(payload.max_combo, 10) * 2
             )
 
-        accuracy = min(1.0, payload.correct_count / payload.total_attempts)
-        game_badges: list[str] = []
-        if payload.game_type == "lightning_match" and (
-            payload.correct_count >= 10 or payload.max_combo >= 5
-        ):
-            game_badges.append("Tia Chớp Nối Cặp")
-        if payload.game_type == "iupac_lab" and payload.correct_count >= 8 and accuracy >= 0.75:
-            game_badges.append("Hiệp Sĩ IUPAC")
+        game_badges = evaluate_game_badges(
+            game_type=payload.game_type,
+            correct_count=payload.correct_count,
+            total_attempts=payload.total_attempts,
+            max_combo=payload.max_combo,
+            study_pack_unit_no=payload.study_pack_unit_no,
+        )
 
         total_xp, streak, unlocked = self._apply_gamification(
             student_id=student.id,
@@ -498,7 +504,21 @@ class LearningService:
             game_type=payload.game_type,
             xp_earned=xp_earned,
             total_xp=total_xp,
-            level=(total_xp // 100) + 1,
+            level=compute_level(total_xp),
             current_streak=streak,
             newly_unlocked_badges=unlocked,
         )
+
+    def get_students_gamification_map(self, student_ids: list[str]) -> dict[str, dict[str, Any]]:
+        """Read-only gamification lookup exposed for Unit 3 classroom leaderboards."""
+        rows = self.repo.list_gamification_for_students(student_ids)
+        return {
+            row.student_id: {
+                "total_xp": row.total_xp,
+                "level": compute_level(row.total_xp),
+                "current_streak": row.current_streak,
+                "longest_streak": row.longest_streak,
+                "badges": list(row.badges_json or []),
+            }
+            for row in rows
+        }

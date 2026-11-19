@@ -20,7 +20,7 @@ import { AccountPage } from "./features/auth/AuthModalAndAccount";
 import { CurriculumMapPage } from "./features/curriculum/CurriculumMapPage";
 import { GlossaryAndRulesPage } from "./features/curriculum/GlossaryAndRulesPage";
 import { LessonDetailPage } from "./features/curriculum/LessonDetailPage";
-import { GameArenaPage } from "./features/games/GameArenaPage";
+import { type ArenaTab, GameArenaPage } from "./features/games/GameArenaPage";
 import { LearningHubPage, type LearningSubTab } from "./features/learning/LearningHubPage";
 import { TeacherStudioPage } from "./features/lms/TeacherStudioPage";
 import { StudyPack16Page } from "./features/study_pack/StudyPack16Page";
@@ -34,8 +34,8 @@ import {
 type View =
   | { kind: "map" }
   | { kind: "lesson"; lessonNo: number }
-  | { kind: "study_pack" }
-  | { kind: "games"; initialGame?: "lightning" | "iupac"; initialUnitNo?: number }
+  | { kind: "study_pack"; initialUnitNo?: number }
+  | { kind: "games"; initialGame?: ArenaTab; initialUnitNo?: number }
   | { kind: "learning"; tab: LearningSubTab; lessonNo?: number }
   | { kind: "teacher" }
   | { kind: "glossary" }
@@ -271,6 +271,7 @@ export function App() {
             <PageTransitionWrapper key={viewKey}>
               {view.kind === "map" && (
                 <CurriculumMapPage
+                  session={session}
                   onSelectLesson={openLesson}
                   onOpenStudyPack={() => {
                     playClickSound();
@@ -285,6 +286,8 @@ export function App() {
               )}
               {view.kind === "study_pack" && (
                 <StudyPack16Page
+                  session={session}
+                  initialUnitNo={view.initialUnitNo}
                   onSelectLesson={openLesson}
                   onLaunchLightningUnit={(unitNo) => {
                     playClickSound();
@@ -299,6 +302,11 @@ export function App() {
                   onSessionChange={setSession}
                   initialGame={view.initialGame}
                   initialUnitNo={view.initialUnitNo}
+                  onOpenStudyPackUnit={(unitNo) => {
+                    playClickSound();
+                    setView({ kind: "study_pack", initialUnitNo: unitNo });
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }}
                 />
               )}
               {view.kind === "lesson" && (
@@ -315,6 +323,11 @@ export function App() {
                   onSessionChange={setSession}
                   initialTab={view.tab}
                   initialLessonNo={view.lessonNo}
+                  onLaunchGameChallenge={(game, unitNo) => {
+                    playClickSound();
+                    setView({ kind: "games", initialGame: game, initialUnitNo: unitNo });
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }}
                 />
               )}
               {view.kind === "teacher" && (

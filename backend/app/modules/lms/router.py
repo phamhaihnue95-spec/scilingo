@@ -16,10 +16,13 @@ from app.modules.lms.schemas import (
     AssignmentTakeOut,
     ClassroomAnalyticsOut,
     ClassroomCreateRequest,
+    ClassroomLeaderboardOut,
     ClassroomOut,
     ExamDetailOut,
     ExamGenerateRequest,
     ExamSummaryOut,
+    GameChallengeCreateRequest,
+    GameChallengeOut,
     JoinClassroomRequest,
     QuestionCreateRequest,
     QuestionOut,
@@ -74,6 +77,61 @@ def get_classroom_analytics(
 ) -> ClassroomAnalyticsOut:
     """Return student submission breakdown (VI vs EN scores) and weak questions."""
     return LMSService(db).get_classroom_analytics(current_user, classroom_id)
+
+
+@router.get("/lms/my-classrooms", response_model=list[ClassroomOut])
+def list_my_classrooms(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> list[ClassroomOut]:
+    """List classrooms that the authenticated student has joined."""
+    return LMSService(db).list_student_classrooms(current_user)
+
+
+@router.get(
+    "/lms/classrooms/{classroom_id}/leaderboard", response_model=ClassroomLeaderboardOut
+)
+def get_classroom_leaderboard(
+    classroom_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> ClassroomLeaderboardOut:
+    """Return tenant- and classroom-isolated gamification leaderboard."""
+    return LMSService(db).get_classroom_leaderboard(current_user, classroom_id)
+
+
+@router.post(
+    "/lms/classrooms/{classroom_id}/game-challenges", response_model=GameChallengeOut
+)
+def create_game_challenge(
+    classroom_id: str,
+    payload: GameChallengeCreateRequest,
+    current_user: User = Depends(require_roles(*TEACHER_ROLES)),
+    db: Session = Depends(get_db),
+) -> GameChallengeOut:
+    """Assign a 5-minute mini-game challenge to a classroom."""
+    return LMSService(db).create_game_challenge(current_user, classroom_id, payload)
+
+
+@router.get(
+    "/lms/classrooms/{classroom_id}/game-challenges", response_model=list[GameChallengeOut]
+)
+def list_classroom_game_challenges(
+    classroom_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> list[GameChallengeOut]:
+    """List active mini-game challenges assigned to a classroom."""
+    return LMSService(db).list_classroom_game_challenges(current_user, classroom_id)
+
+
+@router.get("/lms/my-game-challenges", response_model=list[GameChallengeOut])
+def list_my_game_challenges(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> list[GameChallengeOut]:
+    """List active mini-game challenges assigned to the student's classrooms."""
+    return LMSService(db).list_student_game_challenges(current_user)
 
 
 # --- CLIL Resources ---
