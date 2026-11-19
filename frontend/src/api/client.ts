@@ -9,6 +9,8 @@ import type {
   Entitlements,
   ExamDetail,
   ExamSummary,
+  GameRewardPayload,
+  GameRewardResult,
   GamificationSummary,
   LessonDetail,
   LessonMindmap,
@@ -223,6 +225,13 @@ export const api = {
 
   getGamification(): Promise<GamificationSummary> {
     return request<GamificationSummary>("/learning/gamification/me");
+  },
+
+  recordGameReward(payload: GameRewardPayload): Promise<GameRewardResult> {
+    return request<GameRewardResult>("/learning/games/reward", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
   },
 
   // --- Unit 3: Teacher Studio, LMS, Exam Builder & TT94 ---

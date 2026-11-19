@@ -9,6 +9,8 @@ from app.core.database import get_db
 from app.modules.identity_billing.dependencies import get_current_user
 from app.modules.identity_billing.models import User
 from app.modules.learning.schemas import (
+    GameRewardOut,
+    GameRewardRequest,
     GamificationSummaryOut,
     LessonMindmapOut,
     PracticeResultOut,
@@ -89,3 +91,13 @@ def get_gamification_me(
 ) -> GamificationSummaryOut:
     """Return current streak, XP, level, badges, and recent practice history."""
     return LearningService(db).get_gamification_summary(current_user)
+
+
+@router.post("/learning/games/reward", response_model=GameRewardOut)
+def record_game_reward(
+    payload: GameRewardRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> GameRewardOut:
+    """Award bounded XP and milestone badges upon completing a mini-game round."""
+    return LearningService(db).record_game_reward(current_user, payload)

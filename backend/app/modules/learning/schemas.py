@@ -8,6 +8,7 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 PracticeMode = Literal["quiz_10", "quiz_50", "quiz_100"]
+GameType = Literal["lightning_match", "iupac_lab"]
 
 
 class SRSDueCardOut(BaseModel):
@@ -201,3 +202,24 @@ class GamificationSummaryOut(BaseModel):
     discipline_xp: dict[str, int]
     last_study_date: date | None = None
     recent_attempts: list[PracticeHistoryItemOut]
+
+
+class GameRewardRequest(BaseModel):
+    """Summary submitted at the end of a mini-game round to claim XP and badges."""
+
+    game_type: GameType
+    correct_count: int = Field(ge=0, le=80)
+    total_attempts: int = Field(ge=1, le=160)
+    max_combo: int = Field(default=0, ge=0, le=80)
+    discipline: Literal["general_lab", "chemistry", "physics", "biology"] = "chemistry"
+
+
+class GameRewardOut(BaseModel):
+    """Persisted gamification update after finishing a mini-game session."""
+
+    game_type: GameType
+    xp_earned: int
+    total_xp: int
+    level: int
+    current_streak: int
+    newly_unlocked_badges: list[str]

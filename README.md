@@ -1,6 +1,6 @@
 # SciLingo KHTN 8 — Nền tảng Học & Giảng dạy Tiếng Anh Khoa học tự nhiên THCS
 
-> **Trạng thái:** **Bolt 3 hoàn tất + Giai đoạn 1 Motion & Feel** (Unit 1: Curriculum Core 47 bài + Bộ Đề Học 16 Units / 920 thuật ngữ IPA từ *The English Dictionary for SCIENCE* + Unit 2: Flashcard 3D lật thật, Sound FX, Confetti, Mindmap song ngữ, Quiz & Bài tập Lớp học + Unit 3: Teacher Studio *Trường THCS Cầu Giấy B · GV Phạm Thị Hải*, Kho giáo án/slide CLIL, Exam Builder 10%/50% xuất Word `.docx` & `.pdf`, Lớp học & Báo cáo Thông tư 94/2026 + Unit 5: Identity & Billing RBAC).  
+> **Trạng thái:** **Bolt 3 hoàn tất + Giai đoạn 1 & 2 (Motion UI & 2 Mini-Games)** (Unit 1: Curriculum Core 47 bài + Bộ Đề Học 16 Units / 920 thuật ngữ IPA + Unit 2: Flashcard 3D lật thật, Sound FX, Confetti, Game *Chớp Nhoáng Nối Cặp 60s* & *Phòng Pha Chế / Bắt Lỗi IUPAC*, Mindmap song ngữ, Quiz & Bài tập Lớp học + Unit 3: Teacher Studio *Trường THCS Cầu Giấy B · GV Phạm Thị Hải*, Kho giáo án/slide CLIL, Exam Builder 10%/50% xuất Word `.docx` & `.pdf`, Lớp học & Báo cáo Thông tư 94/2026 + Unit 5: Identity & Billing RBAC).  
 > **Phạm vi Pilot MVP:** Toàn bộ chương trình **KHTN Lớp 8 – Bộ sách Kết nối tri thức với cuộc sống** (Bài 1 đến Bài 47, 8 Chương).  
 > **Phương pháp phát triển:** **AI-DLC (AI-Driven Development Life Cycle)** — `Inception → Construction (Bolts) → Operations`.
 

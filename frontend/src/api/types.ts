@@ -541,3 +541,22 @@ export interface StudyPackQuiz {
   english_ratio: number;
   questions: StudyPackQuizQuestion[];
 }
+
+export type GameType = "lightning_match" | "iupac_lab";
+
+export interface GameRewardPayload {
+  game_type: GameType;
+  correct_count: number;
+  total_attempts: number;
+  max_combo: number;
+  discipline: Discipline;
+}
+
+export interface GameRewardResult {
+  game_type: GameType;
+  xp_earned: number;
+  total_xp: number;
+  level: number;
+  current_streak: number;
+  newly_unlocked_badges: string[];
+}

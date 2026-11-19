@@ -205,3 +205,60 @@ def test_practice_submit_blocks_other_user(client: TestClient) -> None:
         headers=other_headers,
     )
     assert forbid.status_code == 403
+
+
+def test_minigame_reward_awards_xp_and_unlocks_game_badges(client: TestClient) -> None:
+    headers = _login_student(client)
+
+    lightning_resp = client.post(
+        "/api/v1/learning/games/reward",
+        json={
+            "game_type": "lightning_match",
+            "correct_count": 12,
+            "total_attempts": 14,
+            "max_combo": 6,
+            "discipline": "physics",
+        },
+        headers=headers,
+    )
+    assert lightning_resp.status_code == 200
+    l_data = lightning_resp.json()
+    assert 0 < l_data["xp_earned"] <= 80
+    assert l_data["xp_earned"] == min(80, 15 + 12 * 3 + 6 * 2)
+    assert "Tia Chớp Nối Cặp" in l_data["newly_unlocked_badges"]
+
+    iupac_resp = client.post(
+        "/api/v1/learning/games/reward",
+        json={
+            "game_type": "iupac_lab",
+            "correct_count": 10,
+            "total_attempts": 12,
+            "max_combo": 4,
+            "discipline": "chemistry",
+        },
+        headers=headers,
+    )
+    assert iupac_resp.status_code == 200
+    i_data = iupac_resp.json()
+    assert "Hiệp Sĩ IUPAC" in i_data["newly_unlocked_badges"]
+
+    repeat_resp = client.post(
+        "/api/v1/learning/games/reward",
+        json={
+            "game_type": "lightning_match",
+            "correct_count": 12,
+            "total_attempts": 12,
+            "max_combo": 8,
+            "discipline": "physics",
+        },
+        headers=headers,
+    )
+    assert repeat_resp.status_code == 200
+    assert "Tia Chớp Nối Cặp" not in repeat_resp.json()["newly_unlocked_badges"]
+
+    summary_resp = client.get("/api/v1/learning/gamification/me", headers=headers)
+    assert summary_resp.status_code == 200
+    summary = summary_resp.json()
+    assert summary["total_xp"] == repeat_resp.json()["total_xp"]
+    assert "Tia Chớp Nối Cặp" in summary["badges"]
+    assert "Hiệp Sĩ IUPAC" in summary["badges"]

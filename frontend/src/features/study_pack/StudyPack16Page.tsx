@@ -14,6 +14,7 @@ import {
   Sparkles,
   Target,
   XCircle,
+  Zap,
 } from "lucide-react";
 
 import { api } from "../../api/client";
@@ -42,6 +43,7 @@ import { DisciplineBadge } from "../curriculum/DisciplineBadge";
 
 interface Props {
   onSelectLesson: (lessonNo: number) => void;
+  onLaunchLightningUnit?: (unitNo: number) => void;
 }
 
 type StudyMode = "list" | "flashcards" | "quiz";
@@ -65,7 +67,7 @@ const DISC_CARD_STYLE: Record<Discipline, { active: string; chip: string }> = {
   },
 };
 
-export function StudyPack16Page({ onSelectLesson }: Props) {
+export function StudyPack16Page({ onSelectLesson, onLaunchLightningUnit }: Props) {
   const [overview, setOverview] = useState<StudyPackOverview | null>(null);
   const [activeUnitNo, setActiveUnitNo] = useState<number>(1);
   const [unitDetail, setUnitDetail] = useState<StudyPackUnitDetail | null>(null);
@@ -450,6 +452,16 @@ export function StudyPack16Page({ onSelectLesson }: Props) {
                     <span className="font-medium text-slate-700">{unitDetail.unit.title_vi}</span>
                   </div>
                   <div className="flex flex-wrap items-center gap-1.5">
+                    {onLaunchLightningUnit && (
+                      <button
+                        type="button"
+                        onClick={() => onLaunchLightningUnit(unitDetail.unit.unit_no)}
+                        className="btn-tactile mr-1 inline-flex items-center gap-1 rounded-lg border-amber-700 bg-gradient-to-r from-amber-500 to-orange-500 px-2.5 py-1 text-[11px] font-extrabold text-white shadow-sm hover:opacity-95"
+                      >
+                        <Zap className="h-3 w-3" />
+                        Chơi Nối Cặp 60s Unit này
+                      </button>
+                    )}
                     <span className="font-semibold text-slate-500">Liên kết SGK KNTT 8:</span>
                     {unitDetail.unit.kntt8_related_lessons.map((lno) => (
                       <button

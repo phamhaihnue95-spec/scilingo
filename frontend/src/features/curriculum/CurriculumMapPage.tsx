@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowRight, BookOpen, FlaskConical, Library, Link2, Search, Sparkles } from "lucide-react";
+import { ArrowRight, BookOpen, FlaskConical, Gamepad2, Library, Link2, Search, Sparkles, Zap } from "lucide-react";
 
 import { api } from "../../api/client";
 import type { CurriculumTreeResponse, Discipline } from "../../api/types";
@@ -11,6 +11,7 @@ import { DisciplineBadge } from "./DisciplineBadge";
 interface Props {
   onSelectLesson: (lessonNo: number) => void;
   onOpenStudyPack?: () => void;
+  onOpenGames?: (game?: "lightning" | "iupac") => void;
 }
 
 const CHAPTER_ACCENT: Record<Discipline, { headerBg: string; cardHover: string; badge: string }> = {
@@ -44,7 +45,7 @@ const DISCIPLINE_TABS: Array<{ id: "all" | Discipline; label: string }> = [
   { id: "biology", label: "Sinh học" },
 ];
 
-export function CurriculumMapPage({ onSelectLesson, onOpenStudyPack }: Props) {
+export function CurriculumMapPage({ onSelectLesson, onOpenStudyPack, onOpenGames }: Props) {
   const [tree, setTree] = useState<CurriculumTreeResponse | null>(null);
   const [discipline, setDiscipline] = useState<"all" | Discipline>("all");
   const [filterText, setFilterText] = useState("");
@@ -168,6 +169,54 @@ export function CurriculumMapPage({ onSelectLesson, onOpenStudyPack }: Props) {
             Mở Bộ Đề 16 Units
             <ArrowRight className="h-4 w-4" />
           </motion.button>
+        </motion.section>
+      )}
+
+      {onOpenGames && (
+        <motion.section
+          whileHover={{ y: -2 }}
+          transition={{ type: "spring", stiffness: 320, damping: 24 }}
+          className="holo-card flex flex-col items-start justify-between gap-4 rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 via-orange-50 to-rose-50 p-4 shadow-sm sm:flex-row sm:items-center sm:px-5"
+        >
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500 to-rose-500 text-white shadow">
+              <Gamepad2 className="h-5 w-5" />
+            </div>
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="rounded-full bg-rose-600 px-2 py-0.5 text-[10px] font-extrabold uppercase text-white">
+                  Trò chơi mới
+                </span>
+                <h2 className="text-sm font-extrabold text-slate-900 sm:text-base">
+                  Đấu Trường Trò Chơi KHTN 8 (Chớp Nhoáng 60s &amp; Bắt Lỗi IUPAC)
+                </h2>
+              </div>
+              <p className="mt-0.5 text-xs text-slate-600">
+                Thi đua nối 920 thuật ngữ IPA trong 60 giây hoặc phá bẫy danh pháp TT 32/2018 &amp;
+                pha chế công thức để nhận XP và huy hiệu hiếm!
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <motion.button
+              type="button"
+              whileTap={{ scale: 0.96 }}
+              onClick={() => onOpenGames("lightning")}
+              className="btn-tactile inline-flex shrink-0 items-center gap-1.5 rounded-xl border-amber-700 bg-gradient-to-r from-amber-500 to-orange-500 px-3.5 py-2 text-xs font-extrabold text-white shadow hover:opacity-95"
+            >
+              <Zap className="h-3.5 w-3.5" />
+              Nối Cặp 60s
+            </motion.button>
+            <motion.button
+              type="button"
+              whileTap={{ scale: 0.96 }}
+              onClick={() => onOpenGames("iupac")}
+              className="btn-tactile inline-flex shrink-0 items-center gap-1.5 rounded-xl border-rose-700 bg-gradient-to-r from-rose-500 to-fuchsia-600 px-3.5 py-2 text-xs font-extrabold text-white shadow hover:opacity-95"
+            >
+              <FlaskConical className="h-3.5 w-3.5" />
+              Phòng Pha Chế IUPAC
+            </motion.button>
+          </div>
         </motion.section>
       )}
 

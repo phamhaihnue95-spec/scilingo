@@ -78,6 +78,7 @@ def evaluate_badges(
     total_xp: int,
     discipline_xp: dict[str, int],
     passed_tt94_50: bool = False,
+    extra_unlocked: list[str] | None = None,
 ) -> list[str]:
     """Return newly unlocked badge IDs based on current achievements."""
     candidates: list[str] = []
@@ -97,6 +98,8 @@ def evaluate_badges(
         candidates.append("Lab Safety Pioneer")
     if passed_tt94_50:
         candidates.append("Sẵn sàng 50% Thông tư 94")
+    if extra_unlocked:
+        candidates.extend(extra_unlocked)
 
     existing_set = set(existing_badges)
-    return [badge for badge in candidates if badge not in existing_set]
+    return list(dict.fromkeys(badge for badge in candidates if badge not in existing_set))

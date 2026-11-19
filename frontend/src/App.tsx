@@ -4,6 +4,7 @@ import {
   Atom,
   BookOpen,
   BookText,
+  Gamepad2,
   GraduationCap,
   Library,
   Sparkles,
@@ -19,6 +20,7 @@ import { AccountPage } from "./features/auth/AuthModalAndAccount";
 import { CurriculumMapPage } from "./features/curriculum/CurriculumMapPage";
 import { GlossaryAndRulesPage } from "./features/curriculum/GlossaryAndRulesPage";
 import { LessonDetailPage } from "./features/curriculum/LessonDetailPage";
+import { GameArenaPage } from "./features/games/GameArenaPage";
 import { LearningHubPage, type LearningSubTab } from "./features/learning/LearningHubPage";
 import { TeacherStudioPage } from "./features/lms/TeacherStudioPage";
 import { StudyPack16Page } from "./features/study_pack/StudyPack16Page";
@@ -33,6 +35,7 @@ type View =
   | { kind: "map" }
   | { kind: "lesson"; lessonNo: number }
   | { kind: "study_pack" }
+  | { kind: "games"; initialGame?: "lightning" | "iupac"; initialUnitNo?: number }
   | { kind: "learning"; tab: LearningSubTab; lessonNo?: number }
   | { kind: "teacher" }
   | { kind: "glossary" }
@@ -118,6 +121,18 @@ export function App() {
       icon: Library,
       label: "Bộ Đề 16 Units",
       pillClass: "from-fuchsia-600 to-indigo-600",
+      hideLabelClass: "hidden md:inline",
+    },
+    {
+      id: "games",
+      active: view.kind === "games",
+      onClick: () => {
+        playClickSound();
+        setView({ kind: "games" });
+      },
+      icon: Gamepad2,
+      label: "Trò chơi KHTN",
+      pillClass: "from-amber-500 via-orange-500 to-rose-500",
       hideLabelClass: "hidden md:inline",
     },
     {
@@ -261,9 +276,31 @@ export function App() {
                     playClickSound();
                     setView({ kind: "study_pack" });
                   }}
+                  onOpenGames={(initialGame) => {
+                    playClickSound();
+                    setView({ kind: "games", initialGame });
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }}
                 />
               )}
-              {view.kind === "study_pack" && <StudyPack16Page onSelectLesson={openLesson} />}
+              {view.kind === "study_pack" && (
+                <StudyPack16Page
+                  onSelectLesson={openLesson}
+                  onLaunchLightningUnit={(unitNo) => {
+                    playClickSound();
+                    setView({ kind: "games", initialGame: "lightning", initialUnitNo: unitNo });
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }}
+                />
+              )}
+              {view.kind === "games" && (
+                <GameArenaPage
+                  session={session}
+                  onSessionChange={setSession}
+                  initialGame={view.initialGame}
+                  initialUnitNo={view.initialUnitNo}
+                />
+              )}
               {view.kind === "lesson" && (
                 <LessonDetailPage
                   lessonNo={view.lessonNo}

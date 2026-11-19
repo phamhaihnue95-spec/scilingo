@@ -13,6 +13,8 @@ from app.modules.learning.models import SRSCard, StudentPracticeAttempt
 from app.modules.learning.quiz_builder import build_lesson_quiz
 from app.modules.learning.repository import LearningRepository
 from app.modules.learning.schemas import (
+    GameRewardOut,
+    GameRewardRequest,
     GamificationSummaryOut,
     LessonMindmapOut,
     MindmapEdgeOut,
@@ -51,6 +53,7 @@ class LearningService:
         xp_earned: int,
         discipline_increments: dict[str, int],
         passed_tt94_50: bool = False,
+        extra_unlocked: list[str] | None = None,
     ) -> tuple[int, int, list[str]]:
         profile = self.repo.get_or_create_gamification(student_id)
         new_streak, longest_streak, study_date = update_streak(
@@ -71,6 +74,7 @@ class LearningService:
             total_xp=total_xp,
             discipline_xp=discipline_xp,
             passed_tt94_50=passed_tt94_50,
+            extra_unlocked=extra_unlocked,
         )
 
         profile.current_streak = new_streak
@@ -462,4 +466,39 @@ class LearningService:
                 )
                 for item in recent
             ],
+        )
+
+    def record_game_reward(self, student: User, payload: GameRewardRequest) -> GameRewardOut:
+        """Compute bounded mini-game XP, unlock milestone badges, and persist gamification."""
+        if payload.correct_count == 0:
+            xp_earned = 0
+        else:
+            xp_earned = min(
+                80, 15 + payload.correct_count * 3 + min(payload.max_combo, 10) * 2
+            )
+
+        accuracy = min(1.0, payload.correct_count / payload.total_attempts)
+        game_badges: list[str] = []
+        if payload.game_type == "lightning_match" and (
+            payload.correct_count >= 10 or payload.max_combo >= 5
+        ):
+            game_badges.append("Tia Chớp Nối Cặp")
+        if payload.game_type == "iupac_lab" and payload.correct_count >= 8 and accuracy >= 0.75:
+            game_badges.append("Hiệp Sĩ IUPAC")
+
+        total_xp, streak, unlocked = self._apply_gamification(
+            student_id=student.id,
+            xp_earned=xp_earned,
+            discipline_increments={payload.discipline: xp_earned} if xp_earned > 0 else {},
+            extra_unlocked=game_badges,
+        )
+        self.db.commit()
+
+        return GameRewardOut(
+            game_type=payload.game_type,
+            xp_earned=xp_earned,
+            total_xp=total_xp,
+            level=(total_xp // 100) + 1,
+            current_streak=streak,
+            newly_unlocked_badges=unlocked,
         )
