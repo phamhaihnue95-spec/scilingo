@@ -39,6 +39,7 @@ interface Props {
   session: AuthSession | null;
   initialUnitNo?: number;
   onRewardRecorded?: () => void;
+  onPlayingChange?: (playing: boolean) => void;
 }
 
 type Phase = "lobby" | "playing" | "finished";
@@ -107,7 +108,12 @@ function buildUnambiguousBoard(
   };
 }
 
-export function LightningMatchGame({ session, initialUnitNo, onRewardRecorded }: Props) {
+export function LightningMatchGame({
+  session,
+  initialUnitNo,
+  onRewardRecorded,
+  onPlayingChange,
+}: Props) {
   const [overview, setOverview] = useState<StudyPackOverview | null>(null);
   const [selectedUnit, setSelectedUnit] = useState<number | "all">(initialUnitNo ?? 1);
   const [difficulty, setDifficulty] = useState<Difficulty>("standard");
@@ -156,8 +162,21 @@ export function LightningMatchGame({ session, initialUnitNo, onRewardRecorded }:
       .catch((err: Error) => setError(err.message));
   }, []);
 
+  useEffect(() => {
+    const playing = phase === "playing";
+    onPlayingChange?.(playing);
+    if (playing) {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+    return () => {
+      onPlayingChange?.(false);
+    };
+  }, [phase, onPlayingChange]);
+
   const boardSize = difficulty === "pro" ? 6 : 5;
   const roundSeconds = difficulty === "pro" ? 45 : 60;
+  const tileHeightClass =
+    difficulty === "pro" ? "min-h-[54px] sm:min-h-[62px]" : "min-h-[60px] sm:min-h-[64px]";
 
   const dealNextBoard = (sourcePool: StudyPackItem[], size: number) => {
     const { left, right } = buildUnambiguousBoard(sourcePool, size);
@@ -375,7 +394,7 @@ export function LightningMatchGame({ session, initialUnitNo, onRewardRecorded }:
 
   if (phase === "lobby") {
     return (
-      <div className="mx-auto max-w-3xl space-y-5 rounded-3xl border border-sky-200 bg-white/95 p-6 shadow-sm">
+      <div className="mx-auto max-w-3xl space-y-4 rounded-3xl border border-sky-200 bg-white/95 p-4 shadow-sm sm:space-y-5 sm:p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="space-y-1">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-0.5 text-xs font-extrabold text-amber-900">
@@ -586,7 +605,7 @@ export function LightningMatchGame({ session, initialUnitNo, onRewardRecorded }:
 
   return (
     <div
-      className={`relative space-y-4 rounded-3xl border-2 bg-white/95 p-5 shadow-md transition-all ${
+      className={`relative space-y-2.5 rounded-2xl border-2 bg-white/95 p-3 shadow-md transition-all sm:space-y-4 sm:rounded-3xl sm:p-5 ${
         isFever
           ? "border-amber-400 shadow-amber-200/70 ring-4 ring-amber-300/40"
           : "border-sky-200"
@@ -596,15 +615,15 @@ export function LightningMatchGame({ session, initialUnitNo, onRewardRecorded }:
         burstKey={burst.id}
         text={burst.text}
         subtext={burst.subtext}
-        className="right-6 top-4"
+        className="right-3 top-2 sm:right-6 sm:top-4"
       />
 
       {/* HUD */}
-      <div className="space-y-2">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex flex-wrap items-center gap-2">
+      <div className="space-y-1.5 sm:space-y-2">
+        <div className="flex items-center justify-between gap-1.5 sm:gap-2">
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
             <span
-              className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-sm font-extrabold ${
+              className={`inline-flex items-center gap-1 rounded-xl px-2 py-1 text-xs font-extrabold sm:gap-1.5 sm:px-3 sm:py-1.5 sm:text-sm ${
                 timeLeft <= 8
                   ? "animate-pulse bg-rose-100 text-rose-700"
                   : timeLeft <= 15
@@ -612,25 +631,29 @@ export function LightningMatchGame({ session, initialUnitNo, onRewardRecorded }:
                     : "bg-sky-100 text-sky-900"
               }`}
             >
-              <Clock className="h-4 w-4" />
+              <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               {timeLeft}s
             </span>
 
-            <span className="rounded-xl bg-indigo-100 px-3 py-1.5 text-sm font-extrabold text-indigo-900">
-              {score} điểm
+            <span className="rounded-xl bg-indigo-100 px-2 py-1 text-xs font-extrabold text-indigo-900 sm:px-3 sm:py-1.5 sm:text-sm">
+              {score}
+              <span className="sm:hidden">đ</span>
+              <span className="hidden sm:inline"> điểm</span>
             </span>
 
-            <span className="rounded-xl bg-emerald-100 px-3 py-1.5 text-xs font-extrabold text-emerald-800">
-              Đã ghép: {matchedTotal}
+            <span className="rounded-xl bg-emerald-100 px-2 py-1 text-[11px] font-extrabold text-emerald-800 sm:px-3 sm:py-1.5 sm:text-xs">
+              <span className="sm:hidden">✓ </span>
+              <span className="hidden sm:inline">Đã ghép: </span>
+              {matchedTotal}
             </span>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
             <motion.span
               key={combo}
               initial={{ scale: 0.85 }}
               animate={{ scale: 1 }}
-              className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-extrabold shadow-sm ${
+              className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-extrabold shadow-sm sm:px-3 sm:py-1 sm:text-xs ${
                 isFever
                   ? "bg-gradient-to-r from-amber-500 via-orange-500 to-rose-600 text-white"
                   : combo >= 2
@@ -638,21 +661,26 @@ export function LightningMatchGame({ session, initialUnitNo, onRewardRecorded }:
                     : "bg-slate-100 text-slate-600"
               }`}
             >
-              <Flame className="h-3.5 w-3.5" />
-              {isFever ? `FEVER MODE x4! (${combo})` : `Combo x${getComboMultiplier(combo)} (${combo})`}
+              <Flame className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+              <span className="sm:hidden">
+                {isFever ? "FEVER x4!" : `x${getComboMultiplier(combo)}`}
+              </span>
+              <span className="hidden sm:inline">
+                {isFever ? `FEVER MODE x4! (${combo})` : `Combo x${getComboMultiplier(combo)} (${combo})`}
+              </span>
             </motion.span>
 
             <button
               type="button"
               onClick={() => setPhase("finished")}
-              className="rounded-xl border border-slate-200 px-2.5 py-1 text-xs font-bold text-slate-600 hover:bg-slate-100"
+              className="rounded-xl border border-slate-200 px-2 py-1 text-[11px] font-bold text-slate-600 hover:bg-slate-100 sm:px-2.5 sm:text-xs"
             >
               Kết thúc
             </button>
           </div>
         </div>
 
-        <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
+        <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100 sm:h-2.5">
           <div
             style={{ width: `${timePct}%` }}
             className={`h-full rounded-full transition-all duration-500 ${
@@ -666,11 +694,12 @@ export function LightningMatchGame({ session, initialUnitNo, onRewardRecorded }:
         </div>
       </div>
 
-      {/* 2-Column Match Grid */}
-      <div className="grid gap-4 md:grid-cols-2">
-        <div className="space-y-2.5">
-          <div className="text-xs font-extrabold uppercase tracking-wide text-indigo-700">
-            Thuật ngữ Tiếng Anh &amp; IPA
+      {/* 2-Column Match Grid (Side-by-side on all screen widths for zero-scroll mobile play) */}
+      <div className="grid grid-cols-2 gap-2 sm:gap-4">
+        <div className="space-y-1.5 sm:space-y-2.5">
+          <div className="text-[11px] font-extrabold uppercase tracking-wide text-indigo-700 sm:text-xs">
+            <span className="sm:hidden">Tiếng Anh &amp; IPA</span>
+            <span className="hidden sm:inline">Thuật ngữ Tiếng Anh &amp; IPA</span>
           </div>
           <AnimatePresence>
             {leftItems.map((item) => {
@@ -691,7 +720,7 @@ export function LightningMatchGame({ session, initialUnitNo, onRewardRecorded }:
                   }
                   transition={{ duration: isShaking ? 0.35 : 0.18 }}
                   onClick={() => handleSelectLeft(key)}
-                  className={`flex cursor-pointer items-center justify-between gap-2 rounded-2xl border-2 p-3 transition ${
+                  className={`flex ${tileHeightClass} cursor-pointer items-center justify-between gap-1.5 rounded-xl border-2 px-2.5 py-1.5 transition sm:gap-2 sm:rounded-2xl sm:p-3 ${
                     matched
                       ? "pointer-events-none border-emerald-200 bg-emerald-50 text-emerald-700"
                       : isShaking
@@ -701,27 +730,30 @@ export function LightningMatchGame({ session, initialUnitNo, onRewardRecorded }:
                           : "border-slate-200 bg-white hover:border-sky-400 hover:bg-sky-50/40"
                   }`}
                 >
-                  <div className="min-w-0">
-                    <div className="truncate text-sm font-extrabold text-slate-900">
+                  <div className="min-w-0 flex-1">
+                    <div className="line-clamp-2 break-words text-[13px] font-extrabold leading-tight text-slate-900 sm:text-sm">
                       {item.term_en}
                     </div>
-                    <div className="flex items-center gap-1.5 font-mono text-[11px] text-sky-700">
+                    <div className="mt-0.5 flex items-center gap-1 font-mono text-[10px] text-sky-700 sm:gap-1.5 sm:text-[11px]">
                       <span className="truncate">{item.ipa}</span>
-                      <span className="rounded bg-slate-100 px-1 font-sans text-[10px] font-bold text-slate-600">
+                      <span className="hidden rounded bg-slate-100 px-1 font-sans text-[10px] font-bold text-slate-600 sm:inline">
                         {item.pos}
                       </span>
                     </div>
                   </div>
-                  {!matched && <SpeakButton termEn={item.term_en} className="h-8 w-8 shrink-0" />}
+                  {!matched && (
+                    <SpeakButton termEn={item.term_en} className="!h-7 !w-7 shrink-0 sm:!h-8 sm:!w-8" />
+                  )}
                 </motion.div>
               );
             })}
           </AnimatePresence>
         </div>
 
-        <div className="space-y-2.5">
-          <div className="text-xs font-extrabold uppercase tracking-wide text-emerald-700">
-            Nghĩa Tiếng Việt
+        <div className="space-y-1.5 sm:space-y-2.5">
+          <div className="text-[11px] font-extrabold uppercase tracking-wide text-emerald-700 sm:text-xs">
+            <span className="sm:hidden">Tiếng Việt</span>
+            <span className="hidden sm:inline">Nghĩa Tiếng Việt</span>
           </div>
           <AnimatePresence>
             {rightItems.map((item) => {
@@ -744,7 +776,7 @@ export function LightningMatchGame({ session, initialUnitNo, onRewardRecorded }:
                   }
                   transition={{ duration: isShaking ? 0.35 : 0.18 }}
                   onClick={() => handleSelectRight(key)}
-                  className={`flex min-h-[58px] w-full items-center justify-between gap-2 rounded-2xl border-2 px-4 py-3 text-left text-sm font-bold transition ${
+                  className={`flex ${tileHeightClass} w-full items-center justify-between gap-1.5 rounded-xl border-2 px-2.5 py-1.5 text-left text-xs font-bold leading-snug transition sm:gap-2 sm:rounded-2xl sm:px-4 sm:py-3 sm:text-sm ${
                     matched
                       ? "border-emerald-200 bg-emerald-50 text-emerald-700"
                       : isShaking
@@ -754,7 +786,7 @@ export function LightningMatchGame({ session, initialUnitNo, onRewardRecorded }:
                           : "border-slate-200 bg-white text-slate-800 hover:border-emerald-400 hover:bg-emerald-50/40"
                   }`}
                 >
-                  <span>{item.meaning_vi}</span>
+                  <span className="line-clamp-3 break-words">{item.meaning_vi}</span>
                   {matched && <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />}
                 </motion.button>
               );

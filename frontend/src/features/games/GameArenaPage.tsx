@@ -47,6 +47,7 @@ export function GameArenaPage({
 }: Props) {
   const [activeGame, setActiveGame] = useState<ArenaTab>(initialGame);
   const [unitOverride, setUnitOverride] = useState<number | undefined>(initialUnitNo);
+  const [focusPlaying, setFocusPlaying] = useState(false);
   const [gamification, setGamification] = useState<GamificationSummary | null>(null);
   const [loggingInDemo, setLoggingInDemo] = useState(false);
 
@@ -61,6 +62,10 @@ export function GameArenaPage({
   useEffect(() => {
     setActiveGame(initialGame);
   }, [initialGame]);
+
+  useEffect(() => {
+    setFocusPlaying(false);
+  }, [activeGame]);
 
   useEffect(() => {
     setUnitOverride(initialUnitNo);
@@ -161,9 +166,13 @@ export function GameArenaPage({
   };
 
   return (
-    <div className="space-y-6">
+    <div className={focusPlaying ? "space-y-3 md:space-y-6" : "space-y-4 sm:space-y-6"}>
       {/* Arcade Hero Banner */}
-      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-amber-500 via-rose-500 to-indigo-600 p-6 text-white shadow-lg sm:p-7">
+      <section
+        className={`relative overflow-hidden rounded-3xl bg-gradient-to-br from-amber-500 via-rose-500 to-indigo-600 p-5 text-white shadow-lg sm:p-7 ${
+          focusPlaying ? "hidden md:block" : ""
+        }`}
+      >
         <ScienceAmbientParticles />
         <div className="pointer-events-none absolute -right-10 -top-10 h-52 w-52 rounded-full bg-white/15 blur-2xl" />
         <div className="pointer-events-none absolute -bottom-12 left-1/3 h-44 w-44 rounded-full bg-amber-300/25 blur-2xl" />
@@ -218,7 +227,7 @@ export function GameArenaPage({
       </section>
 
       {/* Arena Switcher Tabs */}
-      <div className="flex flex-wrap gap-2">
+      <div className={`${focusPlaying ? "hidden md:flex" : "flex"} flex-wrap gap-2`}>
         {(
           [
             { id: "lightning" as const, label: "Chớp Nhoáng 60s", icon: Zap },
@@ -272,6 +281,7 @@ export function GameArenaPage({
               session={session}
               initialUnitNo={unitOverride}
               onRewardRecorded={refreshGamification}
+              onPlayingChange={setFocusPlaying}
             />
           )}
 

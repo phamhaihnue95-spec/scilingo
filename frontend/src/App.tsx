@@ -189,7 +189,7 @@ export function App() {
       <div className="flex min-h-screen flex-col text-slate-900">
         {/* Top Navigation */}
         <header className="sticky top-0 z-20 border-b border-sky-100 bg-white/85 shadow-sm backdrop-blur-md">
-          <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-4 py-3 sm:px-6">
+          <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-3 py-2 sm:px-6 sm:py-3">
             <button
               type="button"
               onClick={() => {
@@ -266,7 +266,7 @@ export function App() {
         </header>
 
         {/* Main Content */}
-        <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-8">
+        <main className="mx-auto w-full max-w-6xl flex-1 px-3 py-3 sm:px-6 sm:py-8">
           <AnimatePresence mode="wait">
             <PageTransitionWrapper key={viewKey}>
               {view.kind === "map" && (
