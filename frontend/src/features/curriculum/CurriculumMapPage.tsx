@@ -5,9 +5,7 @@ import {
   BookOpen,
   Compass,
   FlaskConical,
-  Gamepad2,
   LayoutGrid,
-  Library,
   Link2,
   ListOrdered,
   Search,
@@ -18,6 +16,13 @@ import {
 import { api } from "../../api/client";
 import type { AuthSession, CurriculumTreeResponse, Discipline, GradeLevel } from "../../api/types";
 import { ScienceAmbientParticles } from "../../components/motion/MotionPrimitives";
+import {
+  DISCIPLINE_3D_ICON,
+  GRADE_3D_ICON,
+  Icon3D,
+  LottieSticker,
+  type Icon3DName,
+} from "../../components/visuals/ScienceVisuals";
 import { GRADE_INFO, GRADE_LESSON_COUNTS, VALID_GRADES } from "../../utils/grades";
 import { playClickSound } from "../../utils/soundFx";
 import { CurriculumQuestMap } from "./CurriculumQuestMap";
@@ -57,12 +62,12 @@ const CHAPTER_ACCENT: Record<Discipline, { headerBg: string; cardHover: string; 
   },
 };
 
-const DISCIPLINE_BASE_TABS: Array<{ id: "all" | Discipline; label: string }> = [
-  { id: "all", label: "Tất cả" },
-  { id: "general_lab", label: "Phòng thí nghiệm" },
-  { id: "chemistry", label: "Hóa học (IUPAC)" },
-  { id: "physics", label: "Vật lí (SI)" },
-  { id: "biology", label: "Sinh học" },
+const DISCIPLINE_BASE_TABS: Array<{ id: "all" | Discipline; label: string; icon: Icon3DName }> = [
+  { id: "all", label: "Tất cả", icon: "compass" },
+  { id: "general_lab", label: "Phòng thí nghiệm", icon: DISCIPLINE_3D_ICON.general_lab },
+  { id: "chemistry", label: "Hóa học (IUPAC)", icon: DISCIPLINE_3D_ICON.chemistry },
+  { id: "physics", label: "Vật lí (SI)", icon: DISCIPLINE_3D_ICON.physics },
+  { id: "biology", label: "Sinh học", icon: DISCIPLINE_3D_ICON.biology },
 ];
 
 export function CurriculumMapPage({
@@ -157,7 +162,7 @@ export function CurriculumMapPage({
     <div className="space-y-6">
       {/* Hero Summary Card */}
       <section
-        className={`relative overflow-hidden rounded-3xl bg-gradient-to-br p-6 text-white shadow-lg sm:p-7 ${gradeInfo.gradient}`}
+        className={`aurora-hero relative overflow-hidden rounded-3xl bg-gradient-to-br p-6 text-white shadow-lg sm:p-7 ${gradeInfo.gradient}`}
       >
         <ScienceAmbientParticles />
         <div className="pointer-events-none absolute -right-10 -top-12 h-52 w-52 rounded-full bg-white/15 blur-2xl" />
@@ -186,13 +191,14 @@ export function CurriculumMapPage({
                       key={g}
                       type="button"
                       onClick={() => onGradeChange(g)}
-                      className={`relative rounded-xl px-3 py-1.5 text-xs font-extrabold transition ${
+                      className={`relative inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-extrabold transition ${
                         active
                           ? "bg-white text-indigo-700 shadow"
                           : "bg-white/20 text-white hover:bg-white/30"
                       }`}
                     >
-                      {GRADE_INFO[g].label}
+                      <Icon3D name={GRADE_3D_ICON[g]} size={16} />
+                      <span>{GRADE_INFO[g].label}</span>
                     </button>
                   );
                 })}
@@ -200,22 +206,35 @@ export function CurriculumMapPage({
             )}
           </div>
 
-          <div className="grid grid-cols-3 gap-3 text-center">
-            {[
-              { value: tree?.total_lessons ?? expectedLessons, label: `Bài Lớp ${grade}` },
-              { value: "190", label: "Bài THCS 6–9" },
-              { value: "920+", label: "Từ vựng IPA" },
-            ].map((stat) => (
-              <motion.div
-                key={stat.label}
-                whileHover={{ y: -4, scale: 1.04 }}
-                transition={{ type: "spring", stiffness: 360, damping: 22 }}
-                className="rounded-2xl bg-white/20 px-4 py-3 backdrop-blur-sm"
-              >
-                <div className="text-2xl font-extrabold">{stat.value}</div>
-                <div className="text-xs font-medium text-sky-50">{stat.label}</div>
-              </motion.div>
-            ))}
+          <div className="flex flex-col items-stretch gap-2.5 sm:items-end">
+            <div className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/25 bg-white/15 px-3.5 py-1.5 backdrop-blur-sm">
+              <LottieSticker name="owl" fallbackIcon="owl" size={38} />
+              <div className="text-left">
+                <div className="text-[11px] font-bold uppercase text-amber-100">
+                  Khám phá KHTN {grade}
+                </div>
+                <div className="text-xs font-extrabold text-white">Chuẩn IUPAC &amp; SI Quốc tế</div>
+              </div>
+              <LottieSticker name="rocket" fallbackIcon="rocket" size={34} />
+            </div>
+
+            <div className="grid grid-cols-3 gap-3 text-center">
+              {[
+                { value: tree?.total_lessons ?? expectedLessons, label: `Bài Lớp ${grade}` },
+                { value: "190", label: "Bài THCS 6–9" },
+                { value: "920+", label: "Từ vựng IPA" },
+              ].map((stat) => (
+                <motion.div
+                  key={stat.label}
+                  whileHover={{ y: -4, scale: 1.04 }}
+                  transition={{ type: "spring", stiffness: 360, damping: 22 }}
+                  className="rounded-2xl bg-white/20 px-4 py-3 backdrop-blur-sm"
+                >
+                  <div className="text-2xl font-extrabold">{stat.value}</div>
+                  <div className="text-xs font-medium text-sky-50">{stat.label}</div>
+                </motion.div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -227,8 +246,8 @@ export function CurriculumMapPage({
           className="holo-card flex flex-col items-start justify-between gap-4 rounded-2xl border border-fuchsia-200 bg-gradient-to-r from-fuchsia-50 via-indigo-50 to-sky-50 p-4 shadow-sm sm:flex-row sm:items-center sm:px-5"
         >
           <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-fuchsia-600 to-indigo-600 text-white shadow">
-              <Library className="h-5 w-5" />
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-fuchsia-500/15 to-indigo-500/20 p-1 shadow-inner">
+              <Icon3D name="books" size={36} float />
             </div>
             <div>
               <div className="flex flex-wrap items-center gap-2">
@@ -236,7 +255,7 @@ export function CurriculumMapPage({
                   Mới cập nhật
                 </span>
                 <h2 className="text-sm font-extrabold text-slate-900 sm:text-base">
-                  Bộ Đề Học & Từ điển Khoa học 16 Units (The English Dictionary for SCIENCE)
+                  Bộ Đề Học &amp; Từ điển Khoa học 16 Units (The English Dictionary for SCIENCE)
                 </h2>
               </div>
               <p className="mt-0.5 text-xs text-slate-600">
@@ -264,8 +283,8 @@ export function CurriculumMapPage({
           className="holo-card flex flex-col items-start justify-between gap-4 rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 via-orange-50 to-rose-50 p-4 shadow-sm sm:flex-row sm:items-center sm:px-5"
         >
           <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500 to-rose-500 text-white shadow">
-              <Gamepad2 className="h-5 w-5" />
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400/20 to-rose-500/20 p-1 shadow-inner">
+              <Icon3D name="video_game" size={36} float />
             </div>
             <div>
               <div className="flex flex-wrap items-center gap-2">
@@ -273,7 +292,7 @@ export function CurriculumMapPage({
                   Trò chơi mới
                 </span>
                 <h2 className="text-sm font-extrabold text-slate-900 sm:text-base">
-                  Đấu Trường Trò Chơi KHTN 8 (Chớp Nhoáng 60s, IUPAC, Tháp Sắp Xếp &amp; SciDex 16)
+                  Đấu Trường Trò Chơi KHTN 6–9 (Chớp Nhoáng 60s, IUPAC, Tháp Sắp Xếp &amp; SciDex 16)
                 </h2>
               </div>
               <p className="mt-0.5 text-xs text-slate-600">
@@ -349,7 +368,10 @@ export function CurriculumMapPage({
                     className="absolute inset-0 rounded-xl bg-gradient-to-r from-indigo-600 to-sky-500 shadow-sm"
                   />
                 )}
-                <span className="relative z-10">{label}</span>
+                <span className="relative z-10 inline-flex items-center gap-1.5">
+                  <Icon3D name={tab.icon} size={16} />
+                  <span>{label}</span>
+                </span>
               </button>
             );
           })}

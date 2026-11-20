@@ -23,6 +23,7 @@ import {
   FloatingXPBurst,
   SpeakButton,
 } from "../../components/motion/MotionPrimitives";
+import { Icon3D, LottieSticker } from "../../components/visuals/ScienceVisuals";
 import { fireSuccessSpark, fireVictoryCelebration } from "../../utils/confetti";
 import { playCelebrationSound, playClickSound, playSuccessSound, playWrongSound } from "../../utils/soundFx";
 
@@ -541,6 +542,11 @@ export function SequenceLabGame({ session, grade = 8, onRewardRecorded }: Props)
             </div>
 
             <div className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-50 p-4 text-center sm:min-w-[230px]">
+              <div className="mb-2 flex items-center justify-center gap-2">
+                <Icon3D name="microscope" size={30} float />
+                <Icon3D name="dna" size={30} />
+                <Icon3D name="ringed_planet" size={30} float />
+              </div>
               <div className="text-xs font-bold uppercase text-emerald-800">Huy hiệu mở khóa</div>
               <div className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1 text-sm font-extrabold text-emerald-700 shadow-sm">
                 <Award className="h-4 w-4 text-amber-500" />
@@ -818,8 +824,8 @@ export function SequenceLabGame({ session, grade = 8, onRewardRecorded }: Props)
       {/* FINISHED */}
       {phase === "finished" && (
         <section className="space-y-5 rounded-3xl border border-emerald-200 bg-white/95 p-6 text-center shadow-md sm:p-8">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg">
-            <Trophy className="h-8 w-8" />
+          <div className="mx-auto flex justify-center">
+            <LottieSticker name="party" fallbackIcon="party_popper" size={76} />
           </div>
           <div>
             <h2 className="text-2xl font-extrabold text-slate-900">

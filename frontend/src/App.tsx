@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, MotionConfig, motion } from "framer-motion";
 import {
-  Atom,
   BookOpen,
   BookText,
   Gamepad2,
@@ -16,6 +15,7 @@ import {
 import { api, clearAuthTokens, getStoredAccessToken } from "./api/client";
 import type { AuthSession, GradeLevel } from "./api/types";
 import { PageTransitionWrapper } from "./components/motion/MotionPrimitives";
+import { Icon3D } from "./components/visuals/ScienceVisuals";
 import { AccountPage } from "./features/auth/AuthModalAndAccount";
 import { CurriculumMapPage } from "./features/curriculum/CurriculumMapPage";
 import { GlossaryAndRulesPage } from "./features/curriculum/GlossaryAndRulesPage";
@@ -234,7 +234,7 @@ export function App() {
                 transition={{ type: "spring", stiffness: 260, damping: 18 }}
                 className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-600 via-sky-500 to-emerald-400 text-white shadow-md"
               >
-                <Atom className="h-5 w-5" />
+                <Icon3D name="atom" size={30} />
               </motion.div>
               <div>
                 <div className="text-sm font-extrabold tracking-tight text-slate-900 sm:text-base">
@@ -413,10 +413,16 @@ export function App() {
         </main>
 
         <footer className="border-t border-sky-100 bg-white/75 py-4 text-center text-xs text-slate-600">
-          <div className="mx-auto max-w-6xl px-4">
-            <span className="font-bold text-indigo-700">Trường THCS Cầu Giấy B</span> · Giáo viên phụ
-            trách: <span className="font-bold text-slate-800">Phạm Thị Hải</span> · Nền tảng SciLingo
-            KHTN 6–9 (Chuẩn IUPAC / SI &amp; Thông tư 94/2026/TT-BGDĐT)
+          <div className="mx-auto max-w-6xl space-y-1 px-4">
+            <div>
+              <span className="font-bold text-indigo-700">Trường THCS Cầu Giấy B</span> · Giáo viên
+              phụ trách: <span className="font-bold text-slate-800">Phạm Thị Hải</span> · Nền tảng
+              SciLingo KHTN 6–9 (Chuẩn IUPAC / SI &amp; Thông tư 94/2026/TT-BGDĐT)
+            </div>
+            <div className="text-[11px] text-slate-400">
+              Icons 3D: Microsoft Fluent Emoji (MIT) · Lottie: Google Noto Emoji (CC BY 4.0) ·
+              Bioicons (CC0)
+            </div>
           </div>
         </footer>
       </div>

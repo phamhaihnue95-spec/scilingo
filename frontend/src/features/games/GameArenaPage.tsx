@@ -22,6 +22,7 @@ import type {
   GradeLevel,
 } from "../../api/types";
 import { ScienceAmbientParticles } from "../../components/motion/MotionPrimitives";
+import { Icon3D, LottieSticker } from "../../components/visuals/ScienceVisuals";
 import { playClickSound } from "../../utils/soundFx";
 import { ClassroomLeaderboardPanel } from "./ClassroomLeaderboardPanel";
 import { IupacLabGame } from "./IupacLabGame";
@@ -172,7 +173,7 @@ export function GameArenaPage({
     <div className={focusPlaying ? "space-y-3 md:space-y-6" : "space-y-4 sm:space-y-6"}>
       {/* Arcade Hero Banner */}
       <section
-        className={`relative overflow-hidden rounded-3xl bg-gradient-to-br from-amber-500 via-rose-500 to-indigo-600 p-5 text-white shadow-lg sm:p-7 ${
+        className={`aurora-hero relative overflow-hidden rounded-3xl bg-gradient-to-br from-amber-500 via-rose-500 to-indigo-600 p-5 text-white shadow-lg sm:p-7 ${
           focusPlaying ? "hidden md:block" : ""
         }`}
       >
@@ -186,9 +187,17 @@ export function GameArenaPage({
               <Gamepad2 className="h-4 w-4 text-amber-200" />
               <span>Trường THCS Cầu Giấy B · Giáo viên Phạm Thị Hải</span>
             </div>
-            <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">
-              Đấu Trường Trò Chơi KHTN 6–9
-            </h1>
+            <div className="flex items-center gap-3">
+              <div className="hidden rounded-2xl bg-white/20 p-2 backdrop-blur-sm sm:flex">
+                <Icon3D name="video_game" size={44} float />
+              </div>
+              <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">
+                Đấu Trường Trò Chơi KHTN 6–9
+              </h1>
+              <div className="hidden sm:block">
+                <LottieSticker name="rocket" fallbackIcon="rocket" size={44} />
+              </div>
+            </div>
             <p className="max-w-2xl text-sm text-amber-50">
               Vừa chơi vừa chinh phục 920 thuật ngữ IPA (16 Units) cùng từ vựng SGK KHTN Khối 6, 7, 8, 9,
               công thức Hóa học chuẩn IUPAC (TT 32/2018), dây chuyền quy trình KHTN, sưu tầm 16 huy hiệu 3D SciDex và đua Top Bảng Vàng Lớp!

@@ -33,6 +33,7 @@ import {
   FloatingXPBurst,
   SpeakButton,
 } from "../../components/motion/MotionPrimitives";
+import { BioDiagram, Icon3D, LottieSticker } from "../../components/visuals/ScienceVisuals";
 import { fireSuccessSpark, fireVictoryCelebration } from "../../utils/confetti";
 import {
   playCelebrationSound,
@@ -637,21 +638,30 @@ export function IupacLabGame({ session, grade = 8, onRewardRecorded }: Props) {
 
       {/* READY LOBBY */}
       {phase === "ready" && (
-        <div className="space-y-5 rounded-3xl border border-orange-200 bg-white/95 p-6 shadow-sm">
+        <div className="relative space-y-5 overflow-hidden rounded-3xl border border-orange-200 bg-white/95 p-6 shadow-sm">
+          <BioDiagram
+            name="dropper_bottles"
+            className="pointer-events-none absolute -bottom-3 right-3 hidden h-32 w-32 opacity-[0.09] sm:block"
+          />
           {labMode === "linter_slash" ? (
             <>
-              <div className="space-y-1.5">
-                <h2 className="text-2xl font-extrabold text-slate-900">
-                  Bắt Lỗi Phù Thủy (Terminology Linter Slash)
-                </h2>
-                <p className="text-sm text-slate-600">
-                  Kiểm tra nhanh <strong>12 thẻ bài</strong>: bấm{" "}
-                  <strong className="text-rose-600">Bắt lỗi! (←)</strong> nếu viết sai danh pháp cũ
-                  (<em>axit, bazơ, oxit, ADN, hợp chất dùng tên Việt...</em>) hoặc{" "}
-                  <strong className="text-emerald-700">Giữ lại! (→)</strong> nếu viết chuẩn IUPAC /
-                  thuộc <strong>13 nguyên tố ngoại lệ ở dạng đơn chất</strong>. Bạn có{" "}
-                  <strong className="text-rose-600">3 trái tim ❤️❤️❤️</strong>!
-                </p>
+              <div className="relative flex items-start gap-3">
+                <div className="hidden rounded-2xl border border-rose-100 bg-rose-50/70 p-2 sm:block">
+                  <Icon3D name="shield" size={44} float />
+                </div>
+                <div className="space-y-1.5">
+                  <h2 className="text-2xl font-extrabold text-slate-900">
+                    Bắt Lỗi Phù Thủy (Terminology Linter Slash)
+                  </h2>
+                  <p className="text-sm text-slate-600">
+                    Kiểm tra nhanh <strong>12 thẻ bài</strong>: bấm{" "}
+                    <strong className="text-rose-600">Bắt lỗi! (←)</strong> nếu viết sai danh pháp cũ
+                    (<em>axit, bazơ, oxit, ADN, hợp chất dùng tên Việt...</em>) hoặc{" "}
+                    <strong className="text-emerald-700">Giữ lại! (→)</strong> nếu viết chuẩn IUPAC /
+                    thuộc <strong>13 nguyên tố ngoại lệ ở dạng đơn chất</strong>. Bạn có{" "}
+                    <strong className="text-rose-600">3 trái tim ❤️❤️❤️</strong>!
+                  </p>
+                </div>
               </div>
               <div className="grid gap-3 rounded-2xl bg-amber-50/70 p-4 text-xs text-amber-950 sm:grid-cols-2">
                 <div>
@@ -672,16 +682,21 @@ export function IupacLabGame({ session, grade = 8, onRewardRecorded }: Props) {
             </>
           ) : (
             <>
-              <div className="space-y-1.5">
-                <h2 className="text-2xl font-extrabold text-slate-900">
-                  Phòng Pha Chế Công Thức &amp; Đơn Vị SI
-                </h2>
-                <p className="text-sm text-slate-600">
-                  Quan sát công thức hóa học hoặc ký hiệu vật lí hiện lên trong{" "}
-                  <strong>bình thí nghiệm</strong> (<code>H₂SO₄</code>, <code>p = F / S (Pa)</code>
-                  , <code>M = F · d (N·m)</code>...), sau đó rót đúng lọ thuốc thử tên tiếng Anh
-                  chuẩn IUPAC / SI!
-                </p>
+              <div className="relative flex items-start gap-3">
+                <div className="hidden rounded-2xl border border-orange-100 bg-orange-50/70 p-2 sm:block">
+                  <Icon3D name="alembic" size={44} float />
+                </div>
+                <div className="space-y-1.5">
+                  <h2 className="text-2xl font-extrabold text-slate-900">
+                    Phòng Pha Chế Công Thức &amp; Đơn Vị SI
+                  </h2>
+                  <p className="text-sm text-slate-600">
+                    Quan sát công thức hóa học hoặc ký hiệu vật lí hiện lên trong{" "}
+                    <strong>bình thí nghiệm</strong> (<code>H₂SO₄</code>, <code>p = F / S (Pa)</code>
+                    , <code>M = F · d (N·m)</code>...), sau đó rót đúng lọ thuốc thử tên tiếng Anh
+                    chuẩn IUPAC / SI!
+                  </p>
+                </div>
               </div>
 
               <div className="flex flex-wrap items-center justify-between gap-3">
@@ -975,13 +990,18 @@ export function IupacLabGame({ session, grade = 8, onRewardRecorded }: Props) {
       {phase === "finished" && (
         <div className="space-y-5 rounded-3xl border border-indigo-200 bg-white/95 p-6 shadow-md">
           <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-5">
-            <div>
-              <div className="text-xs font-extrabold uppercase text-indigo-700">
-                Tổng kết {labMode === "linter_slash" ? "Bắt Lỗi Phù Thủy" : "Phòng Pha Chế Công Thức"}
+            <div className="flex items-center gap-3">
+              <div className="hidden rounded-2xl bg-indigo-50 p-1.5 sm:flex">
+                <LottieSticker name="trophy" fallbackIcon="trophy" size={52} />
               </div>
-              <div className="mt-1 text-4xl font-extrabold text-slate-900">
-                <AnimatedScoreCounter value={score} decimals={0} className="text-indigo-700" />{" "}
-                <span className="text-lg font-bold text-slate-500">điểm</span>
+              <div>
+                <div className="text-xs font-extrabold uppercase text-indigo-700">
+                  Tổng kết {labMode === "linter_slash" ? "Bắt Lỗi Phù Thủy" : "Phòng Pha Chế Công Thức"}
+                </div>
+                <div className="mt-1 text-4xl font-extrabold text-slate-900">
+                  <AnimatedScoreCounter value={score} decimals={0} className="text-indigo-700" />{" "}
+                  <span className="text-lg font-bold text-slate-500">điểm</span>
+                </div>
               </div>
             </div>
 

@@ -35,6 +35,7 @@ import {
   ScienceAmbientParticles,
   SpeakButton,
 } from "../../components/motion/MotionPrimitives";
+import { Icon3D, STUDY_PACK_UNIT_3D_ICON } from "../../components/visuals/ScienceVisuals";
 import { fireSuccessSpark, fireVictoryCelebration } from "../../utils/confetti";
 import { unlockLocalSciDexUnit } from "../../utils/scidex";
 import {
@@ -314,9 +315,14 @@ export function StudyPack16Page({
               <Sparkles className="h-3.5 w-3.5 text-amber-200" />
               <span>Trường THCS Cầu Giấy B · Giáo viên Phạm Thị Hải</span>
             </div>
-            <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">
-              {overview?.title ?? "The English Dictionary for SCIENCE (16 Units)"}
-            </h1>
+            <div className="flex items-center gap-3">
+              <div className="hidden rounded-2xl bg-white/20 p-2 backdrop-blur-sm sm:flex">
+                <Icon3D name="books" size={44} float />
+              </div>
+              <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">
+                {overview?.title ?? "The English Dictionary for SCIENCE (16 Units)"}
+              </h1>
+            </div>
             <p className="max-w-2xl text-sm text-sky-50">
               Bộ đề học & cẩm nang {overview?.total_items ?? 920} thuật ngữ Khoa học tự nhiên kèm
               phiên âm IPA chuẩn, phát âm giọng đọc, thẻ lật Flashcard và bài luyện trắc nghiệm
@@ -390,6 +396,10 @@ export function StudyPack16Page({
                     >
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
+                          <Icon3D
+                            name={STUDY_PACK_UNIT_3D_ICON[u.unit_no] ?? "sparkles"}
+                            size={22}
+                          />
                           <span
                             className={`rounded-md px-2 py-0.5 text-[11px] font-extrabold ${
                               isActive ? "bg-white/25 text-white" : style.chip

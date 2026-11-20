@@ -1,8 +1,14 @@
 import { useMemo } from "react";
 import { motion } from "framer-motion";
-import { BookOpen, Compass, FlaskConical, Link2, Sparkles, Star } from "lucide-react";
+import { BookOpen, FlaskConical, Link2, Sparkles, Star } from "lucide-react";
 
 import type { ChapterWithLessons, Discipline, LessonSummary } from "../../api/types";
+import {
+  BioDiagram,
+  DISCIPLINE_3D_ICON,
+  DISCIPLINE_BIO_DIAGRAM,
+  Icon3D,
+} from "../../components/visuals/ScienceVisuals";
 import { playClickSound } from "../../utils/soundFx";
 import { DisciplineBadge } from "./DisciplineBadge";
 
@@ -139,9 +145,9 @@ export function CurriculumQuestMap({ chapters, lessonStars, onSelectLesson }: Pr
             <div className="flex flex-col gap-3 border-b border-white/70 bg-white/80 px-5 py-4 backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-start gap-3">
                 <div
-                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br text-white shadow ${theme.headerBg}`}
+                  className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br p-1.5 text-white shadow ring-2 ring-white/50 ${theme.headerBg}`}
                 >
-                  <Compass className="h-5 w-5" />
+                  <Icon3D name={DISCIPLINE_3D_ICON[chapter.discipline] ?? "microscope"} size={32} />
                 </div>
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
@@ -163,6 +169,10 @@ export function CurriculumQuestMap({ chapters, lessonStars, onSelectLesson }: Pr
 
             {/* Winding SVG Trail */}
             <div className="relative mx-auto max-w-4xl px-4 py-4 sm:px-6" style={{ minHeight: height }}>
+              <BioDiagram
+                name={DISCIPLINE_BIO_DIAGRAM[chapter.discipline] ?? "distillation"}
+                className="pointer-events-none absolute right-4 top-6 h-40 w-40 opacity-[0.08]"
+              />
               {d && (
                 <svg
                   viewBox={`0 0 800 ${height}`}
@@ -241,16 +251,16 @@ export function CurriculumQuestMap({ chapters, lessonStars, onSelectLesson }: Pr
 
                         {/* 3-Star Progress Row */}
                         <div className="relative z-10 -mt-2 flex items-center gap-0.5 rounded-full border border-slate-200 bg-white px-2 py-0.5 shadow-sm">
-                          {[1, 2, 3].map((sIdx) => (
-                            <Star
-                              key={sIdx}
-                              className={`h-3 w-3 ${
-                                stars >= sIdx
-                                  ? "fill-amber-400 text-amber-500"
-                                  : "fill-slate-100 text-slate-300"
-                              }`}
-                            />
-                          ))}
+                          {[1, 2, 3].map((sIdx) =>
+                            stars >= sIdx ? (
+                              <Icon3D key={sIdx} name="glowing_star" size={14} />
+                            ) : (
+                              <Star
+                                key={sIdx}
+                                className="h-3 w-3 fill-slate-100 text-slate-300"
+                              />
+                            )
+                          )}
                         </div>
 
                         {/* Floating Label Card */}

@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Award, ClipboardCheck, Flame, GitBranch, Layers, Target, Trophy, UserCheck } from "lucide-react";
+import { Award, ClipboardCheck, GitBranch, Layers, Target, UserCheck } from "lucide-react";
 
 import { api, saveAuthTokens } from "../../api/client";
 import type { AuthSession, GamificationSummary, GradeLevel } from "../../api/types";
 import { ScienceAmbientParticles } from "../../components/motion/MotionPrimitives";
+import { LottieSticker } from "../../components/visuals/ScienceVisuals";
 import { playClickSound } from "../../utils/soundFx";
 import { StudentAssignmentsPanel } from "../lms/StudentAssignmentsPanel";
 import { FlashcardSRSView } from "./FlashcardSRSView";
@@ -84,11 +85,11 @@ export function LearningHubPage({
               </div>
               <div className="mt-1 flex flex-wrap items-center gap-4">
                 <span className="inline-flex items-center gap-1.5 text-lg font-extrabold">
-                  <Flame className="h-5 w-5 text-amber-300" />
+                  <LottieSticker name="fire" fallbackIcon="fire" size={26} />
                   {gamification.current_streak} ngày Streak
                 </span>
                 <span className="inline-flex items-center gap-1.5 text-lg font-extrabold">
-                  <Trophy className="h-5 w-5 text-emerald-300" />
+                  <LottieSticker name="trophy" fallbackIcon="trophy" size={26} />
                   Level {gamification.level} ({gamification.total_xp} XP)
                 </span>
                 <span className="text-xs font-semibold text-white/90">

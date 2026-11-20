@@ -1,18 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import {
-  Atom,
-  BookOpen,
-  Dna,
-  FlaskConical,
-  Lock,
-  Sparkles,
-  Zap,
-} from "lucide-react";
+import { BookOpen, Lock, Sparkles, Zap } from "lucide-react";
 
 import { api } from "../../api/client";
 import type { Discipline, GamificationSummary, StudyPackOverview } from "../../api/types";
 import { Tilt3DCard } from "../../components/motion/MotionPrimitives";
+import {
+  Icon3D,
+  LottieSticker,
+  STUDY_PACK_UNIT_3D_ICON,
+} from "../../components/visuals/ScienceVisuals";
 import { getMergedSciDexUnits } from "../../utils/scidex";
 import { playClickSound } from "../../utils/soundFx";
 
@@ -24,27 +21,23 @@ interface Props {
 
 const DISC_CARD_THEME: Record<
   Discipline,
-  { grad: string; chip: string; icon: typeof Atom }
+  { grad: string; chip: string }
 > = {
   general_lab: {
     grad: "from-violet-600 via-fuchsia-500 to-indigo-600",
     chip: "bg-violet-100 text-violet-900",
-    icon: Sparkles,
   },
   chemistry: {
     grad: "from-amber-500 via-orange-500 to-rose-500",
     chip: "bg-amber-100 text-amber-900",
-    icon: FlaskConical,
   },
   physics: {
     grad: "from-sky-500 via-cyan-500 to-indigo-600",
     chip: "bg-sky-100 text-sky-900",
-    icon: Atom,
   },
   biology: {
     grad: "from-emerald-500 via-teal-500 to-cyan-600",
     chip: "bg-emerald-100 text-emerald-900",
-    icon: Dna,
   },
 };
 
@@ -93,18 +86,23 @@ export function SciDexAlbumView({
       {/* Collector Header */}
       <section className="rounded-3xl border border-indigo-200 bg-white/95 p-5 shadow-sm sm:p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="space-y-1.5">
-            <div className="inline-flex items-center gap-1.5 rounded-full bg-indigo-100 px-3 py-1 text-xs font-extrabold text-indigo-800">
-              <Sparkles className="h-3.5 w-3.5" />
-              Sổ Tay Huy Hiệu Hologram 3D · 16 Units KHTN
+          <div className="flex items-start gap-3">
+            <div className="hidden rounded-2xl border border-indigo-100 bg-indigo-50/70 p-2 sm:flex">
+              <LottieSticker name="star_glow" fallbackIcon="glowing_star" size={48} />
             </div>
-            <h2 className="text-xl font-extrabold text-slate-900">
-              Bộ Sưu Tập SciDex: {unlockedCount} / {totalCount} Huy hiệu đã mở khóa
-            </h2>
-            <p className="text-xs text-slate-600">
-              Ghép đúng <strong>≥ 6 cặp</strong> trong <strong>Nối Cặp 60s</strong> theo từng Unit
-              hoặc đạt <strong>≥ 7.0 điểm Quiz Unit</strong> để mở khóa thẻ 3D Hologram tương ứng!
-            </p>
+            <div className="space-y-1.5">
+              <div className="inline-flex items-center gap-1.5 rounded-full bg-indigo-100 px-3 py-1 text-xs font-extrabold text-indigo-800">
+                <Sparkles className="h-3.5 w-3.5" />
+                Sổ Tay Huy Hiệu Hologram 3D · 16 Units KHTN
+              </div>
+              <h2 className="text-xl font-extrabold text-slate-900">
+                Bộ Sưu Tập SciDex: {unlockedCount} / {totalCount} Huy hiệu đã mở khóa
+              </h2>
+              <p className="text-xs text-slate-600">
+                Ghép đúng <strong>≥ 6 cặp</strong> trong <strong>Nối Cặp 60s</strong> theo từng Unit
+                hoặc đạt <strong>≥ 7.0 điểm Quiz Unit</strong> để mở khóa thẻ 3D Hologram tương ứng!
+              </p>
+            </div>
           </div>
 
           <div className="flex flex-wrap gap-1.5 rounded-2xl border border-slate-200 bg-slate-100 p-1">
@@ -168,7 +166,7 @@ export function SciDexAlbumView({
           {visibleUnits.map((unit) => {
             const unlocked = unlockedSet.has(unit.unit_no);
             const theme = DISC_CARD_THEME[unit.discipline] ?? DISC_CARD_THEME.general_lab;
-            const UnitIcon = theme.icon;
+            const icon3DName = STUDY_PACK_UNIT_3D_ICON[unit.unit_no] ?? "sparkles";
 
             return (
               <Tilt3DCard
@@ -204,14 +202,22 @@ export function SciDexAlbumView({
 
                   <div className="mt-4 flex items-center gap-3">
                     <div
-                      className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl shadow-inner ${
-                        unlocked ? "bg-white/20 text-white" : "bg-slate-200/80 text-slate-400"
+                      className={`relative flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl p-1.5 shadow-inner ${
+                        unlocked
+                          ? "glow-badge-ring bg-white/25 backdrop-blur-sm"
+                          : "bg-slate-200/80"
                       }`}
                     >
-                      {unlocked ? (
-                        <UnitIcon className="h-6 w-6" />
-                      ) : (
-                        <Lock className="h-5 w-5" />
+                      <Icon3D
+                        name={icon3DName}
+                        size={38}
+                        float={unlocked}
+                        className={unlocked ? "" : "opacity-45 grayscale"}
+                      />
+                      {!unlocked && (
+                        <span className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full border border-white bg-slate-600 text-white shadow">
+                          <Lock className="h-2.5 w-2.5" />
+                        </span>
                       )}
                     </div>
                     <div className="min-w-0">

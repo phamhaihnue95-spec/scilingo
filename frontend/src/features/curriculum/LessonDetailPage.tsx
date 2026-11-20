@@ -15,6 +15,12 @@ import {
 import { api } from "../../api/client";
 import type { GradeLevel, LessonDetail } from "../../api/types";
 import { SpeakButton, Tilt3DCard } from "../../components/motion/MotionPrimitives";
+import {
+  BioDiagram,
+  DISCIPLINE_3D_ICON,
+  DISCIPLINE_BIO_DIAGRAM,
+  Icon3D,
+} from "../../components/visuals/ScienceVisuals";
 import { GRADE_LESSON_COUNTS } from "../../utils/grades";
 import { playClickSound } from "../../utils/soundFx";
 import type { LearningSubTab } from "../learning/LearningHubPage";
@@ -126,8 +132,12 @@ export function LessonDetailPage({
       </div>
 
       {/* Lesson Header */}
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+      <section className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <BioDiagram
+          name={DISCIPLINE_BIO_DIAGRAM[lesson.discipline] ?? "distillation"}
+          className="pointer-events-none absolute -right-4 -top-2 hidden h-36 w-36 opacity-[0.09] sm:block"
+        />
+        <div className="relative flex flex-wrap items-center gap-2 text-xs text-slate-500">
           <span className="rounded-md bg-indigo-100 px-2 py-0.5 font-extrabold text-indigo-800">
             KHTN {resolvedGrade}
           </span>
@@ -136,12 +146,21 @@ export function LessonDetailPage({
           <span>{lesson.chapter_title_en}</span>
         </div>
 
-        <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900">
-              Bài {lesson.lesson_no}. {lesson.title_vi}
-            </h1>
-            <p className="mt-1 text-base font-medium text-teal-700">{lesson.title_en}</p>
+        <div className="relative mt-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex items-start gap-3">
+            <div className="hidden rounded-2xl border border-sky-100 bg-sky-50/70 p-2 sm:block">
+              <Icon3D
+                name={DISCIPLINE_3D_ICON[lesson.discipline] ?? "microscope"}
+                size={44}
+                float
+              />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900">
+                Bài {lesson.lesson_no}. {lesson.title_vi}
+              </h1>
+              <p className="mt-1 text-base font-medium text-teal-700">{lesson.title_en}</p>
+            </div>
           </div>
           <DisciplineBadge discipline={lesson.discipline} />
         </div>

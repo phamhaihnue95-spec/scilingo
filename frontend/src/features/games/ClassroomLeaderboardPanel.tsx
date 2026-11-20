@@ -1,7 +1,8 @@
 import { motion } from "framer-motion";
-import { Award, Crown, Flame, Medal, Sparkles, Trophy } from "lucide-react";
+import { Award, Flame, Sparkles, Trophy } from "lucide-react";
 
 import type { ClassroomLeaderboard } from "../../api/types";
+import { Icon3D, LottieSticker } from "../../components/visuals/ScienceVisuals";
 
 interface Props {
   leaderboard: ClassroomLeaderboard | null;
@@ -92,11 +93,15 @@ export function ClassroomLeaderboardPanel({
                 animate={{ opacity: 1, y: 0 }}
                 className={`rounded-3xl border p-4 text-center shadow-sm ${style.orderClass} ${style.ring}`}
               >
-                <div className="flex justify-center">
+                <div className="flex flex-col items-center gap-1.5">
+                  <Icon3D
+                    name={entry.rank === 1 ? "crown" : entry.rank === 2 ? "medal" : "trophy"}
+                    size={34}
+                    float={entry.rank === 1}
+                  />
                   <span
                     className={`inline-flex items-center gap-1 rounded-full px-3 py-0.5 text-[11px] font-black ${style.badge}`}
                   >
-                    {entry.rank === 1 ? <Crown className="h-3.5 w-3.5" /> : <Medal className="h-3.5 w-3.5" />}
                     {style.label}
                   </span>
                 </div>
@@ -114,7 +119,11 @@ export function ClassroomLeaderboardPanel({
                 <div className="mt-2 flex flex-wrap justify-center gap-2 text-xs font-bold text-slate-600">
                   <span>Lv.{entry.level}</span>
                   <span className="inline-flex items-center gap-0.5 text-orange-600">
-                    <Flame className="h-3.5 w-3.5" />
+                    {entry.current_streak > 0 ? (
+                      <LottieSticker name="fire" fallbackIcon="fire" size={18} />
+                    ) : (
+                      <Flame className="h-3.5 w-3.5" />
+                    )}
                     {entry.current_streak}d
                   </span>
                   <span className="inline-flex items-center gap-0.5 text-fuchsia-700">

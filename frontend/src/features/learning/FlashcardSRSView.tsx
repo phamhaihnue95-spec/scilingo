@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Award, CheckCircle2, Flame, RotateCcw, Sparkles } from "lucide-react";
+import { Award, Flame, RotateCcw, Sparkles } from "lucide-react";
 
 import { api } from "../../api/client";
 import type { GradeLevel, SRSDueCard, SRSReviewResult } from "../../api/types";
@@ -9,6 +9,7 @@ import {
   FloatingXPBurst,
   SpeakButton,
 } from "../../components/motion/MotionPrimitives";
+import { LottieSticker } from "../../components/visuals/ScienceVisuals";
 import { fireSuccessSpark, fireVictoryCelebration } from "../../utils/confetti";
 import { GRADE_LESSON_COUNTS } from "../../utils/grades";
 import {
@@ -293,7 +294,9 @@ export function FlashcardSRSView({ grade = 8, lessonNo, onProgressUpdated }: Pro
 
       {!loading && !error && !currentCard && (
         <div className="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-8 text-center">
-          <CheckCircle2 className="mx-auto h-10 w-10 text-emerald-600" />
+          <div className="mx-auto flex justify-center">
+            <LottieSticker name="party" fallbackIcon="party_popper" size={68} />
+          </div>
           <h3 className="mt-3 text-lg font-bold text-slate-900">
             Bạn đã hoàn thành toàn bộ thẻ đến hạn!
           </h3>

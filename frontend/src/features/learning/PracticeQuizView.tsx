@@ -8,6 +8,7 @@ import {
   AnimatedScoreCounter,
   FloatingXPBurst,
 } from "../../components/motion/MotionPrimitives";
+import { LottieSticker } from "../../components/visuals/ScienceVisuals";
 import { fireVictoryCelebration } from "../../utils/confetti";
 import { GRADE_LESSON_COUNTS } from "../../utils/grades";
 import {
@@ -132,20 +133,29 @@ export function PracticeQuizView({ grade = 8, initialLessonNo = 8, onProgressUpd
             className="right-6 top-3"
           />
           <div className="flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <div className="text-xs font-extrabold uppercase text-indigo-700">
-                Kết quả Luyện tập · KHTN {grade} · Bài {result.lesson_no} (
-                {Math.round(result.english_ratio * 100)}% EN)
+            <div className="flex items-center gap-4">
+              <div className="hidden rounded-2xl bg-indigo-50/80 p-2 sm:flex">
+                <LottieSticker
+                  name={result.score >= 7 ? "trophy" : "lightbulb"}
+                  fallbackIcon={result.score >= 7 ? "trophy" : "light_bulb"}
+                  size={56}
+                />
               </div>
-              <h2 className="mt-1 text-3xl font-extrabold text-slate-900">
-                <AnimatedScoreCounter value={result.score} className="text-indigo-700" /> /{" "}
-                {result.max_score} điểm
-              </h2>
-              <p className="mt-1 text-sm text-slate-600">
-                Điểm Tiếng Việt: <strong>{result.vi_score}</strong> · Điểm Tiếng Anh:{" "}
-                <strong className="text-indigo-800">{result.en_score}</strong> · Nhận{" "}
-                <strong className="text-emerald-700">+{result.xp_earned} XP</strong>
-              </p>
+              <div>
+                <div className="text-xs font-extrabold uppercase text-indigo-700">
+                  Kết quả Luyện tập · KHTN {grade} · Bài {result.lesson_no} (
+                  {Math.round(result.english_ratio * 100)}% EN)
+                </div>
+                <h2 className="mt-1 text-3xl font-extrabold text-slate-900">
+                  <AnimatedScoreCounter value={result.score} className="text-indigo-700" /> /{" "}
+                  {result.max_score} điểm
+                </h2>
+                <p className="mt-1 text-sm text-slate-600">
+                  Điểm Tiếng Việt: <strong>{result.vi_score}</strong> · Điểm Tiếng Anh:{" "}
+                  <strong className="text-indigo-800">{result.en_score}</strong> · Nhận{" "}
+                  <strong className="text-emerald-700">+{result.xp_earned} XP</strong>
+                </p>
+              </div>
             </div>
 
             <motion.button

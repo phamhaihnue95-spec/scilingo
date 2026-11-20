@@ -1,28 +1,25 @@
 import type { Discipline } from "../../api/types";
+import { DISCIPLINE_3D_ICON, Icon3D } from "../../components/visuals/ScienceVisuals";
 
 const DISCIPLINE_META: Record<
   Discipline,
-  { label: string; badgeClass: string; dotClass: string }
+  { label: string; badgeClass: string }
 > = {
   general_lab: {
     label: "Phòng thí nghiệm",
     badgeClass: "bg-violet-100 text-violet-800 border-violet-200",
-    dotClass: "bg-violet-500",
   },
   chemistry: {
     label: "Hóa học (IUPAC)",
     badgeClass: "bg-orange-100 text-orange-800 border-orange-200",
-    dotClass: "bg-orange-500",
   },
   physics: {
     label: "Vật lí (SI)",
     badgeClass: "bg-sky-100 text-sky-800 border-sky-200",
-    dotClass: "bg-sky-500",
   },
   biology: {
     label: "Sinh học",
     badgeClass: "bg-emerald-100 text-emerald-800 border-emerald-200",
-    dotClass: "bg-emerald-500",
   },
 };
 
@@ -36,7 +33,7 @@ export function DisciplineBadge({ discipline }: { discipline: Discipline }) {
     <span
       className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium ${meta.badgeClass}`}
     >
-      <span className={`h-1.5 w-1.5 rounded-full ${meta.dotClass}`} />
+      <Icon3D name={DISCIPLINE_3D_ICON[discipline] ?? "microscope"} size={15} />
       {meta.label}
     </span>
   );

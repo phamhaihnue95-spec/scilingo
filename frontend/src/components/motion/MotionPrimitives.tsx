@@ -11,6 +11,7 @@ import { Atom, Dna, FlaskConical, Sparkles, Volume2, Zap } from "lucide-react";
 
 import { playFlipSound } from "../../utils/soundFx";
 import { speakEnglishTerm } from "../../utils/speech";
+import { Icon3D, type Icon3DName } from "../visuals/ScienceVisuals";
 
 const AMBIENT_SPECS = [
   { Icon: Atom, pos: "left-[6%] top-4", dur: 7.5, delay: 0, size: "h-7 w-7", rot: 14 },
@@ -20,9 +21,57 @@ const AMBIENT_SPECS = [
   { Icon: Sparkles, pos: "left-[54%] top-5", dur: 7.2, delay: 0.6, size: "h-5 w-5", rot: 20 },
 ];
 
-export function ScienceAmbientParticles() {
+const AMBIENT_3D_SPECS: Array<{
+  name: Icon3DName;
+  pos: string;
+  dur: number;
+  delay: number;
+  size: number;
+  rot: number;
+}> = [
+  { name: "atom", pos: "left-[5%] top-3", dur: 7.8, delay: 0, size: 30, rot: 12 },
+  { name: "test_tube", pos: "left-[27%] bottom-2", dur: 8.5, delay: 0.7, size: 26, rot: -10 },
+  { name: "dna", pos: "right-[27%] top-3", dur: 9.2, delay: 0.4, size: 28, rot: 14 },
+  { name: "light_bulb", pos: "right-[7%] bottom-3", dur: 7.0, delay: 1.0, size: 26, rot: -8 },
+  { name: "ringed_planet", pos: "left-[52%] top-4", dur: 8.0, delay: 0.5, size: 26, rot: 12 },
+];
+
+interface ScienceAmbientParticlesProps {
+  variant?: "icons" | "3d";
+}
+
+export function ScienceAmbientParticles({ variant = "3d" }: ScienceAmbientParticlesProps) {
   const reduced = useReducedMotion();
   if (reduced) return null;
+
+  if (variant === "3d") {
+    return (
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 overflow-hidden"
+      >
+        {AMBIENT_3D_SPECS.map((item) => (
+          <motion.div
+            key={item.name}
+            className={`absolute ${item.pos} opacity-25`}
+            animate={{
+              y: [0, -10, 4, 0],
+              x: [0, 6, -4, 0],
+              rotate: [-item.rot, item.rot, -item.rot],
+            }}
+            transition={{
+              duration: item.dur,
+              delay: item.delay,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+          >
+            <Icon3D name={item.name} size={item.size} />
+          </motion.div>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div

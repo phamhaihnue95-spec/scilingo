@@ -26,6 +26,7 @@ import {
   FloatingXPBurst,
   SpeakButton,
 } from "../../components/motion/MotionPrimitives";
+import { LottieSticker } from "../../components/visuals/ScienceVisuals";
 import { fireSuccessSpark, fireVictoryCelebration } from "../../utils/confetti";
 import { GRADE_INFO, VALID_GRADES } from "../../utils/grades";
 import { unlockLocalSciDexUnit } from "../../utils/scidex";
@@ -427,19 +428,24 @@ export function LightningMatchGame({
     return (
       <div className="mx-auto max-w-3xl space-y-4 rounded-3xl border border-sky-200 bg-white/95 p-4 shadow-sm sm:space-y-5 sm:p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="space-y-1">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-0.5 text-xs font-extrabold text-amber-900">
-              <Zap className="h-3.5 w-3.5 text-amber-600" />
-              Mini-Game 1 · 920 Thuật ngữ IPA &amp; SGK KHTN 6–9
-            </span>
-            <h2 className="text-2xl font-extrabold text-slate-900">
-              Chớp Nhoáng Nối Cặp 60s (Lightning Match)
-            </h2>
-            <p className="text-sm text-slate-600">
-              Nối nhanh thuật ngữ Tiếng Anh (IPA) với nghĩa Tiếng Việt. Đạt chuỗi{" "}
-              <strong className="text-rose-600">5 cặp đúng liên tiếp</strong> để kích hoạt{" "}
-              <strong className="text-amber-700">FEVER MODE x4 điểm</strong>!
-            </p>
+          <div className="flex items-start gap-3">
+            <div className="hidden rounded-2xl border border-amber-200 bg-amber-50/70 p-2 sm:flex">
+              <LottieSticker name="electricity" fallbackIcon="high_voltage" size={44} />
+            </div>
+            <div className="space-y-1">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-0.5 text-xs font-extrabold text-amber-900">
+                <Zap className="h-3.5 w-3.5 text-amber-600" />
+                Mini-Game 1 · 920 Thuật ngữ IPA &amp; SGK KHTN 6–9
+              </span>
+              <h2 className="text-2xl font-extrabold text-slate-900">
+                Chớp Nhoáng Nối Cặp 60s (Lightning Match)
+              </h2>
+              <p className="text-sm text-slate-600">
+                Nối nhanh thuật ngữ Tiếng Anh (IPA) với nghĩa Tiếng Việt. Đạt chuỗi{" "}
+                <strong className="text-rose-600">5 cặp đúng liên tiếp</strong> để kích hoạt{" "}
+                <strong className="text-amber-700">FEVER MODE x4 điểm</strong>!
+              </p>
+            </div>
           </div>
 
           <div className="rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50 px-4 py-2.5 text-center">
@@ -592,20 +598,25 @@ export function LightningMatchGame({
     return (
       <div className="mx-auto max-w-3xl space-y-5 rounded-3xl border border-indigo-200 bg-white/95 p-6 shadow-md">
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-5">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-extrabold uppercase text-indigo-700">
-                Tổng kết Chớp Nhoáng Nối Cặp
-              </span>
-              {isNewBest && (
-                <span className="rounded-full bg-gradient-to-r from-amber-400 to-orange-500 px-2.5 py-0.5 text-[11px] font-extrabold text-white shadow-sm">
-                  Kỷ lục mới!
-                </span>
-              )}
+          <div className="flex items-center gap-3">
+            <div className="hidden rounded-2xl bg-indigo-50 p-1.5 sm:flex">
+              <LottieSticker name="party" fallbackIcon="party_popper" size={54} />
             </div>
-            <div className="mt-1 text-4xl font-extrabold text-slate-900">
-              <AnimatedScoreCounter value={score} decimals={0} className="text-indigo-700" />{" "}
-              <span className="text-lg font-bold text-slate-500">điểm</span>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-extrabold uppercase text-indigo-700">
+                  Tổng kết Chớp Nhoáng Nối Cặp
+                </span>
+                {isNewBest && (
+                  <span className="rounded-full bg-gradient-to-r from-amber-400 to-orange-500 px-2.5 py-0.5 text-[11px] font-extrabold text-white shadow-sm">
+                    Kỷ lục mới!
+                  </span>
+                )}
+              </div>
+              <div className="mt-1 text-4xl font-extrabold text-slate-900">
+                <AnimatedScoreCounter value={score} decimals={0} className="text-indigo-700" />{" "}
+                <span className="text-lg font-bold text-slate-500">điểm</span>
+              </div>
             </div>
           </div>
 

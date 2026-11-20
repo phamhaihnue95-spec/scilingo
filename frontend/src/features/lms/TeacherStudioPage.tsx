@@ -35,6 +35,7 @@ import type {
   TeachingSessionLog,
 } from "../../api/types";
 import { ScienceAmbientParticles } from "../../components/motion/MotionPrimitives";
+import { Icon3D } from "../../components/visuals/ScienceVisuals";
 import { GRADE_LESSON_COUNTS, VALID_GRADES, normalizeGrade } from "../../utils/grades";
 import { playClickSound, playSuccessSound } from "../../utils/soundFx";
 import { ClassroomLeaderboardPanel } from "../games/ClassroomLeaderboardPanel";
@@ -467,15 +468,20 @@ export function TeacherStudioPage({ session, grade = 8, onSessionChange }: Props
         <ScienceAmbientParticles />
         <div className="pointer-events-none absolute -right-12 -top-12 h-48 w-48 rounded-full bg-white/15 blur-2xl" />
         <div className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <div className="text-xs font-bold uppercase tracking-wider text-sky-100">
-              Unit 3 · Teacher Studio, LMS & Hồ sơ Thông tư 94/2026/TT-BGDĐT
+          <div className="flex items-center gap-3.5">
+            <div className="hidden rounded-2xl bg-white/15 p-2 backdrop-blur-sm sm:flex">
+              <Icon3D name="graduation_cap" size={42} float />
             </div>
-            <h1 className="mt-1 text-2xl font-extrabold">{session.tenant.name}</h1>
-            <p className="mt-1 text-xs text-sky-50">
-              Giáo viên phụ trách: <strong>{session.user.full_name}</strong> ({session.user.role}) ·
-              Năm học 2026–2027
-            </p>
+            <div>
+              <div className="text-xs font-bold uppercase tracking-wider text-sky-100">
+                Unit 3 · Teacher Studio, LMS &amp; Hồ sơ Thông tư 94/2026/TT-BGDĐT
+              </div>
+              <h1 className="mt-1 text-2xl font-extrabold">{session.tenant.name}</h1>
+              <p className="mt-1 text-xs text-sky-50">
+                Giáo viên phụ trách: <strong>{session.user.full_name}</strong> ({session.user.role}) ·
+                Năm học 2026–2027
+              </p>
+            </div>
           </div>
           {report && (
             <div className="rounded-2xl bg-white/15 px-4 py-3 text-right backdrop-blur-sm">
