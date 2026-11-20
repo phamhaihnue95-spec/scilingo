@@ -49,6 +49,7 @@ from app.modules.lms.schemas import (
     ExamSummaryOut,
     GameChallengeCreateRequest,
     GameChallengeOut,
+    GradeTT94MetricsOut,
     LeaderboardEntryOut,
     QuestionCreateRequest,
     QuestionOut,
@@ -334,14 +335,17 @@ class LMSService:
 
     # --- CLIL Resources ---
     def get_resources_for_lesson(
-        self, current_user: User, lesson_no: int
+        self, current_user: User, lesson_no: int, grade: int = 8
     ) -> list[TeacherResourceOut]:
-        lesson = self.curriculum.get_lesson_detail(lesson_no)
+        lesson = self.curriculum.get_lesson_detail(lesson_no, grade=grade)
         official_pack = build_lesson_clil_pack(lesson)
-        custom = self.repo.list_custom_resources(current_user.tenant_id, lesson_no=lesson_no)
+        custom = self.repo.list_custom_resources(
+            current_user.tenant_id, lesson_no=lesson_no, grade=grade
+        )
         custom_outs = [
             TeacherResourceOut(
                 id=r.id,
+                grade=r.grade,
                 lesson_no=r.lesson_no,
                 title=r.title,
                 resource_type=r.resource_type,  # type: ignore[arg-type]
@@ -355,9 +359,10 @@ class LMSService:
 
     # --- Question Bank ---
     def create_question(self, teacher: User, payload: QuestionCreateRequest) -> QuestionOut:
-        self.curriculum.get_lesson_detail(payload.lesson_no)
+        self.curriculum.get_lesson_detail(payload.lesson_no, grade=payload.grade)
         correct_answer = payload.options[payload.correct_index]
         item = QuestionBankItem(
+            grade=payload.grade,
             lesson_no=payload.lesson_no,
             author_id=teacher.id,
             tenant_id=teacher.tenant_id,
@@ -376,6 +381,7 @@ class LMSService:
         self.db.commit()
         return QuestionOut(
             id=item.id,
+            grade=item.grade,
             lesson_no=item.lesson_no,
             language=item.language,
             cognitive_level=item.cognitive_level,
@@ -388,16 +394,22 @@ class LMSService:
         )
 
     def list_questions(
-        self, teacher: User, lesson_no: int | None = None, language: str | None = None
+        self,
+        teacher: User,
+        grade: int | None = None,
+        lesson_no: int | None = None,
+        language: str | None = None,
     ) -> list[QuestionOut]:
         items = self.repo.list_questions(
             tenant_id=teacher.tenant_id,
+            grade=grade,
             lesson_nos=[lesson_no] if lesson_no else None,
             language=language,
         )
         return [
             QuestionOut(
                 id=q.id,
+                grade=q.grade,
                 lesson_no=q.lesson_no,
                 language=q.language,
                 cognitive_level=q.cognitive_level,
@@ -413,11 +425,12 @@ class LMSService:
 
     # --- Exam Builder & Export ---
     def _save_synthesized_questions(
-        self, teacher: User, synthesized: list[dict]
+        self, teacher: User, grade: int, synthesized: list[dict]
     ) -> list[QuestionBankItem]:
         saved: list[QuestionBankItem] = []
         for q_dict in synthesized:
             item = QuestionBankItem(
+                grade=grade,
                 lesson_no=q_dict["lesson_no"],
                 author_id=teacher.id,
                 tenant_id=teacher.tenant_id,
@@ -440,6 +453,7 @@ class LMSService:
         self,
         *,
         teacher: User,
+        grade: int,
         lessons: list,
         all_terms: list,
         study_pack_units: list,
@@ -456,11 +470,12 @@ class LMSService:
                 language=language,
                 needed=needed,
             )
-            return self._save_synthesized_questions(teacher, synthesized)[:needed]
+            return self._save_synthesized_questions(teacher, grade, synthesized)[:needed]
 
         lesson_nos = [lesson.lesson_no for lesson in lessons]
         existing = self.repo.list_questions(
             tenant_id=teacher.tenant_id,
+            grade=grade,
             lesson_nos=lesson_nos,
             language=language,
         )
@@ -475,7 +490,9 @@ class LMSService:
                     language=language,
                     needed=study_count,
                 )
-                selected.extend(self._save_synthesized_questions(teacher, synthesized_pack))
+                selected.extend(
+                    self._save_synthesized_questions(teacher, grade, synthesized_pack)
+                )
                 shortfall = needed - len(selected)
             if shortfall > 0 and lessons:
                 synthesized = synthesize_questions_from_curriculum(
@@ -484,7 +501,7 @@ class LMSService:
                     language=language,
                     needed=shortfall,
                 )
-                selected.extend(self._save_synthesized_questions(teacher, synthesized))
+                selected.extend(self._save_synthesized_questions(teacher, grade, synthesized))
         return selected[:needed]
 
     def _to_exam_detail(self, exam: Exam) -> ExamDetailOut:
@@ -517,6 +534,7 @@ class LMSService:
         vi_points = round(vi_points, 2)
         return ExamDetailOut(
             id=exam.id,
+            grade=exam.grade,
             title=exam.title,
             classroom_id=exam.classroom_id,
             target_en_ratio=exam.target_en_ratio,
@@ -541,8 +559,13 @@ class LMSService:
                     detail="Không tìm thấy lớp học trong trường của bạn.",
                 )
 
-        lessons = [self.curriculum.get_lesson_detail(no) for no in sorted(set(payload.lesson_nos))]
-        all_terms = self.curriculum.search_terms(limit=200).items if lessons else []
+        lessons = [
+            self.curriculum.get_lesson_detail(no, grade=payload.grade)
+            for no in sorted(set(payload.lesson_nos))
+        ]
+        all_terms = (
+            self.curriculum.search_terms(grade=payload.grade, limit=200).items if lessons else []
+        )
         study_pack_units = [
             self.curriculum.get_english_science_unit(u_no)
             for u_no in sorted(set(payload.study_pack_unit_nos))
@@ -560,6 +583,7 @@ class LMSService:
 
         vi_questions = self._ensure_questions_for_language(
             teacher=teacher,
+            grade=payload.grade,
             lessons=lessons,
             all_terms=all_terms,
             study_pack_units=study_pack_units,
@@ -569,6 +593,7 @@ class LMSService:
         )
         en_questions = self._ensure_questions_for_language(
             teacher=teacher,
+            grade=payload.grade,
             lessons=lessons,
             all_terms=all_terms,
             study_pack_units=study_pack_units,
@@ -591,12 +616,14 @@ class LMSService:
             tenant_id=teacher.tenant_id,
             teacher_id=teacher.id,
             classroom_id=payload.classroom_id,
+            grade=payload.grade,
             title=payload.title.strip(),
             target_en_ratio=payload.target_en_ratio,
             achieved_en_ratio=plan.achieved_en_ratio,
             total_points=payload.total_points,
             duration_minutes=payload.duration_minutes,
             matrix_json={
+                "grade": payload.grade,
                 "lesson_nos": [lesson.lesson_no for lesson in lessons],
                 "study_pack_unit_nos": [u.unit.unit_no for u in study_pack_units],
                 "vi_count": plan.vi_count,
@@ -616,6 +643,7 @@ class LMSService:
         return [
             ExamSummaryOut(
                 id=e.id,
+                grade=e.grade,
                 title=e.title,
                 classroom_id=e.classroom_id,
                 target_en_ratio=e.target_en_ratio,
@@ -910,12 +938,14 @@ class LMSService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Không tìm thấy lớp học trong trường của bạn.",
             )
-        self.curriculum.get_lesson_detail(payload.lesson_no)
+        target_grade = payload.grade or classroom.grade
+        self.curriculum.get_lesson_detail(payload.lesson_no, grade=target_grade)
 
         log = TeachingSessionLog(
             tenant_id=teacher.tenant_id,
             classroom_id=classroom.id,
             teacher_id=teacher.id,
+            grade=target_grade,
             lesson_no=payload.lesson_no,
             taught_date=payload.taught_date,
             periods_count=payload.periods_count,
@@ -1020,6 +1050,25 @@ class LMSService:
                     "bằng tiếng Anh."
                 )
 
+        grade_breakdown: list[GradeTT94MetricsOut] = []
+        for g in (6, 7, 8, 9):
+            g_classes = [c for c in classrooms if c.grade == g]
+            g_periods = sum(periods_map.get(c.id, (0, 0))[0] for c in g_classes)
+            g_minutes = sum(periods_map.get(c.id, (0, 0))[1] for c in g_classes)
+            g_exams = [e for e in exams if e.grade == g]
+            grade_breakdown.append(
+                GradeTT94MetricsOut(
+                    grade=g,
+                    classrooms_count=len(g_classes),
+                    students_count=sum(len(c.members) for c in g_classes),
+                    periods_logged=g_periods,
+                    english_minutes=g_minutes,
+                    exams_count=len(g_exams),
+                    exams_meeting_10_pct=sum(1 for e in g_exams if e.achieved_en_ratio >= 0.10),
+                    exams_meeting_50_pct=sum(1 for e in g_exams if e.achieved_en_ratio >= 0.50),
+                )
+            )
+
         return TT94ComplianceReportOut(
             tenant_id=caller.tenant_id,
             tenant_name=tenant_name,
@@ -1035,4 +1084,5 @@ class LMSService:
             level_label=label,
             next_level_gaps=gaps,
             classrooms=classroom_metrics,
+            grade_breakdown=grade_breakdown,
         )

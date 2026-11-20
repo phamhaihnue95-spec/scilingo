@@ -70,6 +70,7 @@ class MindmapNodeOut(BaseModel):
     ipa: str | None = None
     formula_or_symbol: str | None = None
     note: str | None = None
+    target_grade: int | None = None
     target_lesson_no: int | None = None
     is_13_exception_element: bool = False
 
@@ -84,8 +85,9 @@ class MindmapEdgeOut(BaseModel):
 
 
 class LessonMindmapOut(BaseModel):
-    """Full bilingual mindmap payload for a KHTN 8 lesson."""
+    """Full bilingual mindmap payload for a KHTN 6-9 lesson."""
 
+    grade: int = 8
     lesson_no: int
     title_vi: str
     title_en: str
@@ -97,7 +99,8 @@ class LessonMindmapOut(BaseModel):
 class PracticeStartRequest(BaseModel):
     """Request to launch an adaptive quiz for a lesson."""
 
-    lesson_no: int = Field(ge=1, le=47)
+    grade: int = Field(default=8, ge=6, le=9)
+    lesson_no: int = Field(ge=1, le=60)
     mode: PracticeMode = "quiz_10"
     total_questions: int = Field(default=10, ge=5, le=10)
 
@@ -118,6 +121,7 @@ class PracticeSessionOut(BaseModel):
     """Active quiz attempt started by the student."""
 
     attempt_id: str
+    grade: int = 8
     lesson_no: int
     lesson_title_vi: str
     lesson_title_en: str
@@ -162,6 +166,7 @@ class PracticeResultOut(BaseModel):
     """Final graded quiz result and gamification delta."""
 
     attempt_id: str
+    grade: int = 8
     lesson_no: int
     mode: PracticeMode
     score: float
@@ -180,6 +185,7 @@ class PracticeHistoryItemOut(BaseModel):
     """Compact summary of a completed student quiz attempt."""
 
     attempt_id: str
+    grade: int = 8
     lesson_no: int
     mode: str
     score: float

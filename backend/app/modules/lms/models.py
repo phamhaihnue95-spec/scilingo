@@ -89,6 +89,7 @@ class TeacherResource(Base):
     __table_args__ = {"schema": "lms"}
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_new_uuid)
+    grade: Mapped[int] = mapped_column(Integer, nullable=False, default=8, index=True)
     lesson_no: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
     tenant_id: Mapped[str | None] = mapped_column(
         String(36),
@@ -112,6 +113,7 @@ class QuestionBankItem(Base):
     __table_args__ = {"schema": "lms"}
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_new_uuid)
+    grade: Mapped[int] = mapped_column(Integer, nullable=False, default=8, index=True)
     lesson_no: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
     author_id: Mapped[str | None] = mapped_column(
         String(36),
@@ -159,6 +161,7 @@ class Exam(Base):
     classroom_id: Mapped[str | None] = mapped_column(
         String(36), ForeignKey("lms.classrooms.id", ondelete="SET NULL"), nullable=True
     )
+    grade: Mapped[int] = mapped_column(Integer, nullable=False, default=8, index=True)
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     target_en_ratio: Mapped[float] = mapped_column(Float, nullable=False)
     achieved_en_ratio: Mapped[float] = mapped_column(Float, nullable=False)
@@ -268,6 +271,7 @@ class TeachingSessionLog(Base):
         nullable=False,
         index=True,
     )
+    grade: Mapped[int] = mapped_column(Integer, nullable=False, default=8, index=True)
     lesson_no: Mapped[int] = mapped_column(Integer, nullable=False)
     taught_date: Mapped[date] = mapped_column(Date, nullable=False)
     periods_count: Mapped[int] = mapped_column(Integer, nullable=False, default=1)

@@ -13,20 +13,23 @@ import {
 } from "lucide-react";
 
 import { api } from "../../api/client";
-import type { LessonDetail } from "../../api/types";
+import type { GradeLevel, LessonDetail } from "../../api/types";
 import { SpeakButton, Tilt3DCard } from "../../components/motion/MotionPrimitives";
+import { GRADE_LESSON_COUNTS } from "../../utils/grades";
 import { playClickSound } from "../../utils/soundFx";
 import type { LearningSubTab } from "../learning/LearningHubPage";
 import { DisciplineBadge } from "./DisciplineBadge";
 
 interface Props {
+  grade?: GradeLevel;
   lessonNo: number;
   onBack: () => void;
-  onNavigateLesson: (lessonNo: number) => void;
-  onLaunchLearning: (tab: LearningSubTab, lessonNo: number) => void;
+  onNavigateLesson: (lessonNo: number, grade?: GradeLevel) => void;
+  onLaunchLearning: (tab: LearningSubTab, lessonNo: number, grade?: GradeLevel) => void;
 }
 
 export function LessonDetailPage({
+  grade = 8,
   lessonNo,
   onBack,
   onNavigateLesson,
@@ -41,7 +44,7 @@ export function LessonDetailPage({
     let active = true;
     setLoading(true);
     api
-      .getLesson(lessonNo)
+      .getLesson(lessonNo, grade)
       .then((data) => {
         if (!active) return;
         setLesson(data);
@@ -57,12 +60,14 @@ export function LessonDetailPage({
     return () => {
       active = false;
     };
-  }, [lessonNo]);
+  }, [lessonNo, grade]);
+
+  const maxLessons = GRADE_LESSON_COUNTS[grade] ?? 47;
 
   if (loading) {
     return (
       <div className="rounded-xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500">
-        Đang tải nội dung Bài {lessonNo}...
+        Đang tải nội dung KHTN {grade} · Bài {lessonNo}...
       </div>
     );
   }
@@ -77,11 +82,13 @@ export function LessonDetailPage({
           className="inline-flex items-center gap-2 rounded-lg bg-white px-3 py-1.5 text-sm font-medium text-slate-700 shadow-sm"
         >
           <ArrowLeft className="h-4 w-4" />
-          Quay lại Bản đồ 47 bài
+          Quay lại Bản đồ KHTN {grade}
         </button>
       </div>
     );
   }
+
+  const resolvedGrade = (lesson.grade ?? grade) as GradeLevel;
 
   return (
     <div className="space-y-6">
@@ -93,14 +100,14 @@ export function LessonDetailPage({
           className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
         >
           <ArrowLeft className="h-4 w-4" />
-          Bản đồ 47 bài
+          Bản đồ KHTN {resolvedGrade} ({maxLessons} bài)
         </button>
 
         <div className="flex items-center gap-2">
           <button
             type="button"
             disabled={lesson.lesson_no <= 1}
-            onClick={() => onNavigateLesson(lesson.lesson_no - 1)}
+            onClick={() => onNavigateLesson(lesson.lesson_no - 1, resolvedGrade)}
             className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-40"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -108,11 +115,11 @@ export function LessonDetailPage({
           </button>
           <button
             type="button"
-            disabled={lesson.lesson_no >= 47}
-            onClick={() => onNavigateLesson(lesson.lesson_no + 1)}
+            disabled={lesson.lesson_no >= maxLessons}
+            onClick={() => onNavigateLesson(lesson.lesson_no + 1, resolvedGrade)}
             className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-40"
           >
-            Bài {Math.min(47, lesson.lesson_no + 1)}
+            Bài {Math.min(maxLessons, lesson.lesson_no + 1)}
             <ArrowRight className="h-4 w-4" />
           </button>
         </div>
@@ -121,6 +128,9 @@ export function LessonDetailPage({
       {/* Lesson Header */}
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+          <span className="rounded-md bg-indigo-100 px-2 py-0.5 font-extrabold text-indigo-800">
+            KHTN {resolvedGrade}
+          </span>
           <span className="font-semibold text-teal-700">{lesson.chapter_title_vi}</span>
           <span>·</span>
           <span>{lesson.chapter_title_en}</span>
@@ -174,14 +184,23 @@ export function LessonDetailPage({
             <div className="grid gap-2 sm:grid-cols-2">
               {lesson.integration_links.map((link) => (
                 <button
-                  key={link.target_lesson_no}
+                  key={`${link.target_grade ?? resolvedGrade}-${link.target_lesson_no}`}
                   type="button"
-                  onClick={() => onNavigateLesson(link.target_lesson_no)}
+                  onClick={() =>
+                    onNavigateLesson(
+                      link.target_lesson_no,
+                      (link.target_grade ?? resolvedGrade) as GradeLevel
+                    )
+                  }
                   className="flex flex-col gap-1 rounded-lg border border-teal-200 bg-white p-3 text-left transition hover:border-teal-500"
                 >
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-xs font-bold text-teal-800">
-                      → Bài {link.target_lesson_no}: {link.target_title_vi}
+                      →{" "}
+                      {link.target_grade && link.target_grade !== resolvedGrade
+                        ? `KHTN ${link.target_grade} · `
+                        : ""}
+                      Bài {link.target_lesson_no}: {link.target_title_vi}
                     </span>
                     <DisciplineBadge discipline={link.target_discipline} />
                   </div>

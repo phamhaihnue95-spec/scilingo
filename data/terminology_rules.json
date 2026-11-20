@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "name": "KHTN 8 Terminology Guardrails & IUPAC Rules",
+    "name": "KHTN THCS (Khối 6–9) Terminology Guardrails & IUPAC Rules",
     "legal_basis": [
       "Thông tư 32/2018/TT-BGDĐT",
       "TCVN 5529:2010",
@@ -192,6 +192,55 @@
       "discipline": "physics",
       "severity": "warning",
       "reason": "SGK KHTN 8 KNTT (Bài 18) viết trực tiếp 'moment lực'."
+    },
+    {
+      "pattern": "\\brượu etylic\\b",
+      "recommended": "ethylic alcohol (ethanol)",
+      "discipline": "chemistry",
+      "severity": "error",
+      "reason": "SGK KHTN 9 KNTT (Bài 25) dùng danh pháp IUPAC 'ethylic alcohol' hoặc 'ethanol'."
+    },
+    {
+      "pattern": "\\baxit axetic\\b",
+      "recommended": "acetic acid (ethanoic acid)",
+      "discipline": "chemistry",
+      "severity": "error",
+      "reason": "SGK KHTN 9 KNTT (Bài 26) dùng danh pháp IUPAC 'acetic acid'."
+    },
+    {
+      "pattern": "\\betilen\\b",
+      "recommended": "ethylene (ethene)",
+      "discipline": "chemistry",
+      "severity": "error",
+      "reason": "SGK KHTN 9 KNTT (Bài 23) dùng danh pháp quốc tế IUPAC 'ethylene' / 'ethene'."
+    },
+    {
+      "pattern": "\\bmetan\\b",
+      "recommended": "methane",
+      "discipline": "chemistry",
+      "severity": "error",
+      "reason": "SGK KHTN 9 KNTT (Bài 22) dùng danh pháp quốc tế IUPAC 'methane'."
+    },
+    {
+      "pattern": "\\bglucoz[ơo]\\b",
+      "recommended": "glucose",
+      "discipline": "chemistry",
+      "severity": "error",
+      "reason": "SGK KHTN 7 & 9 KNTT dùng chuẩn IUPAC 'glucose'."
+    },
+    {
+      "pattern": "\\bsaccaroz[ơo]\\b",
+      "recommended": "saccharose",
+      "discipline": "chemistry",
+      "severity": "error",
+      "reason": "SGK KHTN 9 KNTT (Bài 28) dùng chuẩn IUPAC 'saccharose'."
+    },
+    {
+      "pattern": "\\bpolime\\b",
+      "recommended": "polymer",
+      "discipline": "chemistry",
+      "severity": "warning",
+      "reason": "SGK KHTN 6 & 9 KNTT dùng trực tiếp thuật ngữ quốc tế 'polymer'."
     }
   ],
   "exam_compliance_presets": {

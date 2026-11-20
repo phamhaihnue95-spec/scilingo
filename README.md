@@ -1,7 +1,7 @@
-# SciLingo KHTN 8 — Nền tảng Học & Giảng dạy Tiếng Anh Khoa học tự nhiên THCS
+# SciLingo KHTN 6–9 — Nền tảng Học & Giảng dạy Tiếng Anh Khoa học tự nhiên THCS
 
-> **Trạng thái:** **Bolt 3 + Hoàn tất Giai đoạn 1, 2 & 3 (Animation & Gamification KHTN 8)** (Unit 1: Curriculum Core 47 bài + Bản đồ Phiêu lưu SVG 4 vùng KHTN + Bộ Đề Học 16 Units / 920 thuật ngữ IPA + Unit 2: Flashcard 3D lật thật, Sound FX, Confetti, *Chớp Nhoáng Nối Cặp 60s*, *Phòng Pha Chế & Bắt Lỗi IUPAC*, *Tháp Sắp Xếp Quy Trình*, Sổ tay Huy hiệu Hologram 3D *SciDex 16 Units*, Mindmap & Quiz + Unit 3: Teacher Studio *Trường THCS Cầu Giấy B · GV Phạm Thị Hải*, Kho giáo án/slide CLIL, Exam Builder 10%/50% xuất `.docx`/`.pdf`, Bảng Vàng Thi Đua Lớp 8A1, Giao Thử Thách Mini-Game 5 phút & Báo cáo Thông tư 94/2026 + Unit 5: Identity & Billing RBAC).  
-> **Phạm vi Pilot MVP:** Toàn bộ chương trình **KHTN Lớp 8 – Bộ sách Kết nối tri thức với cuộc sống** (Bài 1 đến Bài 47, 8 Chương).  
+> **Trạng thái:** **Multi-Grade KHTN 6–9 (190 bài SGK Kết nối tri thức với cuộc sống)** + **Animation & Gamification THCS** (Unit 1: Curriculum Core **4 khối lớp 6, 7, 8, 9 · 190 bài học · 555 thuật ngữ lõi** + Bản đồ Phiêu lưu SVG 4 vùng KHTN + Bộ Đề Học 16 Units / 920 thuật ngữ IPA | Unit 2: Flashcard 3D lật thật, Sound FX, Confetti, *Chớp Nhoáng Nối Cặp 60s* (16 Units + SGK Khối 6–9), *Phòng Pha Chế & Bắt Lỗi IUPAC*, *Tháp Sắp Xếp Quy Trình (16 chuỗi KHTN 6–9)*, Sổ tay Huy hiệu Hologram 3D *SciDex 16 Units*, Mindmap & Quiz | Unit 3: Teacher Studio *Trường THCS Cầu Giấy B · GV Phạm Thị Hải*, Kho giáo án/slide CLIL 4 khối, Exam Builder 10%/50% xuất `.docx`/`.pdf`, Bảng Vàng Thi Đua Lớp, Giao Thử Thách Mini-Game 5 phút & Báo cáo Thông tư 94/2026 phân rã Khối 6–9 | Unit 5: Identity & Billing RBAC).  
+> **Phạm vi Chương trình:** Trọn bộ **KHTN Khối 6, 7, 8, 9 – Bộ sách Kết nối tri thức với cuộc sống** (Lớp 6: **55 bài**, Lớp 7: **43 bài**, Lớp 8: **47 bài**, Lớp 9: **45 bài** — tổng **190 bài học**).  
 > **Phương pháp phát triển:** **AI-DLC (AI-Driven Development Life Cycle)** — `Inception → Construction (Bolts) → Operations`.
 
 ---
@@ -22,14 +22,14 @@ Nền tảng EdTech mô hình **B2B/B2C** giúp học sinh THCS và giáo viên 
 * **Frontend:** React + TypeScript + Vite + Tailwind CSS
 * **Backend API:** Python 3.12 + FastAPI (`uv` quản lý môi trường & dependencies)
 * **Database:** PostgreSQL 16 + `pgvector` (qua Docker Compose cho môi trường dev)
-* **AI Layer:** Grounded RAG trên SGK KNTT 8 + Bộ kiểm chuẩn thuật ngữ xác định (Deterministic IUPAC/SI Terminology Linter) + Audio CDN cache + Chấm phát âm
+* **AI Layer:** Grounded RAG trên SGK KNTT 6–9 + Bộ kiểm chuẩn thuật ngữ xác định (Deterministic IUPAC/SI Terminology Linter gồm 20 luật & 13 nguyên tố ngoại lệ) + Audio CDN cache + Chấm phát âm
 
 ---
 
-## 3. Cấu trúc Workspace (Bolt 0 – Inception)
+## 3. Cấu trúc Workspace (Inception → Multi-Grade KHTN 6–9)
 
 ```text
-KHTN/
+scilingo/
 ├── README.md                                  # Tổng quan dự án & hướng dẫn chạy
 ├── AGENTS.md                                  # Hiến chương AI-DLC cho các Agent ở các Bolt sau
 ├── docker-compose.yml                         # PostgreSQL 16 + pgvector cho môi trường dev
@@ -42,10 +42,14 @@ KHTN/
 │       ├── 04-architecture-and-api.md         # Kiến trúc React + FastAPI + PostgreSQL & API Contracts
 │       └── 05-units-and-bolt-plan.md          # Lộ trình Bolt 0 -> Bolt 4 & Validation Gates
 ├── data/
-│   ├── khtn8_kntt_curriculum.json             # Cây chương trình đầy đủ 47 bài KHTN 8 KNTT + từ khóa mẫu
-│   └── terminology_rules.json                 # Luật kiểm chuẩn danh pháp IUPAC / SI / Sinh học
+│   ├── khtn6_kntt_curriculum.json             # Cây chương trình 55 bài KHTN 6 KNTT + từ khóa chuẩn
+│   ├── khtn7_kntt_curriculum.json             # Cây chương trình 43 bài KHTN 7 KNTT + từ khóa chuẩn
+│   ├── khtn8_kntt_curriculum.json             # Cây chương trình 47 bài KHTN 8 KNTT + từ khóa chuẩn
+│   ├── khtn9_kntt_curriculum.json             # Cây chương trình 45 bài KHTN 9 KNTT + từ khóa chuẩn
+│   ├── english_for_science_16_units.json      # Bộ Đề Học 16 Units (920 thuật ngữ IPA THCS)
+│   └── terminology_rules.json                 # 20 luật kiểm chuẩn IUPAC (hữu cơ/vô cơ) · SI · DNA/RNA
 └── scripts/
-    └── validate_inception.py                  # Script kiểm tra tự động Gate 1 cho dữ liệu & tài liệu
+    └── validate_inception.py                  # Script kiểm tra tự động Gate 1 cho 4 khối (190 bài)
 ```
 
 ---

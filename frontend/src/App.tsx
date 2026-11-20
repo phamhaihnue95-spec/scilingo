@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 
 import { api, clearAuthTokens, getStoredAccessToken } from "./api/client";
-import type { AuthSession } from "./api/types";
+import type { AuthSession, GradeLevel } from "./api/types";
 import { PageTransitionWrapper } from "./components/motion/MotionPrimitives";
 import { AccountPage } from "./features/auth/AuthModalAndAccount";
 import { CurriculumMapPage } from "./features/curriculum/CurriculumMapPage";
@@ -25,6 +25,12 @@ import { LearningHubPage, type LearningSubTab } from "./features/learning/Learni
 import { TeacherStudioPage } from "./features/lms/TeacherStudioPage";
 import { StudyPack16Page } from "./features/study_pack/StudyPack16Page";
 import {
+  VALID_GRADES,
+  getSavedGrade,
+  normalizeGrade,
+  saveGrade,
+} from "./utils/grades";
+import {
   SOUND_CHANGE_EVENT,
   isSoundEnabled,
   playClickSound,
@@ -33,7 +39,7 @@ import {
 
 type View =
   | { kind: "map" }
-  | { kind: "lesson"; lessonNo: number }
+  | { kind: "lesson"; lessonNo: number; grade?: GradeLevel }
   | { kind: "study_pack"; initialUnitNo?: number }
   | { kind: "games"; initialGame?: ArenaTab; initialUnitNo?: number }
   | { kind: "learning"; tab: LearningSubTab; lessonNo?: number }
@@ -44,7 +50,14 @@ type View =
 export function App() {
   const [view, setView] = useState<View>({ kind: "map" });
   const [session, setSession] = useState<AuthSession | null>(null);
+  const [selectedGrade, setSelectedGrade] = useState<GradeLevel>(() => getSavedGrade());
   const [soundOn, setSoundOn] = useState<boolean>(() => isSoundEnabled());
+
+  const handleGradeChange = (nextGrade: GradeLevel) => {
+    playClickSound();
+    setSelectedGrade(nextGrade);
+    saveGrade(nextGrade);
+  };
 
   useEffect(() => {
     const syncSound = () => setSoundOn(isSoundEnabled());
@@ -64,20 +77,35 @@ export function App() {
           user,
           tenant: ent.tenant,
         });
+        if (user.role === "student" && user.grade_level) {
+          const synced = normalizeGrade(user.grade_level, 8);
+          setSelectedGrade(synced);
+          saveGrade(synced);
+        }
       })
       .catch(() => {
         clearAuthTokens();
       });
   }, []);
 
-  const openLesson = (lessonNo: number) => {
+  const openLesson = (lessonNo: number, targetGrade?: GradeLevel) => {
     playClickSound();
-    setView({ kind: "lesson", lessonNo });
+    const resolvedGrade = targetGrade ?? selectedGrade;
+    if (resolvedGrade !== selectedGrade) {
+      setSelectedGrade(resolvedGrade);
+      saveGrade(resolvedGrade);
+    }
+    setView({ kind: "lesson", lessonNo, grade: resolvedGrade });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const launchLearning = (tab: LearningSubTab, lessonNo: number) => {
+  const launchLearning = (tab: LearningSubTab, lessonNo: number, targetGrade?: GradeLevel) => {
     playClickSound();
+    const resolvedGrade = targetGrade ?? selectedGrade;
+    if (resolvedGrade !== selectedGrade) {
+      setSelectedGrade(resolvedGrade);
+      saveGrade(resolvedGrade);
+    }
     setView({ kind: "learning", tab, lessonNo });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -108,7 +136,7 @@ export function App() {
         setView({ kind: "map" });
       },
       icon: BookOpen,
-      label: "Bản đồ 47 bài",
+      label: `KHTN ${selectedGrade}`,
       hideLabelClass: "hidden md:inline",
     },
     {
@@ -182,7 +210,9 @@ export function App() {
   ];
 
   const viewKey =
-    view.kind === "lesson" ? `lesson-${view.lessonNo}` : view.kind;
+    view.kind === "lesson"
+      ? `lesson-${view.grade ?? selectedGrade}-${view.lessonNo}`
+      : view.kind;
 
   return (
     <MotionConfig reducedMotion="user">
@@ -208,7 +238,7 @@ export function App() {
               </motion.div>
               <div>
                 <div className="text-sm font-extrabold tracking-tight text-slate-900 sm:text-base">
-                  SciLingo <span className="text-indigo-600">KHTN 8</span>
+                  SciLingo <span className="text-indigo-600">KHTN 6–9</span>
                 </div>
                 <div className="hidden text-[11px] font-semibold text-sky-700 sm:block">
                   Trường THCS Cầu Giấy B · GV Phạm Thị Hải
@@ -217,6 +247,35 @@ export function App() {
             </button>
 
             <nav className="flex flex-wrap items-center gap-1 sm:gap-1.5">
+              {/* Compact Multi-Grade Pill Switcher (K6..K9) */}
+              <div
+                className="mr-1 inline-flex items-center rounded-xl border border-indigo-100 bg-indigo-50/70 p-0.5"
+                aria-label="Chọn khối lớp KHTN"
+              >
+                {VALID_GRADES.map((g) => {
+                  const active = selectedGrade === g;
+                  return (
+                    <button
+                      key={g}
+                      type="button"
+                      onClick={() => handleGradeChange(g)}
+                      className={`relative rounded-lg px-2 py-1 text-xs font-extrabold transition-colors ${
+                        active ? "text-white" : "text-indigo-700 hover:text-indigo-950"
+                      }`}
+                    >
+                      {active && (
+                        <motion.span
+                          layoutId="global-grade-pill"
+                          transition={{ type: "spring", stiffness: 450, damping: 32 }}
+                          className="absolute inset-0 rounded-lg bg-gradient-to-r from-indigo-600 to-sky-500 shadow-sm"
+                        />
+                      )}
+                      <span className="relative z-10">K{g}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
               {navItems.map((item) => {
                 const Icon = item.icon;
                 return (
@@ -272,6 +331,8 @@ export function App() {
               {view.kind === "map" && (
                 <CurriculumMapPage
                   session={session}
+                  grade={selectedGrade}
+                  onGradeChange={handleGradeChange}
                   onSelectLesson={openLesson}
                   onOpenStudyPack={() => {
                     playClickSound();
@@ -287,6 +348,7 @@ export function App() {
               {view.kind === "study_pack" && (
                 <StudyPack16Page
                   session={session}
+                  grade={selectedGrade}
                   initialUnitNo={view.initialUnitNo}
                   onSelectLesson={openLesson}
                   onLaunchLightningUnit={(unitNo) => {
@@ -299,6 +361,7 @@ export function App() {
               {view.kind === "games" && (
                 <GameArenaPage
                   session={session}
+                  grade={selectedGrade}
                   onSessionChange={setSession}
                   initialGame={view.initialGame}
                   initialUnitNo={view.initialUnitNo}
@@ -311,6 +374,7 @@ export function App() {
               )}
               {view.kind === "lesson" && (
                 <LessonDetailPage
+                  grade={view.grade ?? selectedGrade}
                   lessonNo={view.lessonNo}
                   onBack={() => setView({ kind: "map" })}
                   onNavigateLesson={openLesson}
@@ -320,6 +384,7 @@ export function App() {
               {view.kind === "learning" && (
                 <LearningHubPage
                   session={session}
+                  grade={selectedGrade}
                   onSessionChange={setSession}
                   initialTab={view.tab}
                   initialLessonNo={view.lessonNo}
@@ -331,9 +396,15 @@ export function App() {
                 />
               )}
               {view.kind === "teacher" && (
-                <TeacherStudioPage session={session} onSessionChange={setSession} />
+                <TeacherStudioPage
+                  session={session}
+                  grade={selectedGrade}
+                  onSessionChange={setSession}
+                />
               )}
-              {view.kind === "glossary" && <GlossaryAndRulesPage onSelectLesson={openLesson} />}
+              {view.kind === "glossary" && (
+                <GlossaryAndRulesPage grade={selectedGrade} onSelectLesson={openLesson} />
+              )}
               {view.kind === "account" && (
                 <AccountPage session={session} onSessionChange={setSession} />
               )}
@@ -345,7 +416,7 @@ export function App() {
           <div className="mx-auto max-w-6xl px-4">
             <span className="font-bold text-indigo-700">Trường THCS Cầu Giấy B</span> · Giáo viên phụ
             trách: <span className="font-bold text-slate-800">Phạm Thị Hải</span> · Nền tảng SciLingo
-            KHTN 8 (Chuẩn IUPAC / SI &amp; Thông tư 94/2026/TT-BGDĐT)
+            KHTN 6–9 (Chuẩn IUPAC / SI &amp; Thông tư 94/2026/TT-BGDĐT)
           </div>
         </footer>
       </div>

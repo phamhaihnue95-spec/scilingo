@@ -1,0 +1,1617 @@
+{
+  "metadata": {
+    "subject": "Khoa học tự nhiên",
+    "subject_en": "Natural Sciences",
+    "grade": 7,
+    "textbook_series": "Kết nối tri thức với cuộc sống",
+    "publisher": "Nhà xuất bản Giáo dục Việt Nam",
+    "legal_basis": [
+      "Thông tư 32/2018/TT-BGDĐT",
+      "Quyết định 3588/QĐ-BGDĐT",
+      "Thông tư 94/2026/TT-BGDĐT",
+      "Công văn 5208/BGDĐT-GDPT"
+    ],
+    "total_lessons": 43
+  },
+  "chapters": [
+    {
+      "chapter_no": 1,
+      "code": "CHUONG_I",
+      "title_vi": "Chương I. Mở đầu",
+      "title_en": "Chapter I. Scientific Inquiry Skills",
+      "discipline": "general_lab",
+      "lessons": [
+        {
+          "lesson_no": 1,
+          "title_vi": "Phương pháp và kĩ năng học tập môn Khoa học tự nhiên",
+          "title_en": "Scientific Method and Inquiry Skills",
+          "discipline": "general_lab",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 8,
+              "note_vi": "Đo đạc thu thập số liệu tốc độ thực nghiệm."
+            },
+            {
+              "target_lesson_no": 24,
+              "note_vi": "Thực hiện thí nghiệm quang hợp theo quy trình khoa học."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Scientific method",
+              "vi": "Phương pháp tìm hiểu tự nhiên",
+              "ipa": "/ˌsaɪənˈtɪf.ɪk ˈmeθ.əd/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Hypothesis",
+              "vi": "Giả thuyết khoa học",
+              "ipa": "/haɪˈpɒθ.ə.sɪs/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Variable",
+              "vi": "Biến số thí nghiệm",
+              "ipa": "/ˈveə.ri.ə.bəl/",
+              "symbol_or_formula": "",
+              "note": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chapter_no": 2,
+      "code": "CHUONG_II",
+      "title_vi": "Chương II. Nguyên tử. Bảng tuần hoàn các nguyên tố hóa học",
+      "title_en": "Chapter II. Atoms and the Periodic Table (IUPAC)",
+      "discipline": "chemistry",
+      "lessons": [
+        {
+          "lesson_no": 2,
+          "title_vi": "Nguyên tử",
+          "title_en": "Structure of the Atom",
+          "discipline": "chemistry",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 6,
+              "note_vi": "Lớp vỏ electron quyết định khả năng liên kết hóa học."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Atom",
+              "vi": "Nguyên tử",
+              "ipa": "/ˈæt.əm/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Proton",
+              "vi": "Hạt proton",
+              "ipa": "/ˈprəʊ.tɒn/",
+              "symbol_or_formula": "p (+1)",
+              "note": ""
+            },
+            {
+              "en": "Neutron",
+              "vi": "Hạt neutron",
+              "ipa": "/ˈnjuː.trɒn/",
+              "symbol_or_formula": "n (0)",
+              "note": ""
+            },
+            {
+              "en": "Electron",
+              "vi": "Hạt electron",
+              "ipa": "/ɪˈlek.trɒn/",
+              "symbol_or_formula": "e (-1)",
+              "note": ""
+            },
+            {
+              "en": "Atomic mass unit",
+              "vi": "Đơn vị khối lượng nguyên tử",
+              "ipa": "/əˈtɒm.ɪk mæs ˈjuː.nɪt/",
+              "symbol_or_formula": "amu",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "lesson_no": 3,
+          "title_vi": "Nguyên tố hóa học",
+          "title_en": "Chemical Elements (IUPAC)",
+          "discipline": "chemistry",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 2,
+              "note_vi": "Số proton trong hạt nhân đặc trưng cho nguyên tố hóa học."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Chemical element",
+              "vi": "Nguyên tố hóa học",
+              "ipa": "/ˈkem.ɪ.kəl ˈel.ɪ.mənt/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Atomic number",
+              "vi": "Số hiệu nguyên tử",
+              "ipa": "/əˈtɒm.ɪk ˈnʌm.bər/",
+              "symbol_or_formula": "Z",
+              "note": ""
+            },
+            {
+              "en": "Chemical symbol",
+              "vi": "Ký hiệu hóa học",
+              "ipa": "/ˈkem.ɪ.kəl ˈsɪm.bəl/",
+              "symbol_or_formula": "",
+              "note": "Viết theo chuẩn quốc tế IUPAC"
+            },
+            {
+              "en": "Hydrogen",
+              "vi": "Nguyên tố Hydrogen",
+              "ipa": "/ˈhaɪ.drə.dʒən/",
+              "symbol_or_formula": "H",
+              "note": "Không viết 'hiđro'"
+            }
+          ]
+        },
+        {
+          "lesson_no": 4,
+          "title_vi": "Sơ lược về bảng tuần hoàn các nguyên tố hóa học",
+          "title_en": "Introduction to the Periodic Table",
+          "discipline": "chemistry",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 3,
+              "note_vi": "Sắp xếp nguyên tố theo chiều tăng dần điện tích hạt nhân."
+            },
+            {
+              "target_lesson_no": 18,
+              "note_vi": "Nhận biết kim loại dẫn từ (Iron, Nickel, Cobalt)."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Periodic table",
+              "vi": "Bảng tuần hoàn nguyên tố",
+              "ipa": "/ˌpɪə.riˈɒd.ɪk ˈteɪ.bəl/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Period",
+              "vi": "Chu kì",
+              "ipa": "/ˈpɪə.ri.əd/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Group",
+              "vi": "Nhóm nguyên tố",
+              "ipa": "/ɡruːp/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Noble gas",
+              "vi": "Khí hiếm",
+              "ipa": "/ˈnəʊ.bəl ɡæs/",
+              "symbol_or_formula": "",
+              "note": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chapter_no": 3,
+      "code": "CHUONG_III",
+      "title_vi": "Chương III. Phân tử. Liên kết hóa học",
+      "title_en": "Chapter III. Molecules and Chemical Bonding",
+      "discipline": "chemistry",
+      "lessons": [
+        {
+          "lesson_no": 5,
+          "title_vi": "Phân tử – Đơn chất – Hợp chất",
+          "title_en": "Molecules, Simple Substances and Compounds",
+          "discipline": "chemistry",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 22,
+              "note_vi": "Glucose C₆H₁₂O₆ và Oxygen O₂ tham gia quang hợp."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Molecule",
+              "vi": "Phân tử",
+              "ipa": "/ˈmɒl.ɪ.kjuːl/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Simple substance",
+              "vi": "Đơn chất",
+              "ipa": "/ˈsɪm.pəl ˈsʌb.stəns/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Compound",
+              "vi": "Hợp chất",
+              "ipa": "/ˈkɒm.paʊnd/",
+              "symbol_or_formula": "",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "lesson_no": 6,
+          "title_vi": "Giới thiệu về liên kết hóa học",
+          "title_en": "Ionic and Covalent Chemical Bonds",
+          "discipline": "chemistry",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 4,
+              "note_vi": "Vị trí kim loại/phi kim trong bảng tuần hoàn dự đoán loại liên kết."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Ionic bond",
+              "vi": "Liên kết ion",
+              "ipa": "/aɪˈɒn.ɪk bɒnd/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Covalent bond",
+              "vi": "Liên kết cộng hóa trị",
+              "ipa": "/kəʊˈveɪ.lənt bɒnd/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Sodium chloride",
+              "vi": "Muối ăn Sodium chloride",
+              "ipa": "/ˈsəʊ.di.əm ˈklɔː.raɪd/",
+              "symbol_or_formula": "NaCl",
+              "note": "Hợp chất dùng tên IUPAC tiếng Anh"
+            }
+          ]
+        },
+        {
+          "lesson_no": 7,
+          "title_vi": "Hóa trị và công thức hóa học",
+          "title_en": "Valence and Chemical Formulas",
+          "discipline": "chemistry",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 6,
+              "note_vi": "Hóa trị biểu thị khả năng liên kết của nguyên tử."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Valence",
+              "vi": "Hóa trị",
+              "ipa": "/ˈveɪ.ləns/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Chemical formula",
+              "vi": "Công thức hóa học",
+              "ipa": "/ˈkem.ɪ.kəl ˈfɔː.mjə.lə/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Aluminium oxide",
+              "vi": "Aluminium oxide (IUPAC)",
+              "ipa": "/ˌæl.jəˈmɪn.i.əm ˈɒk.saɪd/",
+              "symbol_or_formula": "Al₂O₃",
+              "note": "Đơn chất gọi nhôm; hợp chất dùng IUPAC Aluminium oxide"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chapter_no": 4,
+      "code": "CHUONG_IV",
+      "title_vi": "Chương IV. Tốc độ",
+      "title_en": "Chapter IV. Speed and Motion",
+      "discipline": "physics",
+      "lessons": [
+        {
+          "lesson_no": 8,
+          "title_vi": "Tốc độ chuyển động",
+          "title_en": "Speed of Motion",
+          "discipline": "physics",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 1,
+              "note_vi": "Thu thập quãng đường và thời gian theo quy trình khoa học."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Speed",
+              "vi": "Tốc độ",
+              "ipa": "/spiːd/",
+              "symbol_or_formula": "v = s / t",
+              "note": ""
+            },
+            {
+              "en": "Metre per second",
+              "vi": "Mét trên giây (SI)",
+              "ipa": "/ˈmiː.tər pər ˈsek.ənd/",
+              "symbol_or_formula": "m/s",
+              "note": ""
+            },
+            {
+              "en": "Distance",
+              "vi": "Quãng đường",
+              "ipa": "/ˈdɪs.təns/",
+              "symbol_or_formula": "s",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "lesson_no": 9,
+          "title_vi": "Đo tốc độ",
+          "title_en": "Measuring Speed",
+          "discipline": "physics",
+          "is_practical": true,
+          "integration_links": [
+            {
+              "target_lesson_no": 8,
+              "note_vi": "Áp dụng công thức v = s / t khi dùng cổng quang điện."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Photogate",
+              "vi": "Cổng quang điện",
+              "ipa": "/ˈfəʊ.təʊ.ɡeɪt/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Speedometer",
+              "vi": "Tốc kế",
+              "ipa": "/spiːˈdɒm.ɪ.tər/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Average speed",
+              "vi": "Tốc độ trung bình",
+              "ipa": "/ˈæv.ər.ɪdʒ spiːd/",
+              "symbol_or_formula": "",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "lesson_no": 10,
+          "title_vi": "Đồ thị quãng đường – thời gian",
+          "title_en": "Distance–Time Graphs",
+          "discipline": "physics",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 9,
+              "note_vi": "Biểu diễn số liệu đo tốc độ lên hệ trục tọa độ."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Distance-time graph",
+              "vi": "Đồ thị quãng đường - thời gian",
+              "ipa": "/ˈdɪs.təns taɪm ɡrɑːf/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Uniform motion",
+              "vi": "Chuyển động đều",
+              "ipa": "/ˈjuː.nɪ.fɔːm ˈməʊ.ʃən/",
+              "symbol_or_formula": "",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "lesson_no": 11,
+          "title_vi": "Ảnh hưởng của tốc độ trong an toàn giao thông",
+          "title_en": "Speed and Road Traffic Safety",
+          "discipline": "physics",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 32,
+              "note_vi": "Thời gian phản xạ liên quan đến hệ thần kinh cảm ứng."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Braking distance",
+              "vi": "Quãng đường phanh",
+              "ipa": "/ˈbreɪ.kɪŋ ˈdɪs.təns/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Reaction time",
+              "vi": "Thời gian phản xạ",
+              "ipa": "/riˈæk.ʃən taɪm/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Speed limit",
+              "vi": "Giới hạn tốc độ",
+              "ipa": "/spiːd ˈlɪm.ɪt/",
+              "symbol_or_formula": "",
+              "note": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chapter_no": 5,
+      "code": "CHUONG_V",
+      "title_vi": "Chương V. Âm thanh",
+      "title_en": "Chapter V. Sound Waves",
+      "discipline": "physics",
+      "lessons": [
+        {
+          "lesson_no": 12,
+          "title_vi": "Sóng âm",
+          "title_en": "Sound Waves and Propagation",
+          "discipline": "physics",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 5,
+              "note_vi": "Môi trường vật chất rắn, lỏng, khí truyền dao động phân tử."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Sound wave",
+              "vi": "Sóng âm",
+              "ipa": "/saʊnd weɪv/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Vibration",
+              "vi": "Sự dao động",
+              "ipa": "/vaɪˈbreɪ.ʃən/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Frequency",
+              "vi": "Tần số",
+              "ipa": "/ˈfriː.kwən.si/",
+              "symbol_or_formula": "f",
+              "note": ""
+            },
+            {
+              "en": "Hertz",
+              "vi": "Héc (đơn vị SI tần số)",
+              "ipa": "/hɜːts/",
+              "symbol_or_formula": "Hz",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "lesson_no": 13,
+          "title_vi": "Độ to và độ cao của âm",
+          "title_en": "Loudness and Pitch of Sound",
+          "discipline": "physics",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 32,
+              "note_vi": "Tai người và động vật tiếp nhận kích thích âm thanh."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Amplitude",
+              "vi": "Biên độ dao động",
+              "ipa": "/ˈæm.plɪ.tjuːd/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Pitch",
+              "vi": "Độ cao của âm",
+              "ipa": "/pɪtʃ/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Ultrasound",
+              "vi": "Siêu âm",
+              "ipa": "/ˈʌl.trə.saʊnd/",
+              "symbol_or_formula": "> 20,000 Hz",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "lesson_no": 14,
+          "title_vi": "Phản xạ âm, chống ô nhiễm tiếng ồn",
+          "title_en": "Sound Reflection and Noise Control",
+          "discipline": "physics",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 12,
+              "note_vi": "Sóng âm gặp vật cản tạo phản xạ âm."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Echo",
+              "vi": "Tiếng vang",
+              "ipa": "/ˈek.əʊ/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Sound absorption",
+              "vi": "Sự hấp thụ âm",
+              "ipa": "/saʊnd əbˈzɔːp.ʃən/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Noise pollution",
+              "vi": "Ô nhiễm tiếng ồn",
+              "ipa": "/nɔɪz pəˈluː.ʃən/",
+              "symbol_or_formula": "",
+              "note": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chapter_no": 6,
+      "code": "CHUONG_VI",
+      "title_vi": "Chương VI. Ánh sáng",
+      "title_en": "Chapter VI. Light and Reflection",
+      "discipline": "physics",
+      "lessons": [
+        {
+          "lesson_no": 15,
+          "title_vi": "Năng lượng ánh sáng. Tia sáng, vùng tối",
+          "title_en": "Light Energy, Light Rays and Shadows",
+          "discipline": "physics",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 22,
+              "note_vi": "Quang hợp hấp thụ năng lượng ánh sáng Mặt Trời."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Light ray",
+              "vi": "Tia sáng",
+              "ipa": "/laɪt reɪ/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Umbra",
+              "vi": "Vùng tối",
+              "ipa": "/ˈʌm.brə/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Penumbra",
+              "vi": "Vùng nửa tối",
+              "ipa": "/pɪˈnʌm.brə/",
+              "symbol_or_formula": "",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "lesson_no": 16,
+          "title_vi": "Sự phản xạ ánh sáng",
+          "title_en": "Reflection of Light",
+          "discipline": "physics",
+          "is_practical": true,
+          "integration_links": [
+            {
+              "target_lesson_no": 15,
+              "note_vi": "Tia sáng phản xạ tuân theo định luật phản xạ ánh sáng."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Reflection",
+              "vi": "Sự phản xạ ánh sáng",
+              "ipa": "/rɪˈflek.ʃən/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Angle of incidence",
+              "vi": "Góc tới",
+              "ipa": "/ˈæŋ.ɡəl əv ˈɪn.sɪ.dəns/",
+              "symbol_or_formula": "i",
+              "note": ""
+            },
+            {
+              "en": "Angle of reflection",
+              "vi": "Góc phản xạ",
+              "ipa": "/ˈæŋ.ɡəl əv rɪˈflek.ʃən/",
+              "symbol_or_formula": "i' = i",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "lesson_no": 17,
+          "title_vi": "Ảnh của vật qua gương phẳng",
+          "title_en": "Images Formed by a Plane Mirror",
+          "discipline": "physics",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 16,
+              "note_vi": "Ảnh ảo đối xứng qua mặt gương phẳng."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Plane mirror",
+              "vi": "Gương phẳng",
+              "ipa": "/pleɪn ˈmɪr.ər/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Virtual image",
+              "vi": "Ảnh ảo",
+              "ipa": "/ˈvɜː.tʃu.əl ˈɪm.ɪdʒ/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Normal line",
+              "vi": "Đường pháp tuyến",
+              "ipa": "/ˈnɔː.məl laɪn/",
+              "symbol_or_formula": "",
+              "note": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chapter_no": 7,
+      "code": "CHUONG_VII",
+      "title_vi": "Chương VII. Từ",
+      "title_en": "Chapter VII. Magnetism and Electromagnets",
+      "discipline": "physics",
+      "lessons": [
+        {
+          "lesson_no": 18,
+          "title_vi": "Nam châm",
+          "title_en": "Magnets and Magnetic Poles",
+          "discipline": "physics",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 4,
+              "note_vi": "Kim loại sắt (Iron) bị nam châm hút mạnh."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Magnet",
+              "vi": "Nam châm",
+              "ipa": "/ˈmæɡ.nət/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Magnetic pole",
+              "vi": "Từ cực (Bắc N / Nam S)",
+              "ipa": "/mæɡˈnet.ɪk pəʊl/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Iron",
+              "vi": "Sắt (đơn chất: sắt)",
+              "ipa": "/ˈaɪ.ən/",
+              "symbol_or_formula": "Fe",
+              "note": "13 ngoại lệ: đơn chất gọi 'sắt'"
+            }
+          ]
+        },
+        {
+          "lesson_no": 19,
+          "title_vi": "Từ trường",
+          "title_en": "Magnetic Fields and Compass",
+          "discipline": "physics",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 18,
+              "note_vi": "Từ trường tồn tại xung quanh nam châm và Trái Đất."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Magnetic field",
+              "vi": "Từ trường",
+              "ipa": "/mæɡˈnet.ɪk fiːld/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Field line",
+              "vi": "Đường sức từ",
+              "ipa": "/fiːld laɪn/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Compass",
+              "vi": "La bàn",
+              "ipa": "/ˈkʌm.pəs/",
+              "symbol_or_formula": "",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "lesson_no": 20,
+          "title_vi": "Chế tạo nam châm điện đơn giản",
+          "title_en": "Building a Simple Electromagnet",
+          "discipline": "physics",
+          "is_practical": true,
+          "integration_links": [
+            {
+              "target_lesson_no": 19,
+              "note_vi": "Dòng điện chạy qua ống dây sinh ra từ trường."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Electromagnet",
+              "vi": "Nam châm điện",
+              "ipa": "/ɪˌlek.trəʊˈmæɡ.nət/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Solenoid",
+              "vi": "Ống dây dẫn",
+              "ipa": "/ˈsəʊ.lə.nɔɪd/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Copper wire",
+              "vi": "Dây đồng",
+              "ipa": "/ˈkɒp.ər waɪər/",
+              "symbol_or_formula": "Cu",
+              "note": "13 ngoại lệ: đơn chất gọi 'đồng'"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chapter_no": 8,
+      "code": "CHUONG_VIII",
+      "title_vi": "Chương VIII. Trao đổi chất và chuyển hóa năng lượng ở sinh vật",
+      "title_en": "Chapter VIII. Metabolism and Energy Conversion in Organisms",
+      "discipline": "biology",
+      "lessons": [
+        {
+          "lesson_no": 21,
+          "title_vi": "Khái quát về trao đổi chất và chuyển hóa năng lượng",
+          "title_en": "Overview of Metabolism",
+          "discipline": "biology",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 5,
+              "note_vi": "Trao đổi chất liên quan phản ứng chuyển hóa phân tử."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Metabolism",
+              "vi": "Trao đổi chất",
+              "ipa": "/məˈtæb.ə.lɪ.zəm/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Anabolism",
+              "vi": "Đồng hóa",
+              "ipa": "/əˈnæb.ə.lɪ.zəm/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Catabolism",
+              "vi": "Dị hóa",
+              "ipa": "/kəˈtæb.ə.lɪ.zəm/",
+              "symbol_or_formula": "",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "lesson_no": 22,
+          "title_vi": "Quang hợp ở thực vật",
+          "title_en": "Photosynthesis in Plants",
+          "discipline": "biology",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 15,
+              "note_vi": "Quang hợp sử dụng năng lượng ánh sáng tổng hợp chất hữu cơ."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Photosynthesis",
+              "vi": "Quang hợp",
+              "ipa": "/ˌfəʊ.təʊˈsɪn.θə.sɪs/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Chlorophyll",
+              "vi": "Chất diệp lục",
+              "ipa": "/ˈklɔːr.ə.fɪl/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Glucose",
+              "vi": "Đường glucose",
+              "ipa": "/ˈɡluː.kəʊs/",
+              "symbol_or_formula": "C₆H₁₂O₆",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "lesson_no": 23,
+          "title_vi": "Một số yếu tố ảnh hưởng đến quang hợp",
+          "title_en": "Factors Affecting Photosynthesis",
+          "discipline": "biology",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 22,
+              "note_vi": "Ánh sáng, CO₂ và nước quyết định cường độ quang hợp."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Stomata",
+              "vi": "Khí khổng",
+              "ipa": "/ˈstəʊ.mə.tə/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Carbon dioxide",
+              "vi": "Khí carbon dioxide",
+              "ipa": "/ˌkɑː.bən daɪˈɒk.saɪd/",
+              "symbol_or_formula": "CO₂",
+              "note": ""
+            },
+            {
+              "en": "Light intensity",
+              "vi": "Cường độ ánh sáng",
+              "ipa": "/laɪt ɪnˈten.sə.ti/",
+              "symbol_or_formula": "",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "lesson_no": 24,
+          "title_vi": "Thực hành: Chứng minh quang hợp ở cây xanh",
+          "title_en": "Practical: Demonstrating Photosynthesis",
+          "discipline": "biology",
+          "is_practical": true,
+          "integration_links": [
+            {
+              "target_lesson_no": 22,
+              "note_vi": "Kiểm chứng tinh bột sản phẩm quang hợp bằng iodine."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Starch test",
+              "vi": "Thử tinh bột bằng iodine",
+              "ipa": "/stɑːtʃ test/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Iodine solution",
+              "vi": "Dung dịch iodine",
+              "ipa": "/ˈaɪ.ə.diːn səˈluː.ʃən/",
+              "symbol_or_formula": "I₂",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "lesson_no": 25,
+          "title_vi": "Hô hấp tế bào",
+          "title_en": "Cellular Respiration",
+          "discipline": "biology",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 22,
+              "note_vi": "Sản phẩm glucose và oxygen từ quang hợp là nguyên liệu hô hấp."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Cellular respiration",
+              "vi": "Hô hấp tế bào",
+              "ipa": "/ˈsel.jə.lər ˌres.pɪˈreɪ.ʃən/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Mitochondria",
+              "vi": "Ti thể",
+              "ipa": "/ˌmaɪ.təˈkɒn.dri.ə/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Adenosine triphosphate",
+              "vi": "Năng lượng ATP",
+              "ipa": "/əˈden.ə.siːn traɪˈfɒs.feɪt/",
+              "symbol_or_formula": "ATP",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "lesson_no": 26,
+          "title_vi": "Một số yếu tố ảnh hưởng đến hô hấp tế bào",
+          "title_en": "Factors Affecting Cellular Respiration",
+          "discipline": "biology",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 25,
+              "note_vi": "Bảo quản nông sản cần giảm độ ẩm và oxygen hợp lý."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Seed preservation",
+              "vi": "Bảo quản hạt giống",
+              "ipa": "/siːd ˌprez.əˈveɪ.ʃən/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Moisture content",
+              "vi": "Độ ẩm",
+              "ipa": "/ˈmɔɪs.tʃər ˈkɒn.tent/",
+              "symbol_or_formula": "",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "lesson_no": 27,
+          "title_vi": "Thực hành: Hô hấp ở thực vật",
+          "title_en": "Practical: Plant Respiration Experiment",
+          "discipline": "biology",
+          "is_practical": true,
+          "integration_links": [
+            {
+              "target_lesson_no": 25,
+              "note_vi": "Phát hiện khí CO₂ thải ra trong hạt đang nảy mầm."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Germinating seed",
+              "vi": "Hạt nảy mầm",
+              "ipa": "/ˈdʒɜː.mɪ.neɪtɪŋ siːd/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Calcium hydroxide",
+              "vi": "Nước vôi trong Ca(OH)₂",
+              "ipa": "/ˈkæl.si.əm haɪˈdrɒk.saɪd/",
+              "symbol_or_formula": "Ca(OH)₂",
+              "note": "Chuẩn IUPAC Calcium hydroxide"
+            }
+          ]
+        },
+        {
+          "lesson_no": 28,
+          "title_vi": "Trao đổi khí ở sinh vật",
+          "title_en": "Gas Exchange in Organisms",
+          "discipline": "biology",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 25,
+              "note_vi": "Cung cấp O₂ và thải CO₂ phục vụ hô hấp tế bào."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Gas exchange",
+              "vi": "Trao đổi khí",
+              "ipa": "/ɡæs ɪksˈtʃeɪndʒ/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Diffusion",
+              "vi": "Sự khuếch tán",
+              "ipa": "/dɪˈfjuː.ʒən/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Trachea",
+              "vi": "Hệ ống khí / Khí quản",
+              "ipa": "/trəˈkiː.ə/",
+              "symbol_or_formula": "",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "lesson_no": 29,
+          "title_vi": "Vai trò của nước và chất dinh dưỡng đối với sinh vật",
+          "title_en": "Roles of Water and Nutrients",
+          "discipline": "biology",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 6,
+              "note_vi": "Phân tử nước là dung môi phân cực thiết yếu."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Mineral ion",
+              "vi": "Ion khoáng",
+              "ipa": "/ˈmɪn.ər.əl ˈaɪ.ən/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Solvent",
+              "vi": "Dung môi",
+              "ipa": "/ˈsɒl.vənt/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Solute",
+              "vi": "Chất tan",
+              "ipa": "/ˈsɒl.juːt/",
+              "symbol_or_formula": "",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "lesson_no": 30,
+          "title_vi": "Trao đổi nước và chất dinh dưỡng ở thực vật",
+          "title_en": "Water and Nutrient Transport in Plants",
+          "discipline": "biology",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 29,
+              "note_vi": "Mạch gỗ và mạch rây vận chuyển dòng vật chất."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Xylem",
+              "vi": "Mạch gỗ",
+              "ipa": "/ˈzaɪ.ləm/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Phloem",
+              "vi": "Mạch rây",
+              "ipa": "/ˈfləʊ.em/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Transpiration",
+              "vi": "Thoát hơi nước",
+              "ipa": "/ˌtræn.spɪˈreɪ.ʃən/",
+              "symbol_or_formula": "",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "lesson_no": 31,
+          "title_vi": "Trao đổi nước và chất dinh dưỡng ở động vật",
+          "title_en": "Transport and Digestion in Animals",
+          "discipline": "biology",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 28,
+              "note_vi": "Hệ tuần hoàn kết hợp hệ hô hấp vận chuyển khí và chất dinh dưỡng."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Circulatory system",
+              "vi": "Hệ tuần hoàn",
+              "ipa": "/ˌsɜː.kjə.ləˈtɔː.ri ˈsɪs.təm/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Capillary",
+              "vi": "Mao mạch",
+              "ipa": "/kəˈpɪl.ər.i/",
+              "symbol_or_formula": "",
+              "note": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chapter_no": 9,
+      "code": "CHUONG_IX",
+      "title_vi": "Chương IX. Cảm ứng ở sinh vật",
+      "title_en": "Chapter IX. Irritability and Behavior in Organisms",
+      "discipline": "biology",
+      "lessons": [
+        {
+          "lesson_no": 32,
+          "title_vi": "Cảm ứng ở sinh vật",
+          "title_en": "Irritability and Tropisms",
+          "discipline": "biology",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 15,
+              "note_vi": "Cây non hướng về nguồn sáng nhờ tính hướng sáng."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Irritability",
+              "vi": "Tính cảm ứng",
+              "ipa": "/ˌɪr.ɪ.təˈbɪl.ə.ti/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Stimulus",
+              "vi": "Kích thích",
+              "ipa": "/ˈstɪm.jə.ləs/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Phototropism",
+              "vi": "Tính hướng sáng",
+              "ipa": "/ˌfəʊ.təʊˈtrəʊ.pɪ.zəm/",
+              "symbol_or_formula": "",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "lesson_no": 33,
+          "title_vi": "Tập tính ở động vật",
+          "title_en": "Animal Behavior: Innate and Learned",
+          "discipline": "biology",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 32,
+              "note_vi": "Tập tính hình thành trên nền tảng hệ thần kinh cảm ứng."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Innate behavior",
+              "vi": "Tập tính bẩm sinh",
+              "ipa": "/ɪˈneɪt bɪˈheɪ.vjər/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Learned behavior",
+              "vi": "Tập tính học được",
+              "ipa": "/lɜːnd bɪˈheɪ.vjər/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Conditioned reflex",
+              "vi": "Phản xạ có điều kiện",
+              "ipa": "/kənˈdɪʃ.ənd ˈriː.fleks/",
+              "symbol_or_formula": "",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "lesson_no": 34,
+          "title_vi": "Vận dụng hiện tượng cảm ứng ở sinh vật vào thực tiễn",
+          "title_en": "Applied Tropisms and Behavior",
+          "discipline": "biology",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 33,
+              "note_vi": "Huấn luyện vật nuôi và giàn leo trồng trọt."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Geotropism",
+              "vi": "Tính hướng trọng lực",
+              "ipa": "/ˌdʒiː.əʊˈtrəʊ.pɪ.zəm/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Hydrotropism",
+              "vi": "Tính hướng nước",
+              "ipa": "/haɪˈdrɒt.rə.pɪ.zəm/",
+              "symbol_or_formula": "",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "lesson_no": 35,
+          "title_vi": "Thực hành: Cảm ứng ở sinh vật",
+          "title_en": "Practical: Plant Tropism Experiment",
+          "discipline": "biology",
+          "is_practical": true,
+          "integration_links": [
+            {
+              "target_lesson_no": 32,
+              "note_vi": "Quan sát tính hướng sáng của cây mầm."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Seedling",
+              "vi": "Cây mầm",
+              "ipa": "/ˈsiːd.lɪŋ/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Control group",
+              "vi": "Nhóm đối chứng",
+              "ipa": "/kənˈtrəʊl ɡruːp/",
+              "symbol_or_formula": "",
+              "note": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chapter_no": 10,
+      "code": "CHUONG_X",
+      "title_vi": "Chương X. Sinh trưởng và phát triển ở sinh vật",
+      "title_en": "Chapter X. Growth and Development",
+      "discipline": "biology",
+      "lessons": [
+        {
+          "lesson_no": 36,
+          "title_vi": "Khái quát về sinh trưởng và phát triển ở sinh vật",
+          "title_en": "Growth and Development Overview",
+          "discipline": "biology",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 21,
+              "note_vi": "Sinh trưởng dựa vào đồng hóa tích lũy chất hữu cơ."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Growth",
+              "vi": "Sinh trưởng",
+              "ipa": "/ɡrəʊθ/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Development",
+              "vi": "Phát triển",
+              "ipa": "/dɪˈvel.əp.mənt/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Meristem",
+              "vi": "Mô phân sinh",
+              "ipa": "/ˈmer.ɪ.stem/",
+              "symbol_or_formula": "",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "lesson_no": 37,
+          "title_vi": "Ứng dụng sinh trưởng và phát triển ở sinh vật vào thực tiễn",
+          "title_en": "Applications in Agriculture",
+          "discipline": "biology",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 36,
+              "note_vi": "Điều chỉnh chiếu sáng và hormone kích thích ra hoa."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Photoperiod",
+              "vi": "Quang chu kì",
+              "ipa": "/ˌfəʊ.təʊˈpɪə.ri.əd/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Hormone",
+              "vi": "Hoocmôn thực vật / động vật",
+              "ipa": "/ˈhɔː.məʊn/",
+              "symbol_or_formula": "",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "lesson_no": 38,
+          "title_vi": "Thực hành: Quan sát và mô tả sự sinh trưởng và phát triển",
+          "title_en": "Practical: Tracking Life Cycles",
+          "discipline": "biology",
+          "is_practical": true,
+          "integration_links": [
+            {
+              "target_lesson_no": 36,
+              "note_vi": "Ghi nhận vòng đời nảy mầm và biến thái."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Metamorphosis",
+              "vi": "Biến thái",
+              "ipa": "/ˌmet.əˈmɔː.fə.sɪs/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Life cycle",
+              "vi": "Vòng đời",
+              "ipa": "/laɪf ˈsaɪ.kəl/",
+              "symbol_or_formula": "",
+              "note": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chapter_no": 11,
+      "code": "CHUONG_XI",
+      "title_vi": "Chương XI. Sinh sản ở sinh vật",
+      "title_en": "Chapter XI. Reproduction and Unified Organism",
+      "discipline": "biology",
+      "lessons": [
+        {
+          "lesson_no": 39,
+          "title_vi": "Sinh sản vô tính ở sinh vật",
+          "title_en": "Asexual Reproduction",
+          "discipline": "biology",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 36,
+              "note_vi": "Sinh sản sinh dưỡng tạo cá thể mới từ mô phân sinh."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Asexual reproduction",
+              "vi": "Sinh sản vô tính",
+              "ipa": "/eɪˈsek.ʃu.əl ˌriː.prəˈdʌk.ʃən/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Vegetative propagation",
+              "vi": "Sinh sản sinh dưỡng",
+              "ipa": "/ˈvedʒ.ɪ.tə.tɪv ˌprɒp.əˈɡeɪ.ʃən/",
+              "symbol_or_formula": "",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "lesson_no": 40,
+          "title_vi": "Sinh sản hữu tính ở sinh vật",
+          "title_en": "Sexual Reproduction",
+          "discipline": "biology",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 39,
+              "note_vi": "So sánh ưu thế đa dạng di truyền với sinh sản vô tính."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Sexual reproduction",
+              "vi": "Sinh sản hữu tính",
+              "ipa": "/ˈsek.ʃu.əl ˌriː.prəˈdʌk.ʃən/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Gamete",
+              "vi": "Giao tử",
+              "ipa": "/ˈɡæm.iːt/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Fertilization",
+              "vi": "Thụ tinh",
+              "ipa": "/ˌfɜː.tɪ.laɪˈzeɪ.ʃən/",
+              "symbol_or_formula": "",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "lesson_no": 41,
+          "title_vi": "Một số yếu tố ảnh hưởng và điều hòa sinh sản",
+          "title_en": "Regulation and Control of Reproduction",
+          "discipline": "biology",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 40,
+              "note_vi": "Thụ phấn và điều hòa nội tiết quyết định hiệu quả thụ tinh."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Pollination",
+              "vi": "Thụ phấn",
+              "ipa": "/ˌpɒl.ɪˈneɪ.ʃən/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Zygote",
+              "vi": "Hợp tử",
+              "ipa": "/ˈzaɪ.ɡəʊt/",
+              "symbol_or_formula": "",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "lesson_no": 42,
+          "title_vi": "Cơ thể sinh vật là một thể thống nhất",
+          "title_en": "The Organism as an Integrated Whole",
+          "discipline": "biology",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 21,
+              "note_vi": "Trao đổi chất, cảm ứng, sinh trưởng và sinh sản gắn kết chặt chẽ."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Homeostasis",
+              "vi": "Cân bằng nội môi",
+              "ipa": "/ˌhəʊ.mi.əʊˈsteɪ.sɪs/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Integration",
+              "vi": "Sự thống nhất cơ thể",
+              "ipa": "/ˌɪn.tɪˈɡreɪ.ʃən/",
+              "symbol_or_formula": "",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "lesson_no": 43,
+          "title_vi": "Thực hành: Nhân giống vô tính và thụ phấn nhân tạo",
+          "title_en": "Practical: Propagation and Pollination",
+          "discipline": "biology",
+          "is_practical": true,
+          "integration_links": [
+            {
+              "target_lesson_no": 39,
+              "note_vi": "Thực hành giâm cành, chiết cành cây trồng."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Stem cutting",
+              "vi": "Giâm cành",
+              "ipa": "/stem ˈkʌt.ɪŋ/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Grafting",
+              "vi": "Ghép cành / Ghép mắt",
+              "ipa": "/ˈɡrɑːf.tɪŋ/",
+              "symbol_or_formula": "",
+              "note": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

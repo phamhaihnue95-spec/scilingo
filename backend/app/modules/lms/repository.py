@@ -90,12 +90,14 @@ class LMSRepository:
         return resource
 
     def list_custom_resources(
-        self, tenant_id: str, lesson_no: int | None = None
+        self, tenant_id: str, lesson_no: int | None = None, grade: int | None = None
     ) -> list[TeacherResource]:
         stmt = select(TeacherResource).where(
             or_(TeacherResource.tenant_id.is_(None), TeacherResource.tenant_id == tenant_id),
             TeacherResource.resource_type != "game_challenge",
         )
+        if grade is not None:
+            stmt = stmt.where(TeacherResource.grade == grade)
         if lesson_no is not None:
             stmt = stmt.where(TeacherResource.lesson_no == lesson_no)
         return list(self.db.scalars(stmt).all())
@@ -123,12 +125,15 @@ class LMSRepository:
         self,
         *,
         tenant_id: str,
+        grade: int | None = None,
         lesson_nos: list[int] | None = None,
         language: str | None = None,
     ) -> list[QuestionBankItem]:
         stmt = select(QuestionBankItem).where(
             or_(QuestionBankItem.tenant_id.is_(None), QuestionBankItem.tenant_id == tenant_id)
         )
+        if grade is not None:
+            stmt = stmt.where(QuestionBankItem.grade == grade)
         if lesson_nos:
             stmt = stmt.where(QuestionBankItem.lesson_no.in_(lesson_nos))
         if language:

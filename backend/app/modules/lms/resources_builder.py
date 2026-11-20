@@ -53,7 +53,7 @@ def build_lesson_clil_pack(lesson: LessonDetailOut) -> list[TeacherResourceOut]:
                     f"- **IPA:** `{t.ipa or 'N/A'}`\n"
                     f"- **Vietnamese:** {t.term_vi}\n"
                     f"- **Symbol / Formula:** `{t.formula_or_symbol or '-'}`\n"
-                    f"- **Note:** {t.iupac_note or 'Chuẩn SGK KNTT 8'}"
+                    f"- **Note:** {t.iupac_note or f'Chuẩn SGK KNTT {lesson.grade}'}"
                 )
                 for idx, t in enumerate(lesson.terms)
             ],
@@ -66,33 +66,43 @@ def build_lesson_clil_pack(lesson: LessonDetailOut) -> list[TeacherResourceOut]:
         for idx, t in enumerate(lesson.terms)
     )
     worksheet_md = (
-        f"# Phiếu học tập Song ngữ — Bài {lesson.lesson_no}: {lesson.title_en}\n\n"
+        f"# Phiếu học tập Song ngữ (KHTN {lesson.grade}) — "
+        f"Bài {lesson.lesson_no}: {lesson.title_en}\n\n"
         f"{worksheet_items}\n"
     )
 
     return [
         TeacherResourceOut(
-            id=f"official-plan-{lesson.lesson_no}",
+            id=f"official-plan-g{lesson.grade}-l{lesson.lesson_no}",
+            grade=lesson.grade,
             lesson_no=lesson.lesson_no,
-            title=f"Giáo án CLIL 45 phút — Bài {lesson.lesson_no}: {lesson.title_vi}",
+            title=(
+                f"Giáo án CLIL 45 phút (KHTN {lesson.grade}) — "
+                f"Bài {lesson.lesson_no}: {lesson.title_vi}"
+            ),
             resource_type="lesson_plan",
             clil_mode="bilingual_10",
             content_markdown=plan_md,
             is_official=True,
         ),
         TeacherResourceOut(
-            id=f"official-slide-{lesson.lesson_no}",
+            id=f"official-slide-g{lesson.grade}-l{lesson.lesson_no}",
+            grade=lesson.grade,
             lesson_no=lesson.lesson_no,
-            title=f"Slide Thẻ thuật ngữ Song ngữ — Bài {lesson.lesson_no}: {lesson.title_en}",
+            title=(
+                f"Slide Thẻ thuật ngữ Song ngữ (KHTN {lesson.grade}) — "
+                f"Bài {lesson.lesson_no}: {lesson.title_en}"
+            ),
             resource_type="bilingual_slide",
             clil_mode="bilingual_50",
             content_markdown=slides_md,
             is_official=True,
         ),
         TeacherResourceOut(
-            id=f"official-ws-{lesson.lesson_no}",
+            id=f"official-ws-g{lesson.grade}-l{lesson.lesson_no}",
+            grade=lesson.grade,
             lesson_no=lesson.lesson_no,
-            title=f"Phiếu học tập (Worksheet) — Bài {lesson.lesson_no}",
+            title=f"Phiếu học tập (Worksheet KHTN {lesson.grade}) — Bài {lesson.lesson_no}",
             resource_type="worksheet",
             clil_mode="term_only",
             content_markdown=worksheet_md,

@@ -54,7 +54,9 @@ def export_exam_docx(
     header_run = header_p.add_run(f"{school_name.upper()}\n")
     header_run.bold = True
     header_run.font.size = Pt(11)
-    header_p.add_run("ĐỀ KIỂM TRA ĐỊNH KỲ MÔN KHOA HỌC TỰ NHIÊN 8 (KNTT)\n").bold = True
+    header_p.add_run(
+        f"ĐỀ KIỂM TRA ĐỊNH KỲ MÔN KHOA HỌC TỰ NHIÊN {exam.grade} (KNTT)\n"
+    ).bold = True
     if teacher_name:
         header_p.add_run(f"Giáo viên phụ trách: {teacher_name}\n").italic = True
 
@@ -144,7 +146,7 @@ def export_exam_pdf(
     pct = round(exam.achieved_en_ratio * 100, 1)
 
     pdf.set_font(font_family, style="B", size=11)
-    _write_block(6, school_name.upper())
+    _write_block(6, f"{school_name.upper()} · KHOA HỌC TỰ NHIÊN {exam.grade} (KNTT)")
     if teacher_name:
         pdf.set_font(font_family, style="", size=10)
         _write_block(5.5, f"Giáo viên phụ trách: {teacher_name}")

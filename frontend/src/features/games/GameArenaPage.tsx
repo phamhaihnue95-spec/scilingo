@@ -19,6 +19,7 @@ import type {
   Classroom,
   ClassroomLeaderboard,
   GamificationSummary,
+  GradeLevel,
 } from "../../api/types";
 import { ScienceAmbientParticles } from "../../components/motion/MotionPrimitives";
 import { playClickSound } from "../../utils/soundFx";
@@ -32,6 +33,7 @@ export type ArenaTab = "lightning" | "iupac" | "sequence" | "scidex" | "leaderbo
 
 interface Props {
   session: AuthSession | null;
+  grade?: GradeLevel;
   onSessionChange: (session: AuthSession) => void;
   initialGame?: ArenaTab;
   initialUnitNo?: number;
@@ -40,6 +42,7 @@ interface Props {
 
 export function GameArenaPage({
   session,
+  grade = 8,
   onSessionChange,
   initialGame = "lightning",
   initialUnitNo,
@@ -184,11 +187,11 @@ export function GameArenaPage({
               <span>Trường THCS Cầu Giấy B · Giáo viên Phạm Thị Hải</span>
             </div>
             <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">
-              Đấu Trường Trò Chơi KHTN 8
+              Đấu Trường Trò Chơi KHTN 6–9
             </h1>
             <p className="max-w-2xl text-sm text-amber-50">
-              Vừa chơi vừa chinh phục 920 thuật ngữ IPA, công thức Hóa học chuẩn IUPAC (TT 32/2018),
-              dây chuyền quy trình KHTN, sưu tầm 16 huy hiệu 3D SciDex và đua Top Bảng Vàng Lớp!
+              Vừa chơi vừa chinh phục 920 thuật ngữ IPA (16 Units) cùng từ vựng SGK KHTN Khối 6, 7, 8, 9,
+              công thức Hóa học chuẩn IUPAC (TT 32/2018), dây chuyền quy trình KHTN, sưu tầm 16 huy hiệu 3D SciDex và đua Top Bảng Vàng Lớp!
             </p>
           </div>
 
@@ -279,6 +282,7 @@ export function GameArenaPage({
           {activeGame === "lightning" && (
             <LightningMatchGame
               session={session}
+              grade={grade}
               initialUnitNo={unitOverride}
               onRewardRecorded={refreshGamification}
               onPlayingChange={setFocusPlaying}
@@ -286,11 +290,19 @@ export function GameArenaPage({
           )}
 
           {activeGame === "iupac" && (
-            <IupacLabGame session={session} onRewardRecorded={refreshGamification} />
+            <IupacLabGame
+              session={session}
+              grade={grade}
+              onRewardRecorded={refreshGamification}
+            />
           )}
 
           {activeGame === "sequence" && (
-            <SequenceLabGame session={session} onRewardRecorded={refreshGamification} />
+            <SequenceLabGame
+              session={session}
+              grade={grade}
+              onRewardRecorded={refreshGamification}
+            />
           )}
 
           {activeGame === "scidex" && (
@@ -310,7 +322,7 @@ export function GameArenaPage({
                 <div className="py-8 text-center">
                   <Trophy className="mx-auto h-10 w-10 text-amber-500" />
                   <h2 className="mt-2 text-lg font-extrabold text-slate-900">
-                    Đăng nhập để xem Bảng Vàng Thi Đua Lớp 8A1
+                    Đăng nhập để xem Bảng Vàng Thi Đua Lớp học KHTN 6–9
                   </h2>
                   <p className="mt-1 text-xs text-slate-600">
                     Bảng xếp hạng được cô lập riêng theo từng lớp học &amp; trường để đảm bảo an toàn dữ liệu học sinh THCS.
@@ -322,7 +334,7 @@ export function GameArenaPage({
                     className="btn-tactile mt-4 inline-flex items-center gap-2 rounded-2xl border-indigo-900 bg-indigo-600 px-5 py-2.5 text-sm font-extrabold text-white shadow"
                   >
                     <UserCheck className="h-4 w-4" />
-                    {loggingInDemo ? "Đang đăng nhập..." : "Dùng thử Học sinh An (Lớp 8A1)"}
+                    {loggingInDemo ? "Đang đăng nhập..." : "Dùng thử Học sinh An (THCS Cầu Giấy B)"}
                   </button>
                 </div>
               ) : (
@@ -353,7 +365,7 @@ export function GameArenaPage({
                     >
                       <div className="flex items-center gap-2 text-xs font-extrabold text-slate-800">
                         <KeyRound className="h-4 w-4 text-indigo-600" />
-                        Bạn chưa vào lớp nào. Nhập mã lớp (vd: KHTN8-CGB8):
+                        Bạn chưa vào lớp nào. Nhập mã lớp (vd: KHTN6-CGB6 / KHTN7-CGB7 / KHTN8-CGB8 / KHTN9-CGB9):
                       </div>
                       <input
                         type="text"

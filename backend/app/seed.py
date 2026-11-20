@@ -36,11 +36,16 @@ def _detect_exception_element(term_en: str, exception_names: set[str]) -> bool:
     return bool(tokens & exception_names)
 
 
+CURRICULUM_FILES: tuple[tuple[int, str], ...] = (
+    (6, "khtn6_kntt_curriculum.json"),
+    (7, "khtn7_kntt_curriculum.json"),
+    (8, "khtn8_kntt_curriculum.json"),
+    (9, "khtn9_kntt_curriculum.json"),
+)
+
+
 def seed_curriculum(db: Session, data_dir: Path) -> tuple[int, int, int]:
-    """Load all 47 KNTT Grade 8 lessons and glossary seed terms idempotently."""
-    curriculum_json = json.loads(
-        (data_dir / "khtn8_kntt_curriculum.json").read_text(encoding="utf-8")
-    )
+    """Load all KNTT Grade 6, 7, 8, and 9 lessons and glossary terms idempotently."""
     rules_json = json.loads(
         (data_dir / "terminology_rules.json").read_text(encoding="utf-8")
     )
@@ -48,100 +53,111 @@ def seed_curriculum(db: Session, data_dir: Path) -> tuple[int, int, int]:
         item["iupac_en"].lower() for item in rules_json["exception_13_elements"]
     }
 
+    existing_chapters = {
+        (c.grade, c.textbook_series, c.chapter_no): c for c in db.scalars(select(Chapter)).all()
+    }
+    existing_lessons = {
+        (les.chapter_id, les.lesson_no): les for les in db.scalars(select(Lesson)).all()
+    }
     existing_terms = {t.slug: t for t in db.scalars(select(Term)).all()}
+    existing_links = {
+        (lt.lesson_id, lt.term_id) for lt in db.scalars(select(LessonTerm)).all()
+    }
+
     chapters_created = 0
     lessons_created = 0
     terms_created = 0
 
-    for ch_data in curriculum_json["chapters"]:
-        chapter = db.scalar(
-            select(Chapter).where(
-                Chapter.grade == 8,
-                Chapter.textbook_series == "kntt",
-                Chapter.chapter_no == ch_data["chapter_no"],
-            )
-        )
-        if chapter is None:
-            chapter = Chapter(
-                grade=8,
-                textbook_series="kntt",
-                chapter_no=ch_data["chapter_no"],
-                code=ch_data["code"],
-                title_vi=ch_data["title_vi"],
-                title_en=ch_data["title_en"],
-                discipline=ch_data["discipline"],
-            )
-            db.add(chapter)
-            db.flush()
-            chapters_created += 1
+    for grade, filename in CURRICULUM_FILES:
+        file_path = data_dir / filename
+        if not file_path.is_file():
+            continue
+        curriculum_json = json.loads(file_path.read_text(encoding="utf-8"))
 
-        for l_data in ch_data["lessons"]:
-            lesson = db.scalar(
-                select(Lesson).where(
-                    Lesson.chapter_id == chapter.id,
-                    Lesson.lesson_no == l_data["lesson_no"],
+        for ch_data in curriculum_json["chapters"]:
+            ch_key = (grade, "kntt", ch_data["chapter_no"])
+            chapter = existing_chapters.get(ch_key)
+            if chapter is None:
+                chapter = Chapter(
+                    grade=grade,
+                    textbook_series="kntt",
+                    chapter_no=ch_data["chapter_no"],
+                    code=ch_data["code"],
+                    title_vi=ch_data["title_vi"],
+                    title_en=ch_data["title_en"],
+                    discipline=ch_data["discipline"],
                 )
-            )
-            if lesson is None:
-                lesson = Lesson(
-                    chapter_id=chapter.id,
-                    lesson_no=l_data["lesson_no"],
-                    title_vi=l_data["title_vi"],
-                    title_en=l_data["title_en"],
-                    discipline=l_data["discipline"],
-                    is_practical=bool(l_data.get("is_practical", False)),
-                    integration_links_json=l_data.get("integration_links", []),
-                    summary_vi=(
-                        f"Bài {l_data['lesson_no']}: {l_data['title_vi']} "
-                        "(SGK KHTN 8 Kết nối tri thức)."
-                    ),
-                    summary_en=f"Lesson {l_data['lesson_no']}: {l_data['title_en']}.",
-                )
-                db.add(lesson)
+                db.add(chapter)
                 db.flush()
-                lessons_created += 1
+                existing_chapters[ch_key] = chapter
+                chapters_created += 1
 
-            for idx, term_data in enumerate(l_data.get("glossary_seed", [])):
-                slug = _slugify(term_data["en"])
-                term = existing_terms.get(slug)
-                if term is None:
-                    term = Term(
-                        slug=slug,
-                        term_en=term_data["en"],
-                        term_vi=term_data["vi"],
-                        ipa=term_data.get("ipa") or None,
+            for l_data in ch_data["lessons"]:
+                l_key = (chapter.id, l_data["lesson_no"])
+                lesson = existing_lessons.get(l_key)
+                if lesson is None:
+                    lesson = Lesson(
+                        chapter_id=chapter.id,
+                        lesson_no=l_data["lesson_no"],
+                        title_vi=l_data["title_vi"],
+                        title_en=l_data["title_en"],
                         discipline=l_data["discipline"],
-                        formula_or_symbol=term_data.get("symbol_or_formula") or None,
-                        iupac_note=term_data.get("note") or None,
-                        is_13_exception_element=_detect_exception_element(
-                            term_data["en"], exception_names
+                        is_practical=bool(l_data.get("is_practical", False)),
+                        integration_links_json=l_data.get("integration_links", []),
+                        summary_vi=(
+                            f"Bài {l_data['lesson_no']}: {l_data['title_vi']} "
+                            f"(SGK KHTN {grade} Kết nối tri thức)."
                         ),
-                        definition_vi=f"{term_data['vi']} ({l_data['title_vi']})",
-                        definition_en=(
-                            f"Key Grade 8 Natural Sciences term in '{l_data['title_en']}'."
+                        summary_en=(
+                            f"Grade {grade} Lesson {l_data['lesson_no']}: "
+                            f"{l_data['title_en']}."
                         ),
-                        status="verified",
                     )
-                    db.add(term)
+                    db.add(lesson)
                     db.flush()
-                    existing_terms[slug] = term
-                    terms_created += 1
+                    existing_lessons[l_key] = lesson
+                    lessons_created += 1
 
-                existing_link = db.scalar(
-                    select(LessonTerm).where(
-                        LessonTerm.lesson_id == lesson.id,
-                        LessonTerm.term_id == term.id,
-                    )
-                )
-                if existing_link is None:
-                    db.add(
-                        LessonTerm(
-                            lesson_id=lesson.id,
-                            term_id=term.id,
-                            is_core=True,
-                            display_order=idx,
+                for idx, term_data in enumerate(l_data.get("glossary_seed", [])):
+                    slug = _slugify(term_data["en"])
+                    term = existing_terms.get(slug)
+                    if term is None:
+                        term = Term(
+                            slug=slug,
+                            term_en=term_data["en"],
+                            term_vi=term_data["vi"],
+                            ipa=term_data.get("ipa") or None,
+                            discipline=l_data["discipline"],
+                            formula_or_symbol=term_data.get("symbol_or_formula") or None,
+                            iupac_note=term_data.get("note") or None,
+                            is_13_exception_element=_detect_exception_element(
+                                term_data["en"], exception_names
+                            ),
+                            definition_vi=(
+                                f"{term_data['vi']} (KHTN {grade} · {l_data['title_vi']})"
+                            ),
+                            definition_en=(
+                                f"Key Grade {grade} Natural Sciences term in "
+                                f"'{l_data['title_en']}'."
+                            ),
+                            status="verified",
                         )
-                    )
+                        db.add(term)
+                        db.flush()
+                        existing_terms[slug] = term
+                        terms_created += 1
+
+                    link_key = (lesson.id, term.id)
+                    if link_key not in existing_links:
+                        db.add(
+                            LessonTerm(
+                                lesson_id=lesson.id,
+                                term_id=term.id,
+                                is_core=True,
+                                display_order=idx,
+                            )
+                        )
+                        existing_links.add(link_key)
 
     db.commit()
     return chapters_created, lessons_created, terms_created
@@ -373,6 +389,7 @@ def seed_demo_lms(db: Session) -> None:
     if existing_challenge is None:
         db.add(
             TeacherResource(
+                grade=8,
                 lesson_no=1,
                 tenant_id=teacher.tenant_id,
                 title="Thử thách 5 phút: Nối nhanh 920 từ vựng Unit 1 (Astronomy)",
@@ -393,6 +410,59 @@ def seed_demo_lms(db: Session) -> None:
                 is_official=False,
             )
         )
+
+    # Seed representative classrooms for Grades 6, 7, 9 at Truong THCS Cau Giay B
+    extra_grade_classes = [
+        (
+            6,
+            "6A1 - KHTN 6 Song ngữ",
+            "KHTN6-CGB6",
+            18,
+            "Giới thiệu tế bào nhân thực và kính hiển vi bằng tiếng Anh (bilingual_10).",
+        ),
+        (
+            7,
+            "7A1 - KHTN 7 Song ngữ",
+            "KHTN7-CGB7",
+            4,
+            "Đọc tên nguyên tố IUPAC & Bảng tuần hoàn.",
+        ),
+        (
+            9,
+            "9A1 - KHTN 9 Ôn thi Song ngữ",
+            "KHTN9-CGB9",
+            25,
+            "Phân biệt Ethylic alcohol (Ethanol) & Acetic acid chuẩn IUPAC.",
+        ),
+    ]
+    for g_val, g_name, g_code, g_lesson, g_note in extra_grade_classes:
+        g_cls = db.scalar(select(Classroom).where(Classroom.join_code == g_code))
+        if g_cls is None:
+            g_cls = Classroom(
+                tenant_id=teacher.tenant_id,
+                teacher_id=teacher.id,
+                name=g_name,
+                grade=g_val,
+                academic_year="2026-2027",
+                join_code=g_code,
+                is_tt94_pilot_class=True,
+            )
+            db.add(g_cls)
+            db.flush()
+            db.add(
+                TeachingSessionLog(
+                    tenant_id=teacher.tenant_id,
+                    classroom_id=g_cls.id,
+                    teacher_id=teacher.id,
+                    grade=g_val,
+                    lesson_no=g_lesson,
+                    taught_date=date(2026, 11, 2),
+                    periods_count=2,
+                    clil_mode="bilingual_10",
+                    english_minutes=30,
+                    notes=g_note,
+                )
+            )
 
     db.commit()
 

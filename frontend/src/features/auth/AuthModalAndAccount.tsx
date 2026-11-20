@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { Building2, CheckCircle2, LogOut, Shield, UserPlus, Users } from "lucide-react";
 
 import { api, clearAuthTokens, saveAuthTokens } from "../../api/client";
-import type { AuthSession, Entitlements, UserProfile } from "../../api/types";
+import type { AuthSession, Entitlements, GradeLevel, UserProfile } from "../../api/types";
+import { VALID_GRADES } from "../../utils/grades";
 
 interface Props {
   session: AuthSession | null;
@@ -36,6 +37,7 @@ export function AccountPage({ session, onSessionChange }: Props) {
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [role, setRole] = useState<"student" | "teacher">("student");
+  const [gradeLevel, setGradeLevel] = useState<GradeLevel>(8);
   const [entitlements, setEntitlements] = useState<Entitlements | null>(null);
   const [tenantUsers, setTenantUsers] = useState<UserProfile[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -71,7 +73,13 @@ export function AccountPage({ session, onSessionChange }: Props) {
       const nextSession =
         mode === "login"
           ? await api.login({ email, password })
-          : await api.register({ email, password, full_name: fullName, role, grade_level: 8 });
+          : await api.register({
+              email,
+              password,
+              full_name: fullName,
+              role,
+              grade_level: gradeLevel,
+            });
       saveAuthTokens(nextSession.access_token, nextSession.refresh_token);
       onSessionChange(nextSession);
     } catch (err) {
@@ -278,10 +286,28 @@ export function AccountPage({ session, onSessionChange }: Props) {
                   onChange={(e) => setRole(e.target.value as "student" | "teacher")}
                   className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
                 >
-                  <option value="student">Học sinh THCS (Lớp 8)</option>
+                  <option value="student">Học sinh THCS (Khối 6–9)</option>
                   <option value="teacher">Giáo viên KHTN</option>
                 </select>
               </div>
+              {role === "student" && (
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-slate-700">
+                    Khối lớp đang học
+                  </label>
+                  <select
+                    value={gradeLevel}
+                    onChange={(e) => setGradeLevel(Number(e.target.value) as GradeLevel)}
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                  >
+                    {VALID_GRADES.map((g) => (
+                      <option key={g} value={g}>
+                        Khối {g} (KHTN {g} – KNTT)
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </>
           )}
 

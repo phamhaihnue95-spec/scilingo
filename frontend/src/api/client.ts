@@ -15,6 +15,8 @@ import type {
   GameRewardPayload,
   GameRewardResult,
   GamificationSummary,
+  GradeLevel,
+  GradeOverview,
   LessonDetail,
   LessonMindmap,
   PracticeMode,
@@ -81,24 +83,30 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 }
 
 export const api = {
-  getChapters(discipline?: string): Promise<CurriculumTreeResponse> {
-    const query = discipline ? `?discipline=${encodeURIComponent(discipline)}` : "";
-    return request<CurriculumTreeResponse>(`/curriculum/kntt-8/chapters${query}`);
+  getGrades(): Promise<GradeOverview[]> {
+    return request<GradeOverview[]>("/curriculum/grades");
   },
 
-  getLesson(lessonNo: number): Promise<LessonDetail> {
-    return request<LessonDetail>(`/curriculum/lessons/${lessonNo}`);
+  getChapters(discipline?: string, grade: GradeLevel = 8): Promise<CurriculumTreeResponse> {
+    const query = discipline ? `?discipline=${encodeURIComponent(discipline)}` : "";
+    return request<CurriculumTreeResponse>(`/curriculum/kntt/${grade}/chapters${query}`);
+  },
+
+  getLesson(lessonNo: number, grade: GradeLevel = 8): Promise<LessonDetail> {
+    return request<LessonDetail>(`/curriculum/kntt/${grade}/lessons/${lessonNo}`);
   },
 
   searchTerms(params: {
     q?: string;
     discipline?: string;
+    grade?: GradeLevel;
     lessonNo?: number;
     limit?: number;
   }): Promise<TermSearchResponse> {
     const sp = new URLSearchParams();
     if (params.q) sp.set("q", params.q);
     if (params.discipline) sp.set("discipline", params.discipline);
+    if (params.grade) sp.set("grade", String(params.grade));
     if (params.lessonNo) sp.set("lesson_no", String(params.lessonNo));
     if (params.limit) sp.set("limit", String(params.limit));
     const qs = sp.toString();
@@ -181,16 +189,18 @@ export const api = {
     return request<UserProfile[]>("/tenants/me/users");
   },
 
-  getLessonMindmap(lessonNo: number): Promise<LessonMindmap> {
-    return request<LessonMindmap>(`/learning/mindmap/${lessonNo}`);
+  getLessonMindmap(lessonNo: number, grade: GradeLevel = 8): Promise<LessonMindmap> {
+    return request<LessonMindmap>(`/learning/mindmap/${lessonNo}?grade=${grade}`);
   },
 
   getDueFlashcards(params: {
+    grade?: GradeLevel;
     lessonNo?: number;
     discipline?: string;
     limit?: number;
   }): Promise<SRSDueResponse> {
     const sp = new URLSearchParams();
+    if (params.grade) sp.set("grade", String(params.grade));
     if (params.lessonNo) sp.set("lesson_no", String(params.lessonNo));
     if (params.discipline) sp.set("discipline", params.discipline);
     if (params.limit) sp.set("limit", String(params.limit));
@@ -206,6 +216,7 @@ export const api = {
   },
 
   startPractice(payload: {
+    grade?: GradeLevel;
     lesson_no: number;
     mode: PracticeMode;
     total_questions?: number;
@@ -300,16 +311,20 @@ export const api = {
     return request<ClassroomGameChallenge[]>("/lms/my-game-challenges");
   },
 
-  getLessonResources(lessonNo: number): Promise<TeacherResource[]> {
-    return request<TeacherResource[]>(`/lms/resources?lesson_no=${lessonNo}`);
+  getLessonResources(lessonNo: number, grade: GradeLevel = 8): Promise<TeacherResource[]> {
+    return request<TeacherResource[]>(`/lms/resources?lesson_no=${lessonNo}&grade=${grade}`);
   },
 
-  listQuestions(lessonNo?: number): Promise<QuestionBankItem[]> {
-    const query = lessonNo ? `?lesson_no=${lessonNo}` : "";
-    return request<QuestionBankItem[]>(`/lms/questions${query}`);
+  listQuestions(lessonNo?: number, grade?: GradeLevel): Promise<QuestionBankItem[]> {
+    const sp = new URLSearchParams();
+    if (grade) sp.set("grade", String(grade));
+    if (lessonNo) sp.set("lesson_no", String(lessonNo));
+    const query = sp.toString();
+    return request<QuestionBankItem[]>(`/lms/questions${query ? `?${query}` : ""}`);
   },
 
   createQuestion(payload: {
+    grade?: GradeLevel;
     lesson_no: number;
     language: "vi" | "en";
     cognitive_level: "know" | "understand" | "apply";
@@ -327,6 +342,7 @@ export const api = {
 
   generateExam(payload: {
     title: string;
+    grade?: GradeLevel;
     lesson_nos?: number[];
     study_pack_unit_nos?: number[];
     classroom_id?: string | null;
@@ -404,6 +420,7 @@ export const api = {
 
   logTeachingSession(payload: {
     classroom_id: string;
+    grade?: GradeLevel;
     lesson_no: number;
     taught_date: string;
     periods_count: number;

@@ -7,12 +7,24 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 
+class GradeOverviewOut(BaseModel):
+    """Curriculum summary metadata for one middle-school grade (6, 7, 8, or 9)."""
+
+    grade: int
+    title_vi: str
+    title_en: str
+    total_chapters: int
+    total_lessons: int
+    total_terms: int
+
+
 class LessonSummaryOut(BaseModel):
     """Compact lesson representation used inside the curriculum map."""
 
     model_config = ConfigDict(from_attributes=True)
 
     id: str
+    grade: int = 8
     lesson_no: int
     title_vi: str
     title_en: str
@@ -71,6 +83,7 @@ class LinkedLessonRefOut(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+    grade: int = 8
     lesson_no: int
     title_vi: str
     title_en: str
@@ -80,6 +93,7 @@ class LinkedLessonRefOut(BaseModel):
 class IntegrationLinkOut(BaseModel):
     """Cross-disciplinary link honoring CV 5208 (integrated KHTN teaching)."""
 
+    target_grade: int = 8
     target_lesson_no: int
     target_title_vi: str
     target_title_en: str
@@ -91,6 +105,7 @@ class LessonDetailOut(BaseModel):
     """Detailed lesson payload with standardized terms and cross-discipline links."""
 
     id: str
+    grade: int = 8
     lesson_no: int
     title_vi: str
     title_en: str
@@ -175,6 +190,7 @@ class StudyPackUnitSummaryOut(BaseModel):
     title_vi: str
     discipline: str
     kntt8_related_lessons: list[int]
+    related_lessons_by_grade: dict[str, list[int]] = Field(default_factory=dict)
     item_count: int
 
 

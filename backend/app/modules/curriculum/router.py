@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.modules.curriculum.schemas import (
     CurriculumTreeResponse,
+    GradeOverviewOut,
     LessonDetailOut,
     StudyPackOverviewOut,
     StudyPackQuizOut,
@@ -23,6 +24,25 @@ from app.modules.curriculum.service import CurriculumService
 router = APIRouter(tags=["Curriculum & Terminology (Unit 1)"])
 
 
+@router.get("/curriculum/grades", response_model=list[GradeOverviewOut])
+def list_available_grades(db: Session = Depends(get_db)) -> list[GradeOverviewOut]:
+    """List all supported KNTT Natural Sciences grades (6, 7, 8, 9) and counts."""
+    return CurriculumService(db).list_grades()
+
+
+@router.get("/curriculum/kntt/{grade}/chapters", response_model=CurriculumTreeResponse)
+def list_kntt_chapters_by_grade(
+    grade: int,
+    discipline: str | None = Query(
+        default=None,
+        description="Filter by discipline: general_lab, chemistry, physics, biology",
+    ),
+    db: Session = Depends(get_db),
+) -> CurriculumTreeResponse:
+    """Return the complete KHTN KNTT chapter and lesson tree for Grade 6, 7, 8, or 9."""
+    return CurriculumService(db).get_curriculum_tree(discipline=discipline, grade=grade)
+
+
 @router.get("/curriculum/kntt-8/chapters", response_model=CurriculumTreeResponse)
 def list_kntt8_chapters(
     discipline: str | None = Query(
@@ -32,13 +52,25 @@ def list_kntt8_chapters(
     db: Session = Depends(get_db),
 ) -> CurriculumTreeResponse:
     """Return the complete KHTN Grade 8 (KNTT) chapter and lesson tree."""
-    return CurriculumService(db).get_curriculum_tree(discipline=discipline)
+    return CurriculumService(db).get_curriculum_tree(discipline=discipline, grade=8)
+
+
+@router.get("/curriculum/kntt/{grade}/lessons/{lesson_no}", response_model=LessonDetailOut)
+def get_lesson_detail_by_grade(
+    grade: int, lesson_no: int, db: Session = Depends(get_db)
+) -> LessonDetailOut:
+    """Return a lesson for Grade 6..9 with its standardized terms and integration links."""
+    return CurriculumService(db).get_lesson_detail(lesson_no, grade=grade)
 
 
 @router.get("/curriculum/lessons/{lesson_no}", response_model=LessonDetailOut)
-def get_lesson_detail(lesson_no: int, db: Session = Depends(get_db)) -> LessonDetailOut:
+def get_lesson_detail(
+    lesson_no: int,
+    grade: int = Query(default=8, ge=6, le=9),
+    db: Session = Depends(get_db),
+) -> LessonDetailOut:
     """Return a lesson with its standardized terms and cross-disciplinary links."""
-    return CurriculumService(db).get_lesson_detail(lesson_no)
+    return CurriculumService(db).get_lesson_detail(lesson_no, grade=grade)
 
 
 @router.get("/curriculum/rules/iupac", response_model=TerminologyRulebookOut)
@@ -51,7 +83,8 @@ def get_iupac_rules(db: Session = Depends(get_db)) -> TerminologyRulebookOut:
 def search_terms(
     q: str | None = Query(default=None, max_length=120),
     discipline: str | None = Query(default=None),
-    lesson_no: int | None = Query(default=None, ge=1, le=47),
+    grade: int | None = Query(default=None, ge=6, le=9),
+    lesson_no: int | None = Query(default=None, ge=1, le=60),
     limit: int = Query(default=60, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
@@ -60,6 +93,7 @@ def search_terms(
     return CurriculumService(db).search_terms(
         q=q,
         discipline=discipline,
+        grade=grade,
         lesson_no=lesson_no,
         limit=limit,
         offset=offset,

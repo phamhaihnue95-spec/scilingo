@@ -21,6 +21,7 @@ import { api } from "../../api/client";
 import type {
   AuthSession,
   Discipline,
+  GradeLevel,
   PracticeMode,
   StudyPackItem,
   StudyPackOverview,
@@ -45,8 +46,9 @@ import { DisciplineBadge } from "../curriculum/DisciplineBadge";
 
 interface Props {
   session?: AuthSession | null;
+  grade?: GradeLevel;
   initialUnitNo?: number;
-  onSelectLesson: (lessonNo: number) => void;
+  onSelectLesson: (lessonNo: number, grade?: GradeLevel) => void;
   onLaunchLightningUnit?: (unitNo: number) => void;
 }
 
@@ -73,6 +75,7 @@ const DISC_CARD_STYLE: Record<Discipline, { active: string; chip: string }> = {
 
 export function StudyPack16Page({
   session,
+  grade = 8,
   initialUnitNo,
   onSelectLesson,
   onLaunchLightningUnit,
@@ -503,12 +506,17 @@ export function StudyPack16Page({
                         Chơi Nối Cặp 60s Unit này
                       </button>
                     )}
-                    <span className="font-semibold text-slate-500">Liên kết SGK KNTT 8:</span>
-                    {unitDetail.unit.kntt8_related_lessons.map((lno) => (
+                    <span className="font-semibold text-slate-500">
+                      Liên kết SGK KNTT {grade}:
+                    </span>
+                    {(
+                      unitDetail.unit.related_lessons_by_grade?.[String(grade)] ??
+                      (grade === 8 ? unitDetail.unit.kntt8_related_lessons : [])
+                    ).map((lno) => (
                       <button
                         key={lno}
                         type="button"
-                        onClick={() => onSelectLesson(lno)}
+                        onClick={() => onSelectLesson(lno, grade)}
                         className="rounded-lg bg-white px-2 py-0.5 font-bold text-indigo-700 shadow-sm ring-1 ring-indigo-200 hover:bg-indigo-600 hover:text-white"
                       >
                         Bài {lno}

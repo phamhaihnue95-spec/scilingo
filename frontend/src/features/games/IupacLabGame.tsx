@@ -24,6 +24,7 @@ import type {
   AuthSession,
   Discipline,
   GameRewardResult,
+  GradeLevel,
   TermSummary,
   TerminologyRulebook,
 } from "../../api/types";
@@ -42,6 +43,7 @@ import {
 
 interface Props {
   session: AuthSession | null;
+  grade?: GradeLevel;
   onRewardRecorded?: () => void;
 }
 
@@ -136,11 +138,43 @@ const DEPRECATED_SAMPLE_PHRASES: Record<string, { text: string; context: string 
   },
   moment: {
     text: "Tính mô-men lực làm quay cánh tay đòn",
-    context: "Vật lí · Bài 18",
+    context: "Vật lí · KHTN 8 Bài 18",
+  },
+  "ethylic alcohol (ethanol)": {
+    text: "Lên men tinh bột thu được dung dịch rượu etylic (C₂H₅OH)",
+    context: "Hóa học · KHTN 9 Bài 25",
+  },
+  "acetic acid (ethanoic acid)": {
+    text: "Giấm ăn có chứa khoảng 2–5% axit axetic (CH₃COOH)",
+    context: "Hóa học · KHTN 9 Bài 26",
+  },
+  "ethylene (ethene)": {
+    text: "Khí etilen (C₂H₄) làm mất màu dung dịch nước bromine",
+    context: "Hóa học · KHTN 9 Bài 23",
+  },
+  methane: {
+    text: "Khí metan (CH₄) là thành phần chính của khí thiên nhiên",
+    context: "Hóa học · KHTN 9 Bài 22",
+  },
+  glucose: {
+    text: "Quả nho chín chứa nhiều đường glucozơ (C₆H₁₂O₆)",
+    context: "Hóa học · KHTN 9 Bài 28",
+  },
+  saccharose: {
+    text: "Đường mía có thành phần chính là saccarozơ (C₁₂H₂₂O₁₁)",
+    context: "Hóa học · KHTN 9 Bài 28",
+  },
+  polymer: {
+    text: "Nhựa PE và tinh bột đều là những hợp chất polime",
+    context: "Hóa học · KHTN 9 Bài 31",
   },
 };
 
-function buildSlasherDeck(rulebook: TerminologyRulebook, terms: TermSummary[]): SlashCard[] {
+function buildSlasherDeck(
+  rulebook: TerminologyRulebook,
+  terms: TermSummary[],
+  grade: GradeLevel
+): SlashCard[] {
   const invalidCards: SlashCard[] = [];
   const validCards: SlashCard[] = [];
 
@@ -211,10 +245,10 @@ function buildSlasherDeck(rulebook: TerminologyRulebook, terms: TermSummary[]): 
     validCards.push({
       id: `term-${t.slug}`,
       text: `${t.term_en}${t.formula_or_symbol ? ` (${t.formula_or_symbol})` : ""} — ${t.term_vi}`,
-      contextLabel: "Thuật ngữ chuẩn SGK KNTT 8",
+      contextLabel: `Thuật ngữ chuẩn SGK KNTT ${grade}`,
       discipline: t.discipline,
       isValid: true,
-      reason: `Đúng chuẩn KHTN 8 (Thông tư 32/2018 & hệ SI): ${t.term_en} — ${t.term_vi}.`,
+      reason: `Đúng chuẩn KHTN ${grade} (Thông tư 32/2018 & hệ SI): ${t.term_en} — ${t.term_vi}.`,
     });
   }
 
@@ -257,7 +291,7 @@ function buildFormulaRounds(terms: TermSummary[], filter: MixerFilter): FormulaR
   });
 }
 
-export function IupacLabGame({ session, onRewardRecorded }: Props) {
+export function IupacLabGame({ session, grade = 8, onRewardRecorded }: Props) {
   const [labMode, setLabMode] = useState<LabMode>("linter_slash");
   const [rulebook, setRulebook] = useState<TerminologyRulebook | null>(null);
   const [terms, setTerms] = useState<TermSummary[]>([]);
@@ -304,11 +338,26 @@ export function IupacLabGame({ session, onRewardRecorded }: Props) {
   const rewardSentRef = useRef(false);
 
   useEffect(() => {
+    if (advanceTimerRef.current !== null) {
+      globalThis.clearTimeout(advanceTimerRef.current);
+      advanceTimerRef.current = null;
+    }
     setLoading(true);
-    Promise.all([api.getIupacRules(), api.searchTerms({ limit: 200 })])
-      .then(([rb, termRes]) => {
+    setPhase("ready");
+    Promise.all([
+      api.getIupacRules(),
+      api.searchTerms({ grade, limit: 200 }),
+      api.searchTerms({ limit: 200 }),
+    ])
+      .then(([rb, gradeRes, allRes]) => {
         setRulebook(rb);
-        setTerms(termRes.items);
+        const merged = new Map<string, TermSummary>();
+        for (const t of [...gradeRes.items, ...allRes.items]) {
+          if (!merged.has(t.id)) {
+            merged.set(t.id, t);
+          }
+        }
+        setTerms(Array.from(merged.values()));
         setError(null);
       })
       .catch((err: Error) => setError(err.message))
@@ -319,7 +368,7 @@ export function IupacLabGame({ session, onRewardRecorded }: Props) {
         globalThis.clearTimeout(advanceTimerRef.current);
       }
     };
-  }, []);
+  }, [grade]);
 
   const clearAdvanceTimer = () => {
     if (advanceTimerRef.current !== null) {
@@ -377,7 +426,7 @@ export function IupacLabGame({ session, onRewardRecorded }: Props) {
 
     if (labMode === "linter_slash") {
       if (!rulebook) return;
-      setSlashDeck(buildSlasherDeck(rulebook, terms));
+      setSlashDeck(buildSlasherDeck(rulebook, terms, grade));
       setSlashIndex(0);
       setHearts(3);
       setSlashFeedback(null);
@@ -582,7 +631,7 @@ export function IupacLabGame({ session, onRewardRecorded }: Props) {
         </div>
 
         <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-900">
-          Chuẩn Hóa IUPAC · Sinh · Lí SI
+          Chuẩn Hóa IUPAC · Sinh · Lí SI · KHTN 6–9 (Khối {grade})
         </span>
       </div>
 

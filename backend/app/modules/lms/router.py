@@ -137,12 +137,13 @@ def list_my_game_challenges(
 # --- CLIL Resources ---
 @router.get("/lms/resources", response_model=list[TeacherResourceOut])
 def get_lesson_resources(
-    lesson_no: int = Query(default=8, ge=1, le=47),
+    lesson_no: int = Query(default=8, ge=1, le=60),
+    grade: int = Query(default=8, ge=6, le=9),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> list[TeacherResourceOut]:
     """Retrieve CLIL lesson plan, bilingual slides, and worksheet for a lesson."""
-    return LMSService(db).get_resources_for_lesson(current_user, lesson_no)
+    return LMSService(db).get_resources_for_lesson(current_user, lesson_no, grade=grade)
 
 
 # --- Question Bank & Exam Builder ---
@@ -158,13 +159,16 @@ def create_question(
 
 @router.get("/lms/questions", response_model=list[QuestionOut])
 def list_questions(
-    lesson_no: int | None = Query(default=None, ge=1, le=47),
+    grade: int | None = Query(default=None, ge=6, le=9),
+    lesson_no: int | None = Query(default=None, ge=1, le=60),
     language: str | None = Query(default=None),
     current_user: User = Depends(require_roles(*TEACHER_ROLES)),
     db: Session = Depends(get_db),
 ) -> list[QuestionOut]:
     """List questions available to the teacher's tenant."""
-    return LMSService(db).list_questions(current_user, lesson_no=lesson_no, language=language)
+    return LMSService(db).list_questions(
+        current_user, grade=grade, lesson_no=lesson_no, language=language
+    )
 
 
 @router.post("/lms/exams/generate", response_model=ExamDetailOut)

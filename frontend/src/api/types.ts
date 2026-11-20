@@ -1,7 +1,18 @@
 export type Discipline = "general_lab" | "chemistry" | "physics" | "biology";
+export type GradeLevel = 6 | 7 | 8 | 9;
+
+export interface GradeOverview {
+  grade: GradeLevel;
+  title_vi: string;
+  title_en: string;
+  total_chapters: number;
+  total_lessons: number;
+  total_terms: number;
+}
 
 export interface LessonSummary {
   id: string;
+  grade?: GradeLevel;
   lesson_no: number;
   title_vi: string;
   title_en: string;
@@ -46,6 +57,7 @@ export interface TermSummary {
 }
 
 export interface LinkedLessonRef {
+  grade?: GradeLevel;
   lesson_no: number;
   title_vi: string;
   title_en: string;
@@ -62,6 +74,7 @@ export interface TermDetail extends TermSummary {
 }
 
 export interface IntegrationLink {
+  target_grade?: GradeLevel;
   target_lesson_no: number;
   target_title_vi: string;
   target_title_en: string;
@@ -71,6 +84,7 @@ export interface IntegrationLink {
 
 export interface LessonDetail {
   id: string;
+  grade?: GradeLevel;
   lesson_no: number;
   title_vi: string;
   title_en: string;
@@ -197,6 +211,7 @@ export interface MindmapNode {
   ipa: string | null;
   formula_or_symbol: string | null;
   note: string | null;
+  target_grade?: GradeLevel | null;
   target_lesson_no: number | null;
   is_13_exception_element: boolean;
 }
@@ -209,6 +224,7 @@ export interface MindmapEdge {
 }
 
 export interface LessonMindmap {
+  grade?: GradeLevel;
   lesson_no: number;
   title_vi: string;
   title_en: string;
@@ -272,6 +288,7 @@ export interface PracticeResult {
 
 export interface PracticeHistoryItem {
   attempt_id: string;
+  grade?: GradeLevel;
   lesson_no: number;
   mode: string;
   score: number;
@@ -349,6 +366,7 @@ export interface ExamQuestion {
 
 export interface ExamSummary {
   id: string;
+  grade?: GradeLevel;
   title: string;
   classroom_id: string | null;
   target_en_ratio: number;
@@ -448,6 +466,17 @@ export interface TeachingSessionLog {
   created_at: string;
 }
 
+export interface GradeTT94Metrics {
+  grade: GradeLevel;
+  classrooms_count: number;
+  students_count: number;
+  periods_logged: number;
+  english_minutes: number;
+  exams_count: number;
+  exams_meeting_10_pct: number;
+  exams_meeting_50_pct: number;
+}
+
 export interface TT94ComplianceReport {
   tenant_id: string;
   tenant_name: string;
@@ -472,6 +501,7 @@ export interface TT94ComplianceReport {
     meets_35_periods: boolean;
     meets_105_periods: boolean;
   }>;
+  grade_breakdown?: GradeTT94Metrics[];
 }
 
 export interface StudyPackItem {
@@ -493,6 +523,7 @@ export interface StudyPackUnitSummary {
   title_vi: string;
   discipline: Discipline;
   kntt8_related_lessons: number[];
+  related_lessons_by_grade?: Record<string, number[]>;
   item_count: number;
 }
 

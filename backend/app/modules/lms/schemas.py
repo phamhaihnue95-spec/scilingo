@@ -50,6 +50,7 @@ class TeacherResourceOut(BaseModel):
     """CLIL lesson plan, bilingual slide, or worksheet resource for a lesson."""
 
     id: str
+    grade: int = 8
     lesson_no: int
     title: str
     resource_type: ResourceType
@@ -61,7 +62,8 @@ class TeacherResourceOut(BaseModel):
 class QuestionCreateRequest(BaseModel):
     """Teacher-authored question saved into the school tenant's question bank."""
 
-    lesson_no: int = Field(ge=1, le=47)
+    grade: int = Field(default=8, ge=6, le=9)
+    lesson_no: int = Field(ge=1, le=60)
     language: QuestionLang = "en"
     cognitive_level: CognitiveLevel = "know"
     discipline: str = "chemistry"
@@ -75,6 +77,7 @@ class QuestionOut(BaseModel):
     """Question bank entry returned to teachers."""
 
     id: str
+    grade: int = 8
     lesson_no: int
     language: str
     cognitive_level: str
@@ -90,6 +93,7 @@ class ExamGenerateRequest(BaseModel):
     """Matrix specification for Exam Builder (supports TT94 10% and 50% presets)."""
 
     title: str = Field(min_length=3, max_length=255)
+    grade: int = Field(default=8, ge=6, le=9)
     lesson_nos: list[int] = Field(default_factory=list)
     study_pack_unit_nos: list[int] = Field(default_factory=list)
     classroom_id: str | None = None
@@ -100,11 +104,11 @@ class ExamGenerateRequest(BaseModel):
 
     @model_validator(mode="after")
     def validate_sources(self) -> ExamGenerateRequest:
-        """Require at least one valid KNTT lesson (1..47) or Study Pack unit (1..16)."""
+        """Require at least one valid KNTT lesson (1..60) or Study Pack unit (1..16)."""
         if not self.lesson_nos and not self.study_pack_unit_nos:
-            raise ValueError("Cần chọn ít nhất 1 bài học (1–47) hoặc 1 chuyên đề Unit (1–16).")
-        if any(not (1 <= n <= 47) for n in self.lesson_nos):
-            raise ValueError("Số bài học KNTT phải nằm trong khoảng 1–47.")
+            raise ValueError("Cần chọn ít nhất 1 bài học hoặc 1 chuyên đề Unit (1–16).")
+        if any(not (1 <= n <= 60) for n in self.lesson_nos):
+            raise ValueError("Số bài học KNTT phải nằm trong khoảng 1–60.")
         if any(not (1 <= u <= 16) for u in self.study_pack_unit_nos):
             raise ValueError("Chuyên đề Bộ đề học phải nằm trong khoảng Unit 1–16.")
         return self
@@ -130,6 +134,7 @@ class ExamSummaryOut(BaseModel):
     """Compact exam summary for teacher lists."""
 
     id: str
+    grade: int = 8
     title: str
     classroom_id: str | None = None
     target_en_ratio: float
@@ -263,7 +268,8 @@ class TeachingSessionCreateRequest(BaseModel):
     """Log one or more taught KHTN periods using English / CLIL."""
 
     classroom_id: str
-    lesson_no: int = Field(ge=1, le=47)
+    grade: int | None = Field(default=None, ge=6, le=9)
+    lesson_no: int = Field(ge=1, le=60)
     taught_date: date
     periods_count: int = Field(default=1, ge=1, le=5)
     clil_mode: ClilMode = "bilingual_10"
@@ -279,6 +285,7 @@ class TeachingSessionOut(BaseModel):
     id: str
     classroom_id: str
     teacher_id: str
+    grade: int = 8
     lesson_no: int
     taught_date: date
     periods_count: int
@@ -301,6 +308,19 @@ class ClassroomTT94MetricsOut(BaseModel):
     meets_105_periods: bool
 
 
+class GradeTT94MetricsOut(BaseModel):
+    """Per-grade summary metrics for Circular 94/2026 school-wide tracking."""
+
+    grade: int
+    classrooms_count: int
+    students_count: int
+    periods_logged: int
+    english_minutes: int
+    exams_count: int
+    exams_meeting_10_pct: int
+    exams_meeting_50_pct: int
+
+
 class TT94ComplianceReportOut(BaseModel):
     """School-wide self-assessment dashboard for Circular 94/2026/TT-BGDDT."""
 
@@ -318,6 +338,7 @@ class TT94ComplianceReportOut(BaseModel):
     level_label: str
     next_level_gaps: list[str]
     classrooms: list[ClassroomTT94MetricsOut]
+    grade_breakdown: list[GradeTT94MetricsOut] = Field(default_factory=list)
 
 
 GameChallengeType = Literal["lightning_match", "iupac_lab", "sequence_lab"]

@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { Award, ClipboardCheck, Flame, GitBranch, Layers, Target, Trophy, UserCheck } from "lucide-react";
 
 import { api, saveAuthTokens } from "../../api/client";
-import type { AuthSession, GamificationSummary } from "../../api/types";
+import type { AuthSession, GamificationSummary, GradeLevel } from "../../api/types";
 import { ScienceAmbientParticles } from "../../components/motion/MotionPrimitives";
 import { playClickSound } from "../../utils/soundFx";
 import { StudentAssignmentsPanel } from "../lms/StudentAssignmentsPanel";
@@ -15,6 +15,7 @@ export type LearningSubTab = "srs" | "mindmap" | "quiz" | "assignments";
 
 interface Props {
   session: AuthSession | null;
+  grade?: GradeLevel;
   onSessionChange: (session: AuthSession) => void;
   initialTab?: LearningSubTab;
   initialLessonNo?: number;
@@ -26,11 +27,13 @@ interface Props {
 
 export function LearningHubPage({
   session,
+  grade = 8,
   onSessionChange,
   initialTab = "srs",
   initialLessonNo,
   onLaunchGameChallenge,
 }: Props) {
+  const defaultLesson = initialLessonNo ?? (grade === 8 ? 8 : 1);
   const [subTab, setSubTab] = useState<LearningSubTab>(initialTab);
   const [gamification, setGamification] = useState<GamificationSummary | null>(null);
   const [loggingInDemo, setLoggingInDemo] = useState(false);
@@ -136,7 +139,7 @@ export function LearningHubPage({
               Đăng nhập để lưu lịch ôn tập SRS, điểm Quiz 10%–50% và Streak
             </h2>
             <p className="mt-0.5 text-xs text-amber-800">
-              Bạn vẫn có thể xem Mindmap Song ngữ ngay, hoặc bấm đăng nhập nhanh bằng tài khoản Học sinh lớp 8 demo.
+              Bạn vẫn có thể xem Mindmap Song ngữ ngay, hoặc bấm đăng nhập nhanh bằng tài khoản Học sinh demo (Khối 6–9).
             </p>
           </div>
           <button
@@ -152,7 +155,7 @@ export function LearningHubPage({
       )}
 
       {/* Sub-navigation Tabs */}
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         {(
           [
             { id: "srs", label: "Flashcard SRS", icon: Layers },
@@ -189,12 +192,16 @@ export function LearningHubPage({
             </button>
           );
         })}
+        <span className="ml-auto inline-flex items-center rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-extrabold text-indigo-800">
+          KHTN {grade}
+        </span>
       </div>
 
       {/* Sub-view */}
       {subTab === "srs" &&
         (session ? (
           <FlashcardSRSView
+            grade={grade}
             lessonNo={initialLessonNo}
             onProgressUpdated={refreshGamification}
           />
@@ -204,12 +211,13 @@ export function LearningHubPage({
           </div>
         ))}
 
-      {subTab === "mindmap" && <MindmapView initialLessonNo={initialLessonNo ?? 8} />}
+      {subTab === "mindmap" && <MindmapView grade={grade} initialLessonNo={defaultLesson} />}
 
       {subTab === "quiz" &&
         (session ? (
           <PracticeQuizView
-            initialLessonNo={initialLessonNo ?? 8}
+            grade={grade}
+            initialLessonNo={defaultLesson}
             onProgressUpdated={refreshGamification}
           />
         ) : (

@@ -3,12 +3,13 @@ import { motion } from "framer-motion";
 import { Award, CheckCircle2, Play, RotateCcw, XCircle } from "lucide-react";
 
 import { api } from "../../api/client";
-import type { PracticeMode, PracticeResult, PracticeSession } from "../../api/types";
+import type { GradeLevel, PracticeMode, PracticeResult, PracticeSession } from "../../api/types";
 import {
   AnimatedScoreCounter,
   FloatingXPBurst,
 } from "../../components/motion/MotionPrimitives";
 import { fireVictoryCelebration } from "../../utils/confetti";
+import { GRADE_LESSON_COUNTS } from "../../utils/grades";
 import {
   playCelebrationSound,
   playClickSound,
@@ -16,6 +17,7 @@ import {
 } from "../../utils/soundFx";
 
 interface Props {
+  grade?: GradeLevel;
   initialLessonNo?: number;
   onProgressUpdated: () => void;
 }
@@ -41,8 +43,11 @@ const MODES: Array<{ id: PracticeMode; title: string; subtitle: string; badge: s
   },
 ];
 
-export function PracticeQuizView({ initialLessonNo = 8, onProgressUpdated }: Props) {
-  const [lessonNo, setLessonNo] = useState(initialLessonNo);
+export function PracticeQuizView({ grade = 8, initialLessonNo = 8, onProgressUpdated }: Props) {
+  const maxLessons = GRADE_LESSON_COUNTS[grade];
+  const [lessonNo, setLessonNo] = useState(() =>
+    Math.min(Math.max(1, initialLessonNo), GRADE_LESSON_COUNTS[grade])
+  );
   const [mode, setMode] = useState<PracticeMode>("quiz_10");
   const [session, setSession] = useState<PracticeSession | null>(null);
   const [answers, setAnswers] = useState<Record<number, number>>({});
@@ -53,8 +58,15 @@ export function PracticeQuizView({ initialLessonNo = 8, onProgressUpdated }: Pro
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    setLessonNo(initialLessonNo);
-  }, [initialLessonNo]);
+    setLessonNo(Math.min(Math.max(1, initialLessonNo), maxLessons));
+  }, [grade, initialLessonNo, maxLessons]);
+
+  useEffect(() => {
+    setSession(null);
+    setResult(null);
+    setAnswers({});
+    setError(null);
+  }, [grade]);
 
   useEffect(() => {
     if (!result || celebratedAttemptRef.current === result.attempt_id) return;
@@ -77,6 +89,7 @@ export function PracticeQuizView({ initialLessonNo = 8, onProgressUpdated }: Pro
     setAnswers({});
     try {
       const nextSession = await api.startPractice({
+        grade,
         lesson_no: lessonNo,
         mode,
         total_questions: 10,
@@ -121,7 +134,8 @@ export function PracticeQuizView({ initialLessonNo = 8, onProgressUpdated }: Pro
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <div className="text-xs font-extrabold uppercase text-indigo-700">
-                Kết quả Luyện tập · Bài {result.lesson_no} ({Math.round(result.english_ratio * 100)}% EN)
+                Kết quả Luyện tập · KHTN {grade} · Bài {result.lesson_no} (
+                {Math.round(result.english_ratio * 100)}% EN)
               </div>
               <h2 className="mt-1 text-3xl font-extrabold text-slate-900">
                 <AnimatedScoreCounter value={result.score} className="text-indigo-700" /> /{" "}
@@ -211,7 +225,7 @@ export function PracticeQuizView({ initialLessonNo = 8, onProgressUpdated }: Pro
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="text-base font-bold text-slate-900">
-                Bài {session.lesson_no}: {session.lesson_title_vi}
+                KHTN {grade} · Bài {session.lesson_no}: {session.lesson_title_vi}
               </h2>
               <p className="text-xs text-slate-500">
                 {session.english_questions_count}/{session.total_questions} câu tiếng Anh (
@@ -315,14 +329,14 @@ export function PracticeQuizView({ initialLessonNo = 8, onProgressUpdated }: Pro
 
       <div>
         <label className="mb-1.5 block text-xs font-bold uppercase text-slate-500">
-          Chọn bài học KHTN 8
+          Chọn bài học KHTN {grade}
         </label>
         <select
           value={lessonNo}
           onChange={(e) => setLessonNo(Number(e.target.value))}
           className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold"
         >
-          {Array.from({ length: 47 }, (_, i) => i + 1).map((n) => (
+          {Array.from({ length: maxLessons }, (_, i) => i + 1).map((n) => (
             <option key={n} value={n}>
               Bài {n}
             </option>

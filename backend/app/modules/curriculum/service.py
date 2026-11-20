@@ -16,6 +16,7 @@ from app.modules.curriculum.repository import CurriculumRepository
 from app.modules.curriculum.schemas import (
     ChapterWithLessonsOut,
     CurriculumTreeResponse,
+    GradeOverviewOut,
     IntegrationLinkOut,
     LessonDetailOut,
     LessonSummaryOut,
@@ -51,6 +52,45 @@ def _load_study_pack_raw(pack_path: str) -> dict:
     return json.loads(Path(pack_path).read_text(encoding="utf-8"))
 
 
+GRADE_METADATA: dict[int, tuple[str, str]] = {
+    6: ("Khoa học tự nhiên 6", "Natural Sciences Grade 6"),
+    7: ("Khoa học tự nhiên 7", "Natural Sciences Grade 7"),
+    8: ("Khoa học tự nhiên 8", "Natural Sciences Grade 8"),
+    9: ("Khoa học tự nhiên 9", "Natural Sciences Grade 9"),
+}
+
+UNIT_GRADE_LESSONS_FALLBACK: dict[int, dict[str, list[int]]] = {
+    1: {"6": [52, 53, 54], "7": [9], "9": [43]},
+    2: {"6": [9, 10], "7": [2, 3, 4], "9": [19, 20]},
+    3: {"6": [11, 14, 15], "7": [5, 6, 7], "9": [22, 23, 25]},
+    4: {"6": [12, 13, 16], "7": [3, 6], "9": [24, 26, 28]},
+    5: {"6": [40, 41, 46], "7": [8, 10, 11], "9": [1, 2, 3]},
+    6: {"6": [35, 36, 48], "7": [13, 15, 19], "9": [4, 7, 11]},
+    7: {"6": [37, 49, 50], "7": [12, 16, 18], "9": [8, 12, 14]},
+    8: {"6": [18, 20, 21], "7": [26, 30, 42], "9": [36, 37]},
+    9: {"6": [22, 24], "7": [23, 28, 31], "9": [38, 39]},
+    10: {"6": [23, 25], "7": [29, 32, 38], "9": [40, 41]},
+    11: {"6": [17, 19], "7": [22, 24], "9": [35, 42]},
+    12: {"6": [26, 28], "7": [27, 34, 36], "9": [36, 40]},
+    13: {"6": [3, 4, 6], "7": [1, 20], "9": [17, 30]},
+    14: {"6": [1, 2], "7": [1, 10], "9": [3, 18]},
+    15: {"6": [29, 30, 31], "7": [21, 35], "9": [44, 45]},
+    16: {"6": [10, 33, 55], "7": [23, 25], "9": [33, 34]},
+}
+
+
+def _build_related_lessons_by_grade(unit_raw: dict) -> dict[str, list[int]]:
+    explicit = dict(unit_raw.get("related_lessons_by_grade") or {})
+    fallback = UNIT_GRADE_LESSONS_FALLBACK.get(int(unit_raw["unit_no"]), {})
+    merged: dict[str, list[int]] = {
+        "6": list(explicit.get("6") or fallback.get("6") or []),
+        "7": list(explicit.get("7") or fallback.get("7") or []),
+        "8": list(explicit.get("8") or unit_raw.get("kntt8_related_lessons") or []),
+        "9": list(explicit.get("9") or fallback.get("9") or []),
+    }
+    return merged
+
+
 def _flatten_study_pack_unit(
     unit_raw: dict,
 ) -> tuple[StudyPackUnitSummaryOut, list[StudyPackItemOut]]:
@@ -60,6 +100,7 @@ def _flatten_study_pack_unit(
         title_vi=unit_raw["title_vi"],
         discipline=unit_raw["discipline"],
         kntt8_related_lessons=unit_raw["kntt8_related_lessons"],
+        related_lessons_by_grade=_build_related_lessons_by_grade(unit_raw),
         item_count=unit_raw["item_count"],
     )
     items = [
@@ -81,13 +122,42 @@ def _flatten_study_pack_unit(
 
 
 class CurriculumService:
-    """Service layer for browsing KHTN 8 lessons, terms, and IUPAC/SI standards."""
+    """Service layer for browsing KHTN 6-9 lessons, terms, and IUPAC/SI standards."""
 
     def __init__(self, db: Session) -> None:
         self.repo = CurriculumRepository(db)
 
-    def get_curriculum_tree(self, discipline: str | None = None) -> CurriculumTreeResponse:
-        chapters = self.repo.list_chapters_with_lessons(grade=8, textbook_series="kntt")
+    def list_grades(self) -> list[GradeOverviewOut]:
+        grades = self.repo.list_available_grades(textbook_series="kntt")
+        out: list[GradeOverviewOut] = []
+        for g in grades:
+            chapters = self.repo.list_chapters_with_lessons(grade=g, textbook_series="kntt")
+            lesson_count = sum(len(ch.lessons) for ch in chapters)
+            term_count = self.repo.count_terms_for_grade(grade=g, textbook_series="kntt")
+            title_vi, title_en = GRADE_METADATA.get(
+                g, (f"Khoa học tự nhiên {g}", f"Natural Sciences Grade {g}")
+            )
+            out.append(
+                GradeOverviewOut(
+                    grade=g,
+                    title_vi=title_vi,
+                    title_en=title_en,
+                    total_chapters=len(chapters),
+                    total_lessons=lesson_count,
+                    total_terms=term_count,
+                )
+            )
+        return out
+
+    def get_curriculum_tree(
+        self, discipline: str | None = None, grade: int = 8
+    ) -> CurriculumTreeResponse:
+        if grade not in GRADE_METADATA:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Chương trình chỉ hỗ trợ các khối 6, 7, 8, 9 (không có Khối {grade}).",
+            )
+        chapters = self.repo.list_chapters_with_lessons(grade=grade, textbook_series="kntt")
         chapter_outs: list[ChapterWithLessonsOut] = []
         total_lessons = 0
 
@@ -103,6 +173,7 @@ class CurriculumService:
             lesson_outs = [
                 LessonSummaryOut(
                     id=lesson.id,
+                    grade=ch.grade,
                     lesson_no=lesson.lesson_no,
                     title_vi=lesson.title_vi,
                     title_en=lesson.title_en,
@@ -129,35 +200,46 @@ class CurriculumService:
             )
 
         return CurriculumTreeResponse(
-            grade=8,
+            grade=grade,
             textbook_series="Kết nối tri thức với cuộc sống",
             total_chapters=len(chapter_outs),
             total_lessons=total_lessons,
             chapters=chapter_outs,
         )
 
-    def get_lesson_detail(self, lesson_no: int) -> LessonDetailOut:
-        lesson = self.repo.get_lesson_by_no(lesson_no)
+    def get_lesson_detail(self, lesson_no: int, grade: int = 8) -> LessonDetailOut:
+        lesson = self.repo.get_lesson_by_no(lesson_no, grade=grade)
         if lesson is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Không tìm thấy Bài {lesson_no} trong chương trình KHTN 8 KNTT.",
+                detail=f"Không tìm thấy Bài {lesson_no} trong chương trình KHTN {grade} KNTT.",
             )
 
         raw_links = lesson.integration_links_json or []
-        target_nos = [int(item["target_lesson_no"]) for item in raw_links]
-        target_map = self.repo.get_lessons_by_numbers(target_nos)
+        by_grade: dict[int, list[int]] = {}
+        for item in raw_links:
+            t_grade = int(item.get("target_grade", grade))
+            t_no = int(item["target_lesson_no"])
+            by_grade.setdefault(t_grade, []).append(t_no)
+
+        target_maps: dict[int, dict[int, object]] = {
+            t_grade: self.repo.get_lessons_by_numbers(nos, grade=t_grade)
+            for t_grade, nos in by_grade.items()
+        }
 
         integration_links: list[IntegrationLinkOut] = []
         for link in raw_links:
-            target = target_map.get(int(link["target_lesson_no"]))
+            t_grade = int(link.get("target_grade", grade))
+            t_no = int(link["target_lesson_no"])
+            target = target_maps.get(t_grade, {}).get(t_no)
             if target is not None:
                 integration_links.append(
                     IntegrationLinkOut(
-                        target_lesson_no=target.lesson_no,
-                        target_title_vi=target.title_vi,
-                        target_title_en=target.title_en,
-                        target_discipline=target.discipline,
+                        target_grade=t_grade,
+                        target_lesson_no=target.lesson_no,  # type: ignore[attr-defined]
+                        target_title_vi=target.title_vi,  # type: ignore[attr-defined]
+                        target_title_en=target.title_en,  # type: ignore[attr-defined]
+                        target_discipline=target.discipline,  # type: ignore[attr-defined]
                         note_vi=link["note_vi"],
                     )
                 )
@@ -167,6 +249,7 @@ class CurriculumService:
 
         return LessonDetailOut(
             id=lesson.id,
+            grade=lesson.chapter.grade,
             lesson_no=lesson.lesson_no,
             title_vi=lesson.title_vi,
             title_en=lesson.title_en,
@@ -186,6 +269,7 @@ class CurriculumService:
         *,
         q: str | None = None,
         discipline: str | None = None,
+        grade: int | None = None,
         lesson_no: int | None = None,
         limit: int = 50,
         offset: int = 0,
@@ -193,6 +277,7 @@ class CurriculumService:
         total, items = self.repo.search_terms(
             q=q,
             discipline=discipline,
+            grade=grade,
             lesson_no=lesson_no,
             limit=limit,
             offset=offset,
@@ -212,7 +297,7 @@ class CurriculumService:
 
         linked_lessons = sorted(
             (lt.lesson for lt in term.lesson_terms),
-            key=lambda item: item.lesson_no,
+            key=lambda item: (item.chapter.grade, item.lesson_no),
         )
         base_data = TermSummaryOut.model_validate(term).model_dump()
         return TermDetailOut(
@@ -222,7 +307,16 @@ class CurriculumService:
             definition_en=term.definition_en,
             example_en=term.example_en,
             example_vi=term.example_vi,
-            lessons=[LinkedLessonRefOut.model_validate(lesson) for lesson in linked_lessons],
+            lessons=[
+                LinkedLessonRefOut(
+                    grade=lesson.chapter.grade,
+                    lesson_no=lesson.lesson_no,
+                    title_vi=lesson.title_vi,
+                    title_en=lesson.title_en,
+                    discipline=lesson.discipline,
+                )
+                for lesson in linked_lessons
+            ],
         )
 
     def get_term_by_id(self, term_id: str) -> TermSummaryOut | None:
@@ -247,6 +341,7 @@ class CurriculumService:
                 title_vi=u["title_vi"],
                 discipline=u["discipline"],
                 kntt8_related_lessons=u["kntt8_related_lessons"],
+                related_lessons_by_grade=_build_related_lessons_by_grade(u),
                 item_count=u["item_count"],
             )
             for u in raw["units"]

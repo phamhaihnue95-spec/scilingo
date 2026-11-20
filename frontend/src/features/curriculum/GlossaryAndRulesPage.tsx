@@ -4,26 +4,34 @@ import { AlertCircle, BookMarked, Search, ShieldCheck, Volume2 } from "lucide-re
 import { api } from "../../api/client";
 import type {
   Discipline,
+  GradeLevel,
   TermDetail,
   TermSummary,
   TerminologyRulebook,
 } from "../../api/types";
+import { VALID_GRADES } from "../../utils/grades";
 import { speakEnglishTerm } from "../../utils/speech";
 import { DisciplineBadge } from "./DisciplineBadge";
 
 interface Props {
-  onSelectLesson: (lessonNo: number) => void;
+  grade?: GradeLevel;
+  onSelectLesson: (lessonNo: number, grade?: GradeLevel) => void;
 }
 
-export function GlossaryAndRulesPage({ onSelectLesson }: Props) {
+export function GlossaryAndRulesPage({ grade, onSelectLesson }: Props) {
   const [tab, setTab] = useState<"glossary" | "iupac">("glossary");
   const [query, setQuery] = useState("");
   const [discipline, setDiscipline] = useState<"" | Discipline>("");
+  const [gradeFilter, setGradeFilter] = useState<"" | GradeLevel>(grade ?? "");
   const [terms, setTerms] = useState<TermSummary[]>([]);
   const [total, setTotal] = useState(0);
   const [selectedTerm, setSelectedTerm] = useState<TermDetail | null>(null);
   const [rulebook, setRulebook] = useState<TerminologyRulebook | null>(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setGradeFilter(grade ?? "");
+  }, [grade]);
 
   useEffect(() => {
     let active = true;
@@ -33,6 +41,7 @@ export function GlossaryAndRulesPage({ onSelectLesson }: Props) {
         .searchTerms({
           q: query || undefined,
           discipline: discipline || undefined,
+          grade: gradeFilter === "" ? undefined : gradeFilter,
           limit: 100,
         })
         .then((res) => {
@@ -53,7 +62,7 @@ export function GlossaryAndRulesPage({ onSelectLesson }: Props) {
       active = false;
       clearTimeout(timer);
     };
-  }, [query, discipline]);
+  }, [query, discipline, gradeFilter]);
 
   useEffect(() => {
     api
@@ -76,9 +85,10 @@ export function GlossaryAndRulesPage({ onSelectLesson }: Props) {
           <h1 className="text-2xl font-bold text-slate-900">
             Từ điển Song ngữ & Cẩm nang Chuẩn IUPAC / SI
           </h1>
-          <p className="text-sm text-slate-600">
-            Nguồn chuẩn hóa duy nhất cho học sinh lớp 8 và công cụ kiểm lỗi giáo án của giáo viên.
-          </p>
+            <p className="text-sm text-slate-600">
+              Nguồn chuẩn hóa duy nhất cho học sinh THCS Khối 6–9 và công cụ kiểm lỗi giáo án của
+              giáo viên.
+            </p>
         </div>
 
         <div className="inline-flex rounded-2xl border border-sky-200 bg-white p-1 shadow-sm">
@@ -122,6 +132,21 @@ export function GlossaryAndRulesPage({ onSelectLesson }: Props) {
                 className="w-full rounded-lg border border-slate-300 py-2 pl-9 pr-3 text-sm focus:border-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-600/20"
               />
             </div>
+
+            <select
+              value={gradeFilter}
+              onChange={(e) =>
+                setGradeFilter(e.target.value ? (Number(e.target.value) as GradeLevel) : "")
+              }
+              className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 focus:border-teal-600 focus:outline-none"
+            >
+              <option value="">Tất cả Khối (6–9)</option>
+              {VALID_GRADES.map((g) => (
+                <option key={g} value={g}>
+                  KHTN Khối {g}
+                </option>
+              ))}
+            </select>
 
             <select
               value={discipline}
@@ -234,11 +259,14 @@ export function GlossaryAndRulesPage({ onSelectLesson }: Props) {
                     <div className="space-y-1.5">
                       {selectedTerm.lessons.map((ref) => (
                         <button
-                          key={ref.lesson_no}
+                          key={`${ref.grade ?? 8}-${ref.lesson_no}`}
                           type="button"
-                          onClick={() => onSelectLesson(ref.lesson_no)}
+                          onClick={() => onSelectLesson(ref.lesson_no, ref.grade)}
                           className="w-full rounded-lg border border-slate-200 px-3 py-2 text-left text-xs font-medium text-teal-800 hover:bg-teal-50"
                         >
+                          <span className="mr-1.5 rounded bg-indigo-100 px-1.5 py-0.5 font-extrabold text-indigo-800">
+                            Lớp {ref.grade ?? 8}
+                          </span>
                           Bài {ref.lesson_no}: {ref.title_vi}
                         </button>
                       ))}

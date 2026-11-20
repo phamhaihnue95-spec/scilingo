@@ -3,13 +3,14 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Award, CheckCircle2, Flame, RotateCcw, Sparkles } from "lucide-react";
 
 import { api } from "../../api/client";
-import type { SRSDueCard, SRSReviewResult } from "../../api/types";
+import type { GradeLevel, SRSDueCard, SRSReviewResult } from "../../api/types";
 import {
   FlipCard3D,
   FloatingXPBurst,
   SpeakButton,
 } from "../../components/motion/MotionPrimitives";
 import { fireSuccessSpark, fireVictoryCelebration } from "../../utils/confetti";
+import { GRADE_LESSON_COUNTS } from "../../utils/grades";
 import {
   playCelebrationSound,
   playClickSound,
@@ -19,6 +20,7 @@ import {
 import { DisciplineBadge } from "../curriculum/DisciplineBadge";
 
 interface Props {
+  grade?: GradeLevel;
   lessonNo?: number;
   onProgressUpdated: () => void;
 }
@@ -30,8 +32,11 @@ const RATING_BUTTONS = [
   { quality: 5, label: "Rất dễ", hint: "Giãn lịch dài hơn", cls: "border-emerald-300 border-b-emerald-400 bg-emerald-50 text-emerald-800 hover:bg-emerald-100" },
 ];
 
-export function FlashcardSRSView({ lessonNo, onProgressUpdated }: Props) {
-  const [selectedLesson, setSelectedLesson] = useState<number | "">(lessonNo ?? "");
+export function FlashcardSRSView({ grade = 8, lessonNo, onProgressUpdated }: Props) {
+  const maxLessons = GRADE_LESSON_COUNTS[grade];
+  const [selectedLesson, setSelectedLesson] = useState<number | "">(
+    lessonNo !== undefined && lessonNo <= maxLessons ? lessonNo : ""
+  );
   const [cards, setCards] = useState<SRSDueCard[]>([]);
   const [totalDue, setTotalDue] = useState(0);
   const [totalNew, setTotalNew] = useState(0);
@@ -46,10 +51,11 @@ export function FlashcardSRSView({ lessonNo, onProgressUpdated }: Props) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const loadQueue = (targetLesson: number | "") => {
+  const loadQueue = (targetLesson: number | "", targetGrade: GradeLevel) => {
     setLoading(true);
     api
       .getDueFlashcards({
+        grade: targetGrade,
         lessonNo: targetLesson === "" ? undefined : targetLesson,
         limit: 15,
       })
@@ -67,12 +73,12 @@ export function FlashcardSRSView({ lessonNo, onProgressUpdated }: Props) {
   };
 
   useEffect(() => {
-    setSelectedLesson(lessonNo ?? "");
-  }, [lessonNo]);
+    setSelectedLesson(lessonNo !== undefined && lessonNo <= maxLessons ? lessonNo : "");
+  }, [grade, lessonNo, maxLessons]);
 
   useEffect(() => {
-    loadQueue(selectedLesson);
-  }, [selectedLesson]);
+    loadQueue(selectedLesson, grade);
+  }, [selectedLesson, grade]);
 
   const currentCard = cards[0] ?? null;
 
@@ -124,8 +130,8 @@ export function FlashcardSRSView({ lessonNo, onProgressUpdated }: Props) {
             }}
             className="rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-800"
           >
-            <option value="">Toàn bộ 47 bài KHTN 8</option>
-            {Array.from({ length: 47 }, (_, i) => i + 1).map((n) => (
+            <option value="">Toàn bộ {maxLessons} bài KHTN {grade}</option>
+            {Array.from({ length: maxLessons }, (_, i) => i + 1).map((n) => (
               <option key={n} value={n}>
                 Bài {n}
               </option>
@@ -238,7 +244,7 @@ export function FlashcardSRSView({ lessonNo, onProgressUpdated }: Props) {
                 back={
                   <div className="flex h-full flex-col items-center justify-center space-y-3 text-center">
                     <span className="rounded-full bg-white/25 px-3 py-0.5 text-xs font-bold text-white">
-                      Nghĩa Tiếng Việt chuẩn KHTN 8 (Bấm để lật lại)
+                      Nghĩa Tiếng Việt chuẩn KHTN {grade} (Bấm để lật lại)
                     </span>
                     <div className="text-3xl font-extrabold">{currentCard.term_vi}</div>
                     <div className="text-sm font-semibold text-emerald-50">
@@ -296,7 +302,7 @@ export function FlashcardSRSView({ lessonNo, onProgressUpdated }: Props) {
           </p>
           <button
             type="button"
-            onClick={() => loadQueue(selectedLesson)}
+            onClick={() => loadQueue(selectedLesson, grade)}
             className="mt-4 inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-semibold text-teal-800 shadow-sm hover:bg-slate-50"
           >
             <RotateCcw className="h-4 w-4" />

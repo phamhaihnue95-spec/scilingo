@@ -27,14 +27,19 @@ router = APIRouter(tags=["Student Learning Engine (Unit 2)"])
 
 
 @router.get("/learning/mindmap/{lesson_no}", response_model=LessonMindmapOut)
-def get_lesson_mindmap(lesson_no: int, db: Session = Depends(get_db)) -> LessonMindmapOut:
+def get_lesson_mindmap(
+    lesson_no: int,
+    grade: int = Query(default=8, ge=6, le=9),
+    db: Session = Depends(get_db),
+) -> LessonMindmapOut:
     """Return bilingual concept mindmap nodes and cross-discipline edges for a lesson."""
-    return LearningService(db).get_lesson_mindmap(lesson_no)
+    return LearningService(db).get_lesson_mindmap(lesson_no, grade=grade)
 
 
 @router.get("/learning/srs/due", response_model=SRSDueResponse)
 def get_due_flashcards(
-    lesson_no: int | None = Query(default=None, ge=1, le=47),
+    grade: int | None = Query(default=None, ge=6, le=9),
+    lesson_no: int | None = Query(default=None, ge=1, le=60),
     discipline: str | None = Query(default=None),
     limit: int = Query(default=15, ge=1, le=50),
     current_user: User = Depends(get_current_user),
@@ -43,6 +48,7 @@ def get_due_flashcards(
     """Fetch due and unseen flashcards for the authenticated student."""
     return LearningService(db).get_due_flashcards(
         student=current_user,
+        grade=grade,
         lesson_no=lesson_no,
         discipline=discipline,
         limit=limit,

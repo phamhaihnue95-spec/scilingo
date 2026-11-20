@@ -17,6 +17,7 @@ import type {
   AuthSession,
   Discipline,
   GameRewardResult,
+  GradeLevel,
   StudyPackItem,
   StudyPackOverview,
 } from "../../api/types";
@@ -26,6 +27,7 @@ import {
   SpeakButton,
 } from "../../components/motion/MotionPrimitives";
 import { fireSuccessSpark, fireVictoryCelebration } from "../../utils/confetti";
+import { GRADE_INFO, VALID_GRADES } from "../../utils/grades";
 import { unlockLocalSciDexUnit } from "../../utils/scidex";
 import {
   playCelebrationSound,
@@ -37,6 +39,7 @@ import { speakEnglishTerm } from "../../utils/speech";
 
 interface Props {
   session: AuthSession | null;
+  grade?: GradeLevel;
   initialUnitNo?: number;
   onRewardRecorded?: () => void;
   onPlayingChange?: (playing: boolean) => void;
@@ -44,6 +47,7 @@ interface Props {
 
 type Phase = "lobby" | "playing" | "finished";
 type Difficulty = "standard" | "pro";
+type SourceMode = "study_pack" | "curriculum";
 
 const BEST_SCORE_KEY = "scilingo_lightning_best";
 
@@ -110,11 +114,16 @@ function buildUnambiguousBoard(
 
 export function LightningMatchGame({
   session,
+  grade = 8,
   initialUnitNo,
   onRewardRecorded,
   onPlayingChange,
 }: Props) {
   const [overview, setOverview] = useState<StudyPackOverview | null>(null);
+  const [sourceMode, setSourceMode] = useState<SourceMode>(
+    initialUnitNo !== undefined ? "study_pack" : "study_pack"
+  );
+  const [selectedGrade, setSelectedGrade] = useState<GradeLevel>(grade);
   const [selectedUnit, setSelectedUnit] = useState<number | "all">(initialUnitNo ?? 1);
   const [difficulty, setDifficulty] = useState<Difficulty>("standard");
   const [phase, setPhase] = useState<Phase>("lobby");
@@ -150,7 +159,12 @@ export function LightningMatchGame({
   const rewardSentRef = useRef(false);
 
   useEffect(() => {
+    setSelectedGrade(grade);
+  }, [grade]);
+
+  useEffect(() => {
     if (initialUnitNo !== undefined) {
+      setSourceMode("study_pack");
       setSelectedUnit(initialUnitNo);
     }
   }, [initialUnitNo]);
@@ -193,7 +207,21 @@ export function LightningMatchGame({
     setError(null);
     try {
       let fetched: StudyPackItem[];
-      if (selectedUnit === "all") {
+      if (sourceMode === "curriculum") {
+        const res = await api.searchTerms({ grade: selectedGrade, limit: 200 });
+        fetched = res.items.map((t, idx) => ({
+          unit_no: selectedGrade,
+          unit_title_en: `Natural Science Grade ${selectedGrade}`,
+          unit_title_vi: `SGK KHTN ${selectedGrade} (KNTT)`,
+          discipline: t.discipline,
+          order_no: idx + 1,
+          term_en: t.term_en,
+          ipa: t.ipa ?? "",
+          pos: t.formula_or_symbol ?? "term",
+          meaning_vi: t.term_vi,
+          iupac_note: t.iupac_note,
+        }));
+      } else if (selectedUnit === "all") {
         const res = await api.searchStudyPack({ limit: 200 });
         fetched = res.items;
       } else {
@@ -258,16 +286,16 @@ export function LightningMatchGame({
       setIsNewBest(true);
     }
 
-    if (selectedUnit !== "all" && matchedTotal >= 6) {
+    if (sourceMode === "study_pack" && selectedUnit !== "all" && matchedTotal >= 6) {
       unlockLocalSciDexUnit(selectedUnit);
     }
 
     if (!session || totalAttempts === 0) return;
 
     const unitDiscipline: Discipline =
-      selectedUnit === "all"
-        ? "physics"
-        : (overview?.units.find((u) => u.unit_no === selectedUnit)?.discipline ?? "physics");
+      sourceMode === "study_pack" && selectedUnit !== "all"
+        ? (overview?.units.find((u) => u.unit_no === selectedUnit)?.discipline ?? "physics")
+        : (pool[0]?.discipline ?? "physics");
 
     api
       .recordGameReward({
@@ -276,7 +304,8 @@ export function LightningMatchGame({
         total_attempts: Math.max(1, totalAttempts),
         max_combo: maxCombo,
         discipline: unitDiscipline,
-        study_pack_unit_no: selectedUnit === "all" ? undefined : selectedUnit,
+        study_pack_unit_no:
+          sourceMode === "study_pack" && selectedUnit !== "all" ? selectedUnit : undefined,
       })
       .then((res) => {
         setRewardResult(res);
@@ -293,8 +322,10 @@ export function LightningMatchGame({
     session,
     totalAttempts,
     maxCombo,
+    sourceMode,
     selectedUnit,
     overview,
+    pool,
     onRewardRecorded,
   ]);
 
@@ -399,7 +430,7 @@ export function LightningMatchGame({
           <div className="space-y-1">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-0.5 text-xs font-extrabold text-amber-900">
               <Zap className="h-3.5 w-3.5 text-amber-600" />
-              Mini-Game 1 · Kho 920 Thuật ngữ IPA
+              Mini-Game 1 · 920 Thuật ngữ IPA &amp; SGK KHTN 6–9
             </span>
             <h2 className="text-2xl font-extrabold text-slate-900">
               Chớp Nhoáng Nối Cặp 60s (Lightning Match)
@@ -420,27 +451,92 @@ export function LightningMatchGame({
           </div>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <label className="mb-1.5 block text-xs font-extrabold uppercase text-slate-500">
-              Chọn Chuyên đề (16 Units)
-            </label>
-            <select
-              value={selectedUnit}
-              onChange={(e) => {
-                playClickSound();
-                setSelectedUnit(e.target.value === "all" ? "all" : Number(e.target.value));
-              }}
-              className="w-full rounded-2xl border border-sky-200 bg-sky-50/40 px-3.5 py-2.5 text-sm font-bold text-slate-800 focus:border-indigo-500 focus:outline-none"
-            >
-              <option value="all">Trộn ngẫu nhiên toàn bộ 16 Units</option>
-              {overview?.units.map((u) => (
-                <option key={u.unit_no} value={u.unit_no}>
-                  Unit {u.unit_no}: {u.title_en} ({u.item_count} từ)
-                </option>
-              ))}
-            </select>
+        <div>
+          <label className="mb-1.5 block text-xs font-extrabold uppercase text-slate-500">
+            Nguồn từ vựng thi đấu
+          </label>
+          <div className="grid grid-cols-2 gap-2">
+            {[
+              {
+                id: "study_pack" as const,
+                title: "Bộ Đề 16 Units (920 từ IPA)",
+                hint: "Mở khóa huy hiệu SciDex",
+              },
+              {
+                id: "curriculum" as const,
+                title: "Từ vựng SGK KHTN Khối 6–9",
+                hint: "Bám sát 190 bài SGK KNTT",
+              },
+            ].map((src) => (
+              <button
+                key={src.id}
+                type="button"
+                onClick={() => {
+                  playClickSound();
+                  setSourceMode(src.id);
+                }}
+                className={`rounded-2xl border px-3 py-2 text-left transition ${
+                  sourceMode === src.id
+                    ? "border-amber-500 bg-amber-50 text-amber-950 ring-2 ring-amber-400/25"
+                    : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                }`}
+              >
+                <div className="text-xs font-extrabold sm:text-sm">{src.title}</div>
+                <div className="text-[11px] opacity-75">{src.hint}</div>
+              </button>
+            ))}
           </div>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          {sourceMode === "study_pack" ? (
+            <div>
+              <label className="mb-1.5 block text-xs font-extrabold uppercase text-slate-500">
+                Chọn Chuyên đề (16 Units)
+              </label>
+              <select
+                value={selectedUnit}
+                onChange={(e) => {
+                  playClickSound();
+                  setSelectedUnit(e.target.value === "all" ? "all" : Number(e.target.value));
+                }}
+                className="w-full rounded-2xl border border-sky-200 bg-sky-50/40 px-3.5 py-2.5 text-sm font-bold text-slate-800 focus:border-indigo-500 focus:outline-none"
+              >
+                <option value="all">Trộn ngẫu nhiên toàn bộ 16 Units</option>
+                {overview?.units.map((u) => (
+                  <option key={u.unit_no} value={u.unit_no}>
+                    Unit {u.unit_no}: {u.title_en} ({u.item_count} từ)
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : (
+            <div>
+              <label className="mb-1.5 block text-xs font-extrabold uppercase text-slate-500">
+                Chọn Khối lớp SGK KNTT
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {VALID_GRADES.map((g) => (
+                  <button
+                    key={g}
+                    type="button"
+                    onClick={() => {
+                      playClickSound();
+                      setSelectedGrade(g);
+                    }}
+                    className={`rounded-2xl border px-3 py-2 text-left transition ${
+                      selectedGrade === g
+                        ? "border-indigo-600 bg-indigo-50 text-indigo-950 ring-2 ring-indigo-500/20"
+                        : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                    }`}
+                  >
+                    <div className="text-sm font-extrabold">{GRADE_INFO[g].label}</div>
+                    <div className="truncate text-[11px] opacity-75">{GRADE_INFO[g].focusVi}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div>
             <label className="mb-1.5 block text-xs font-extrabold uppercase text-slate-500">
@@ -596,7 +692,7 @@ export function LightningMatchGame({
             className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50"
           >
             <Settings2 className="h-4 w-4" />
-            Đổi Unit
+            Đổi bộ từ
           </button>
         </div>
       </div>

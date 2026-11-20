@@ -2,32 +2,37 @@ import { useEffect, useState } from "react";
 import { GitBranch, Link2, Volume2 } from "lucide-react";
 
 import { api } from "../../api/client";
-import type { LessonMindmap, MindmapNode } from "../../api/types";
+import type { GradeLevel, LessonMindmap, MindmapNode } from "../../api/types";
+import { GRADE_LESSON_COUNTS } from "../../utils/grades";
 import { speakEnglishTerm } from "../../utils/speech";
 import { DisciplineBadge } from "../curriculum/DisciplineBadge";
 
 interface Props {
+  grade?: GradeLevel;
   initialLessonNo?: number;
 }
 
 type LangMode = "bilingual" | "vi" | "en";
 
-export function MindmapView({ initialLessonNo = 8 }: Props) {
-  const [lessonNo, setLessonNo] = useState(initialLessonNo);
+export function MindmapView({ grade = 8, initialLessonNo = 8 }: Props) {
+  const maxLessons = GRADE_LESSON_COUNTS[grade];
+  const [lessonNo, setLessonNo] = useState(() =>
+    Math.min(Math.max(1, initialLessonNo), GRADE_LESSON_COUNTS[grade])
+  );
   const [langMode, setLangMode] = useState<LangMode>("bilingual");
   const [mindmap, setMindmap] = useState<LessonMindmap | null>(null);
   const [selectedNode, setSelectedNode] = useState<MindmapNode | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setLessonNo(initialLessonNo);
-  }, [initialLessonNo]);
+    setLessonNo(Math.min(Math.max(1, initialLessonNo), maxLessons));
+  }, [grade, initialLessonNo, maxLessons]);
 
   useEffect(() => {
     let active = true;
     setLoading(true);
     api
-      .getLessonMindmap(lessonNo)
+      .getLessonMindmap(lessonNo, grade)
       .then((data) => {
         if (!active) return;
         setMindmap(data);
@@ -39,7 +44,7 @@ export function MindmapView({ initialLessonNo = 8 }: Props) {
     return () => {
       active = false;
     };
-  }, [lessonNo]);
+  }, [lessonNo, grade]);
 
   const rootNode = mindmap?.nodes.find((n) => n.node_type === "lesson");
   const termNodes = mindmap?.nodes.filter((n) => n.node_type === "term") ?? [];
@@ -56,13 +61,15 @@ export function MindmapView({ initialLessonNo = 8 }: Props) {
       {/* Controls */}
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
         <div className="flex items-center gap-3">
-          <label className="text-xs font-semibold uppercase text-slate-500">Chọn bài:</label>
+          <label className="text-xs font-semibold uppercase text-slate-500">
+            Chọn bài KHTN {grade}:
+          </label>
           <select
             value={lessonNo}
             onChange={(e) => setLessonNo(Number(e.target.value))}
             className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-800"
           >
-            {Array.from({ length: 47 }, (_, i) => i + 1).map((n) => (
+            {Array.from({ length: maxLessons }, (_, i) => i + 1).map((n) => (
               <option key={n} value={n}>
                 Bài {n}
               </option>
@@ -96,7 +103,7 @@ export function MindmapView({ initialLessonNo = 8 }: Props) {
 
       {loading || !mindmap || !rootNode ? (
         <div className="rounded-xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500">
-          Đang dựng sơ đồ tư duy Bài {lessonNo}...
+          Đang dựng sơ đồ tư duy KHTN {grade} · Bài {lessonNo}...
         </div>
       ) : (
         <div className="grid gap-5 lg:grid-cols-3">
@@ -178,7 +185,9 @@ export function MindmapView({ initialLessonNo = 8 }: Props) {
                       key={node.id}
                       type="button"
                       onClick={() => {
-                        if (node.target_lesson_no) setLessonNo(node.target_lesson_no);
+                        if (node.target_lesson_no && node.target_lesson_no <= maxLessons) {
+                          setLessonNo(node.target_lesson_no);
+                        }
                       }}
                       className="rounded-xl border border-dashed border-teal-400 bg-teal-50/50 p-3.5 text-left transition hover:bg-teal-100/60"
                     >

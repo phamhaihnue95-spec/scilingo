@@ -1,0 +1,1577 @@
+{
+  "metadata": {
+    "subject": "Khoa học tự nhiên",
+    "subject_en": "Natural Sciences",
+    "grade": 9,
+    "textbook_series": "Kết nối tri thức với cuộc sống",
+    "publisher": "Nhà xuất bản Giáo dục Việt Nam",
+    "legal_basis": [
+      "Thông tư 32/2018/TT-BGDĐT",
+      "Quyết định 3588/QĐ-BGDĐT",
+      "Thông tư 94/2026/TT-BGDĐT",
+      "Công văn 5208/BGDĐT-GDPT"
+    ],
+    "total_lessons": 45
+  },
+  "chapters": [
+    {
+      "chapter_no": 1,
+      "code": "CHUONG_I",
+      "title_vi": "Chương I. Năng lượng cơ học",
+      "title_en": "Chapter I. Mechanical Energy, Work and Power",
+      "discipline": "physics",
+      "lessons": [
+        {
+          "lesson_no": 1,
+          "title_vi": "Nhận biết một số dụng cụ, hóa chất. Thuyết trình vấn đề khoa học",
+          "title_en": "Lab Equipment & Scientific Presentation",
+          "discipline": "general_lab",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 11,
+              "note_vi": "Sử dụng biến trở, ammeter trong thực hành mạch điện."
+            },
+            {
+              "target_lesson_no": 17,
+              "note_vi": "Chuẩn hóa an toàn hóa chất kim loại."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Scientific presentation",
+              "vi": "Thuyết trình khoa học",
+              "ipa": "/ˌsaɪənˈtɪf.ɪk ˌprez.ənˈteɪ.ʃən/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Prism",
+              "vi": "Lăng kính thủy tinh",
+              "ipa": "/ˈprɪz.əm/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Reagent",
+              "vi": "Thuốc thử hóa học",
+              "ipa": "/riˈeɪ.dʒənt/",
+              "symbol_or_formula": "",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "lesson_no": 2,
+          "title_vi": "Động năng. Thế năng",
+          "title_en": "Kinetic Energy and Potential Energy",
+          "discipline": "physics",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 3,
+              "note_vi": "Tổng động năng và thế năng tạo thành cơ năng."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Kinetic energy",
+              "vi": "Động năng",
+              "ipa": "/kɪˈnet.ɪk ˈen.ə.dʒi/",
+              "symbol_or_formula": "W_đ = ½mv²",
+              "note": ""
+            },
+            {
+              "en": "Potential energy",
+              "vi": "Thế năng trọng trường",
+              "ipa": "/pəˈten.ʃəl ˈen.ə.dʒi/",
+              "symbol_or_formula": "W_t = P·h",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "lesson_no": 3,
+          "title_vi": "Cơ năng",
+          "title_en": "Mechanical Energy",
+          "discipline": "physics",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 2,
+              "note_vi": "Động năng và thế năng chuyển hóa qua lại trong cơ năng."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Mechanical energy",
+              "vi": "Cơ năng",
+              "ipa": "/məˈkæn.ɪ.kəl ˈen.ə.dʒi/",
+              "symbol_or_formula": "W = W_đ + W_t",
+              "note": ""
+            },
+            {
+              "en": "Conservation",
+              "vi": "Bảo toàn năng lượng",
+              "ipa": "/ˌkɒn.səˈveɪ.ʃən/",
+              "symbol_or_formula": "",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "lesson_no": 4,
+          "title_vi": "Công và công suất",
+          "title_en": "Work and Mechanical Power",
+          "discipline": "physics",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 13,
+              "note_vi": "Liên hệ công cơ học với công suất điện P = U·I."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Mechanical work",
+              "vi": "Công cơ học",
+              "ipa": "/məˈkæn.ɪ.kəl wɜːk/",
+              "symbol_or_formula": "A = F·s",
+              "note": ""
+            },
+            {
+              "en": "Power",
+              "vi": "Công suất",
+              "ipa": "/ˈpaʊ.ər/",
+              "symbol_or_formula": "P = A/t (W)",
+              "note": ""
+            },
+            {
+              "en": "Watt",
+              "vi": "Oát (đơn vị SI công suất)",
+              "ipa": "/wɒt/",
+              "symbol_or_formula": "W",
+              "note": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chapter_no": 2,
+      "code": "CHUONG_II",
+      "title_vi": "Chương II. Ánh sáng",
+      "title_en": "Chapter II. Optics — Refraction and Lenses",
+      "discipline": "physics",
+      "lessons": [
+        {
+          "lesson_no": 5,
+          "title_vi": "Khúc xạ ánh sáng",
+          "title_en": "Refraction of Light",
+          "discipline": "physics",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 8,
+              "note_vi": "Thấu kính hoạt động dựa trên hiện tượng khúc xạ."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Refraction",
+              "vi": "Khúc xạ ánh sáng",
+              "ipa": "/rɪˈfræk.ʃən/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Refractive index",
+              "vi": "Chiết suất",
+              "ipa": "/rɪˈfræk.tɪv ˈɪn.deks/",
+              "symbol_or_formula": "n = sin i / sin r",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "lesson_no": 6,
+          "title_vi": "Phản xạ toàn phần",
+          "title_en": "Total Internal Reflection",
+          "discipline": "physics",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 5,
+              "note_vi": "Xảy ra khi góc tới vượt quá góc tới hạn."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Total internal reflection",
+              "vi": "Phản xạ toàn phần",
+              "ipa": "/ˈtəʊ.təl ɪnˈtɜː.nəl rɪˈflek.ʃən/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Critical angle",
+              "vi": "Góc tới hạn",
+              "ipa": "/ˈkrɪt.ɪ.kəl ˈæŋ.ɡəl/",
+              "symbol_or_formula": "i_gh",
+              "note": ""
+            },
+            {
+              "en": "Optical fiber",
+              "vi": "Sợi quang học",
+              "ipa": "/ˈɒp.tɪ.kəl ˈfaɪ.bər/",
+              "symbol_or_formula": "",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "lesson_no": 7,
+          "title_vi": "Lăng kính",
+          "title_en": "Prisms and Dispersion of Light",
+          "discipline": "physics",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 5,
+              "note_vi": "Lăng kính tán sắc ánh sáng trắng tạo quang phổ."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Dispersion",
+              "vi": "Sự tán sắc ánh sáng",
+              "ipa": "/dɪˈspɜː.ʃən/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Spectrum",
+              "vi": "Quang phổ",
+              "ipa": "/ˈspek.trəm/",
+              "symbol_or_formula": "",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "lesson_no": 8,
+          "title_vi": "Thấu kính",
+          "title_en": "Converging and Diverging Lenses",
+          "discipline": "physics",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 5,
+              "note_vi": "Chùm tia ló hội tụ hay phân kì qua hai mặt khúc xạ."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Converging lens",
+              "vi": "Thấu kính hội tụ",
+              "ipa": "/kənˈvɜː.dʒɪŋ lenz/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Diverging lens",
+              "vi": "Thấu kính phân kì",
+              "ipa": "/daɪˈvɜː.dʒɪŋ lenz/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Focal length",
+              "vi": "Tiêu cự",
+              "ipa": "/ˈfəʊ.kəl leŋθ/",
+              "symbol_or_formula": "f",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "lesson_no": 9,
+          "title_vi": "Thực hành đo tiêu cự của thấu kính hội tụ",
+          "title_en": "Practical: Measuring Focal Length of a Lens",
+          "discipline": "physics",
+          "is_practical": true,
+          "integration_links": [
+            {
+              "target_lesson_no": 8,
+              "note_vi": "Đo ảnh thật bằng kích thước vật ở d = 2f."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Real image",
+              "vi": "Ảnh thật",
+              "ipa": "/rɪəl ˈɪm.ɪdʒ/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Optical axis",
+              "vi": "Trục chính",
+              "ipa": "/ˈɒp.tɪ.kəl ˈæk.sɪs/",
+              "symbol_or_formula": "",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "lesson_no": 10,
+          "title_vi": "Kính lúp. Bài tập thấu kính",
+          "title_en": "Magnifying Lenses and Ray Tracing",
+          "discipline": "physics",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 9,
+              "note_vi": "Kính lúp là thấu kính hội tụ tiêu cự ngắn."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Magnifier",
+              "vi": "Kính lúp",
+              "ipa": "/ˈmæɡ.nɪ.faɪ.ər/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Image height",
+              "vi": "Chiều cao ảnh",
+              "ipa": "/ˈɪm.ɪdʒ haɪt/",
+              "symbol_or_formula": "",
+              "note": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chapter_no": 3,
+      "code": "CHUONG_III",
+      "title_vi": "Chương III. Điện",
+      "title_en": "Chapter III. Electric Resistance and Ohm's Law",
+      "discipline": "physics",
+      "lessons": [
+        {
+          "lesson_no": 11,
+          "title_vi": "Điện trở. Định luật Ohm",
+          "title_en": "Electrical Resistance and Ohm's Law",
+          "discipline": "physics",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 12,
+              "note_vi": "Định luật Ohm phân tích đoạn mạch nối tiếp và song song."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Electrical resistance",
+              "vi": "Điện trở",
+              "ipa": "/ɪˈlek.trɪ.kəl rɪˈzɪs.təns/",
+              "symbol_or_formula": "R = U/I",
+              "note": ""
+            },
+            {
+              "en": "Ohm",
+              "vi": "Ôm (đơn vị SI)",
+              "ipa": "/əʊm/",
+              "symbol_or_formula": "Ω",
+              "note": ""
+            },
+            {
+              "en": "Ohm's law",
+              "vi": "Định luật Ôm",
+              "ipa": "/ˈəʊmz lɔː/",
+              "symbol_or_formula": "I = U / R",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "lesson_no": 12,
+          "title_vi": "Đoạn mạch nối tiếp, song song",
+          "title_en": "Series and Parallel Circuits",
+          "discipline": "physics",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 11,
+              "note_vi": "Tính điện trở tương đương của đoạn mạch."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Series circuit",
+              "vi": "Mạch mắc nối tiếp",
+              "ipa": "/ˈsɪə.riːz ˈsɜː.kɪt/",
+              "symbol_or_formula": "R = R₁ + R₂",
+              "note": ""
+            },
+            {
+              "en": "Parallel circuit",
+              "vi": "Mạch mắc song song",
+              "ipa": "/ˈpær.ə.lel ˈsɜː.kɪt/",
+              "symbol_or_formula": "",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "lesson_no": 13,
+          "title_vi": "Năng lượng của dòng điện và công suất điện",
+          "title_en": "Electrical Energy and Electric Power",
+          "discipline": "physics",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 4,
+              "note_vi": "Liên hệ công suất điện với đơn vị SI Oát (W) và kWh."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Electrical power",
+              "vi": "Công suất điện",
+              "ipa": "/ɪˈlek.trɪ.kəl ˈpaʊ.ər/",
+              "symbol_or_formula": "P = U·I (W)",
+              "note": ""
+            },
+            {
+              "en": "Kilowatt-hour",
+              "vi": "Kilôoát giờ",
+              "ipa": "/ˈkɪl.ə.wɒt aʊər/",
+              "symbol_or_formula": "1 kWh = 3.6×10⁶ J",
+              "note": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chapter_no": 4,
+      "code": "CHUONG_IV",
+      "title_vi": "Chương IV. Điện từ",
+      "title_en": "Chapter IV. Electromagnetism and Alternating Current",
+      "discipline": "physics",
+      "lessons": [
+        {
+          "lesson_no": 14,
+          "title_vi": "Cảm ứng điện từ",
+          "title_en": "Electromagnetic Induction",
+          "discipline": "physics",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 15,
+              "note_vi": "Hiện tượng cảm ứng điện từ tạo ra dòng xoay chiều."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Electromagnetic induction",
+              "vi": "Cảm ứng điện từ",
+              "ipa": "/ɪˌlek.trəʊ.mæɡˈnet.ɪk ɪnˈdʌk.ʃən/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Induced current",
+              "vi": "Dòng điện cảm ứng",
+              "ipa": "/ɪnˈdjuːst ˈkʌr.ənt/",
+              "symbol_or_formula": "",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "lesson_no": 15,
+          "title_vi": "Tác dụng của dòng điện xoay chiều",
+          "title_en": "Alternating Current (AC) Applications",
+          "discipline": "physics",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 13,
+              "note_vi": "Truyền tải điện năng xoay chiều giảm hao phí."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Alternating current",
+              "vi": "Dòng điện xoay chiều",
+              "ipa": "/ˈɔːl.tə.neɪ.tɪŋ ˈkʌr.ənt/",
+              "symbol_or_formula": "AC",
+              "note": ""
+            },
+            {
+              "en": "Generator",
+              "vi": "Máy phát điện",
+              "ipa": "/ˈdʒen.ə.reɪ.tər/",
+              "symbol_or_formula": "",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "lesson_no": 16,
+          "title_vi": "Vòng năng lượng trên Trái Đất. Năng lượng hóa thạch",
+          "title_en": "Earth Energy Cycle and Fossil Fuels",
+          "discipline": "physics",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 34,
+              "note_vi": "Đốt nhiên liệu hóa thạch tác động trực tiếp chu trình Carbon."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Energy cycle",
+              "vi": "Vòng tuần hoàn năng lượng",
+              "ipa": "/ˈen.ə.dʒi ˈsaɪ.kəl/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Carbon footprint",
+              "vi": "Dấu chân carbon",
+              "ipa": "/ˈkɑː.bən ˈfʊt.prɪnt/",
+              "symbol_or_formula": "",
+              "note": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chapter_no": 5,
+      "code": "CHUONG_V",
+      "title_vi": "Chương V. Kim loại. Sự khác nhau cơ bản giữa phi kim và kim loại",
+      "title_en": "Chapter V. Metals, Activity Series and Nonmetals",
+      "discipline": "chemistry",
+      "lessons": [
+        {
+          "lesson_no": 17,
+          "title_vi": "Tính chất chung của kim loại",
+          "title_en": "General Properties of Metals",
+          "discipline": "chemistry",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 11,
+              "note_vi": "Tính dẫn điện của kim loại đồng, nhôm ứng dụng trong dây dẫn."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Malleability",
+              "vi": "Tính dẻo (dát mỏng)",
+              "ipa": "/ˌmæl.i.əˈbɪl.ə.ti/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Ductility",
+              "vi": "Tính kéo sợi",
+              "ipa": "/dʌkˈtɪl.ə.ti/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Metallic luster",
+              "vi": "Ánh kim",
+              "ipa": "/məˈtæl.ɪk ˈlʌs.tər/",
+              "symbol_or_formula": "",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "lesson_no": 18,
+          "title_vi": "Dãy hoạt động hóa học của kim loại",
+          "title_en": "Activity Series of Metals",
+          "discipline": "chemistry",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 19,
+              "note_vi": "Kim loại hoạt động mạnh hơn cần điện phân để tách."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Activity series",
+              "vi": "Dãy hoạt động hóa học",
+              "ipa": "/ækˈtɪv.ə.ti ˈsɪə.riːz/",
+              "symbol_or_formula": "K Na Ca Mg Al Zn Fe Pb H Cu Ag Au",
+              "note": ""
+            },
+            {
+              "en": "Displacement reaction",
+              "vi": "Phản ứng thế",
+              "ipa": "/dɪˈspleɪs.mənt riˈæk.ʃən/",
+              "symbol_or_formula": "",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "lesson_no": 19,
+          "title_vi": "Tách kim loại và việc sử dụng hợp kim",
+          "title_en": "Extraction of Metals and Alloys",
+          "discipline": "chemistry",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 18,
+              "note_vi": "Lựa chọn phương pháp nhiệt luyện hay điện phân theo độ hoạt động."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Alloy",
+              "vi": "Hợp kim",
+              "ipa": "/ˈæl.ɔɪ/",
+              "symbol_or_formula": "Thép, gang, đồng thau",
+              "note": ""
+            },
+            {
+              "en": "Metallurgy",
+              "vi": "Luyện kim",
+              "ipa": "/məˈtæl.ə.dʒi/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Electrolysis",
+              "vi": "Điện phân",
+              "ipa": "/ɪˌlekˈtrɒl.ə.sɪs/",
+              "symbol_or_formula": "",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "lesson_no": 20,
+          "title_vi": "Sự khác nhau cơ bản giữa phi kim và kim loại",
+          "title_en": "Comparing Metals and Nonmetals",
+          "discipline": "chemistry",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 21,
+              "note_vi": "Phi kim Carbon là bộ khung của mọi hợp chất hữu cơ."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Nonmetal",
+              "vi": "Phi kim",
+              "ipa": "/nɒnˈmet.əl/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Carbon",
+              "vi": "Nguyên tố Carbon",
+              "ipa": "/ˈkɑː.bən/",
+              "symbol_or_formula": "C",
+              "note": ""
+            },
+            {
+              "en": "Chlorine",
+              "vi": "Khí Chlorine",
+              "ipa": "/ˈklɔː.riːn/",
+              "symbol_or_formula": "Cl₂",
+              "note": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chapter_no": 6,
+      "code": "CHUONG_VI",
+      "title_vi": "Chương VI. Giới thiệu về chất hữu cơ. Hydrocarbon và nhiên liệu",
+      "title_en": "Chapter VI. Organic Chemistry: Alkanes and Alkenes (IUPAC)",
+      "discipline": "chemistry",
+      "lessons": [
+        {
+          "lesson_no": 21,
+          "title_vi": "Giới thiệu về hợp chất hữu cơ",
+          "title_en": "Introduction to Organic Compounds",
+          "discipline": "chemistry",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 27,
+              "note_vi": "Lipid, carbohydrate và protein là các hợp chất hữu cơ sinh học."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Organic compound",
+              "vi": "Hợp chất hữu cơ",
+              "ipa": "/ɔːˈɡæn.ɪk ˈkɒm.paʊnd/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Hydrocarbon",
+              "vi": "Hợp chất Hydrocarbon",
+              "ipa": "/ˌhaɪ.drəʊˈkɑː.bən/",
+              "symbol_or_formula": "CₓHᵧ",
+              "note": ""
+            },
+            {
+              "en": "Structural formula",
+              "vi": "Công thức cấu tạo",
+              "ipa": "/ˈstrʌk.tʃər.əl ˈfɔː.mjə.lə/",
+              "symbol_or_formula": "",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "lesson_no": 22,
+          "title_vi": "Alkane",
+          "title_en": "Alkanes: Saturated Hydrocarbons",
+          "discipline": "chemistry",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 24,
+              "note_vi": "Methane là thành phần chính trong khí thiên nhiên."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Alkane",
+              "vi": "Hydrocarbon no (Alkane)",
+              "ipa": "/ˈæl.keɪn/",
+              "symbol_or_formula": "CₙH₂ₙ₊₂",
+              "note": ""
+            },
+            {
+              "en": "Methane",
+              "vi": "Khí Methane (IUPAC)",
+              "ipa": "/ˈmiː.θeɪn/",
+              "symbol_or_formula": "CH₄",
+              "note": "Không viết 'metan'"
+            },
+            {
+              "en": "Substitution reaction",
+              "vi": "Phản ứng thế",
+              "ipa": "/ˌsʌb.stɪˈtjuː.ʃən riˈæk.ʃən/",
+              "symbol_or_formula": "",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "lesson_no": 23,
+          "title_vi": "Alkene",
+          "title_en": "Alkenes: Unsaturated Hydrocarbons",
+          "discipline": "chemistry",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 25,
+              "note_vi": "Hydrat hóa ethylene tổng hợp ethylic alcohol."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Alkene",
+              "vi": "Hydrocarbon không no (Alkene)",
+              "ipa": "/ˈæl.kiːn/",
+              "symbol_or_formula": "CₙH₂ₙ",
+              "note": ""
+            },
+            {
+              "en": "Ethylene",
+              "vi": "Khí Ethylene / Ethene (IUPAC)",
+              "ipa": "/ˈeθ.ə.liːn/",
+              "symbol_or_formula": "C₂H₄",
+              "note": "Không viết 'etilen'"
+            },
+            {
+              "en": "Addition reaction",
+              "vi": "Phản ứng cộng",
+              "ipa": "/əˈdɪʃ.ən riˈæk.ʃən/",
+              "symbol_or_formula": "",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "lesson_no": 24,
+          "title_vi": "Nguồn nhiên liệu",
+          "title_en": "Natural Fuels and Crude Oil Refining",
+          "discipline": "chemistry",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 34,
+              "note_vi": "Sử dụng nhiên liệu hóa thạch hiệu quả để giảm khí nhà kính."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Crude oil",
+              "vi": "Dầu mỏ",
+              "ipa": "/kruːd ɔɪl/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Fractional distillation",
+              "vi": "Chưng cất phân đoạn",
+              "ipa": "/ˈfræk.ʃən.əl ˌdɪs.tɪˈleɪ.ʃən/",
+              "symbol_or_formula": "",
+              "note": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chapter_no": 7,
+      "code": "CHUONG_VII",
+      "title_vi": "Chương VII. Ethylic alcohol và Acetic acid",
+      "title_en": "Chapter VII. Ethylic Alcohol and Acetic Acid (IUPAC)",
+      "discipline": "chemistry",
+      "lessons": [
+        {
+          "lesson_no": 25,
+          "title_vi": "Ethylic alcohol",
+          "title_en": "Ethylic Alcohol (Ethanol)",
+          "discipline": "chemistry",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 26,
+              "note_vi": "Lên men giấm oxi hóa ethylic alcohol thành acetic acid."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Ethanol",
+              "vi": "Ethylic alcohol / Ethanol (IUPAC)",
+              "ipa": "/ˈeθ.ə.nɒl/",
+              "symbol_or_formula": "C₂H₅OH",
+              "note": "Không dùng 'rượu etylic' trong danh pháp mới"
+            },
+            {
+              "en": "Hydroxyl group",
+              "vi": "Nhóm -OH",
+              "ipa": "/haɪˈdrɒk.sɪl ɡruːp/",
+              "symbol_or_formula": "-OH",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "lesson_no": 26,
+          "title_vi": "Acetic acid",
+          "title_en": "Acetic Acid (Ethanoic Acid)",
+          "discipline": "chemistry",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 25,
+              "note_vi": "Ethylic alcohol phản ứng Acetic acid tạo ester ethyl acetate."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Acetic acid",
+              "vi": "Acetic acid (IUPAC)",
+              "ipa": "/əˈsiː.tɪk ˈæs.ɪd/",
+              "symbol_or_formula": "CH₃COOH",
+              "note": "Không dùng 'axit axetic'"
+            },
+            {
+              "en": "Esterification",
+              "vi": "Phản ứng este hóa",
+              "ipa": "/ˌes.tə.rɪ.fɪˈkeɪ.ʃən/",
+              "symbol_or_formula": "",
+              "note": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chapter_no": 8,
+      "code": "CHUONG_VIII",
+      "title_vi": "Chương VIII. Lipid. Carbohydrate. Protein. Polymer",
+      "title_en": "Chapter VIII. Biomolecules and Polymers",
+      "discipline": "chemistry",
+      "lessons": [
+        {
+          "lesson_no": 27,
+          "title_vi": "Lipid và chất béo",
+          "title_en": "Lipids and Fats",
+          "discipline": "chemistry",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 26,
+              "note_vi": "Chất béo là triester của glycerol và acid béo."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Lipid",
+              "vi": "Chất béo / Lipid",
+              "ipa": "/ˈlɪp.ɪd/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Saponification",
+              "vi": "Phản ứng xà phòng hóa",
+              "ipa": "/səˌpɒn.ɪ.fɪˈkeɪ.ʃən/",
+              "symbol_or_formula": "",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "lesson_no": 28,
+          "title_vi": "Glucose và saccharose",
+          "title_en": "Glucose and Saccharose",
+          "discipline": "chemistry",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 25,
+              "note_vi": "Lên men glucose tạo thành ethylic alcohol và CO₂."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Saccharose",
+              "vi": "Đường saccharose (IUPAC)",
+              "ipa": "/ˈsæk.ə.rəʊs/",
+              "symbol_or_formula": "C₁₂H₂₂O₁₁",
+              "note": "Không viết 'saccarozơ'"
+            },
+            {
+              "en": "Silver mirror reaction",
+              "vi": "Phản ứng tráng bạc",
+              "ipa": "/ˈsɪl.vər ˈmɪr.ər riˈæk.ʃən/",
+              "symbol_or_formula": "",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "lesson_no": 29,
+          "title_vi": "Tinh bột và cellulose",
+          "title_en": "Starch and Cellulose Polymers",
+          "discipline": "chemistry",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 28,
+              "note_vi": "Thủy phân hoàn toàn tinh bột hoặc cellulose thu được glucose."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Cellulose",
+              "vi": "Chất xơ cellulose",
+              "ipa": "/ˈsel.jʊ.ləʊs/",
+              "symbol_or_formula": "(C₆H₁₀O₅)ₙ",
+              "note": ""
+            },
+            {
+              "en": "Hydrolysis",
+              "vi": "Phản ứng thủy phân",
+              "ipa": "/haɪˈdrɒl.ə.sɪs/",
+              "symbol_or_formula": "",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "lesson_no": 30,
+          "title_vi": "Protein",
+          "title_en": "Proteins and Amino Acids",
+          "discipline": "chemistry",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 40,
+              "note_vi": "Gene quy định trình tự amino acid tổng hợp nên protein."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Amino acid",
+              "vi": "Amino acid (IUPAC)",
+              "ipa": "/əˈmiː.nəʊ ˈæs.ɪd/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Peptide bond",
+              "vi": "Liên kết peptide",
+              "ipa": "/ˈpep.taɪd bɒnd/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Denaturation",
+              "vi": "Sự đông tụ / biến tính",
+              "ipa": "/diːˌneɪ.tʃərˈeɪ.ʃən/",
+              "symbol_or_formula": "",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "lesson_no": 31,
+          "title_vi": "Polymer",
+          "title_en": "Polymers and Polymerization",
+          "discipline": "chemistry",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 23,
+              "note_vi": "Trùng hợp phân tử ethylene tạo nhựa polyethylene (PE)."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Polymer",
+              "vi": "Polymer (IUPAC)",
+              "ipa": "/ˈpɒl.ɪ.mər/",
+              "symbol_or_formula": "(CH₂-CH₂)ₙ",
+              "note": ""
+            },
+            {
+              "en": "Monomer",
+              "vi": "Mắt xích monomer",
+              "ipa": "/ˈmɒn.ə.mər/",
+              "symbol_or_formula": "",
+              "note": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chapter_no": 9,
+      "code": "CHUONG_IX",
+      "title_vi": "Chương IX. Khai thác tài nguyên từ vỏ Trái Đất",
+      "title_en": "Chapter IX. Earth's Crust Resources and Carbon Cycle",
+      "discipline": "chemistry",
+      "lessons": [
+        {
+          "lesson_no": 32,
+          "title_vi": "Sơ lược về hóa học vỏ Trái Đất và khai thác tài nguyên",
+          "title_en": "Chemistry of the Earth's Crust",
+          "discipline": "chemistry",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 19,
+              "note_vi": "Tách kim loại từ khoáng vật quặng trong vỏ Trái Đất."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Earth's crust",
+              "vi": "Vỏ Trái Đất",
+              "ipa": "/ɜːθs krʌst/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Silicate mineral",
+              "vi": "Khoáng vật silicate",
+              "ipa": "/ˈsɪl.ɪ.kət ˈmɪn.ər.əl/",
+              "symbol_or_formula": "",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "lesson_no": 33,
+          "title_vi": "Khai thác đá vôi. Công nghiệp silicate",
+          "title_en": "Limestone and Silicate Industry",
+          "discipline": "chemistry",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 32,
+              "note_vi": "Nung đá vôi CaCO₃ sản xuất vôi sống CaO và xi măng."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Calcium carbonate",
+              "vi": "Đá vôi Calcium carbonate",
+              "ipa": "/ˈkæl.si.əm ˈkɑː.bə.nət/",
+              "symbol_or_formula": "CaCO₃",
+              "note": ""
+            },
+            {
+              "en": "Cement",
+              "vi": "Xi măng",
+              "ipa": "/sɪˈment/",
+              "symbol_or_formula": "",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "lesson_no": 34,
+          "title_vi": "Khai thác nhiên liệu hóa thạch. Nguồn carbon và sự ấm lên toàn cầu",
+          "title_en": "Fossil Fuels, Carbon Cycle and Global Warming",
+          "discipline": "chemistry",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 16,
+              "note_vi": "Cân bằng chu trình Carbon giảm hiệu ứng nhà kính."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Carbon cycle",
+              "vi": "Chu trình Carbon",
+              "ipa": "/ˈkɑː.bən ˈsaɪ.kəl/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Global warming",
+              "vi": "Sự ấm lên toàn cầu",
+              "ipa": "/ˈɡləʊ.bəl ˈwɔː.mɪŋ/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Greenhouse gas",
+              "vi": "Khí nhà kính",
+              "ipa": "/ˈɡriːn.haʊs ɡæs/",
+              "symbol_or_formula": "",
+              "note": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chapter_no": 10,
+      "code": "CHUONG_X",
+      "title_vi": "Chương X. Di truyền học Mendel. Cơ sở phân tử của di truyền",
+      "title_en": "Chapter X. Mendelian Genetics and Molecular Heredity",
+      "discipline": "biology",
+      "lessons": [
+        {
+          "lesson_no": 35,
+          "title_vi": "Khái quát về di truyền học",
+          "title_en": "Overview of Genetics",
+          "discipline": "biology",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 37,
+              "note_vi": "Vật chất di truyền cốt lõi là phân tử DNA."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Genetics",
+              "vi": "Di truyền học",
+              "ipa": "/dʒəˈnet.ɪks/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Heredity",
+              "vi": "Tính di truyền",
+              "ipa": "/həˈred.ə.ti/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Variation",
+              "vi": "Biến dị",
+              "ipa": "/ˌveə.riˈeɪ.ʃən/",
+              "symbol_or_formula": "",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "lesson_no": 36,
+          "title_vi": "Các quy luật di truyền của Mendel",
+          "title_en": "Mendel's Laws of Inheritance",
+          "discipline": "biology",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 41,
+              "note_vi": "Sự phân li độc lập dựa trên hành vi của nhiễm sắc thể trong giảm phân."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Dominant allele",
+              "vi": "Alen trội",
+              "ipa": "/ˈdɒm.ɪ.nənt ˈæl.iːl/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Recessive allele",
+              "vi": "Alen lặn",
+              "ipa": "/rɪˈses.ɪv ˈæl.iːl/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Phenotype",
+              "vi": "Kiểu hình",
+              "ipa": "/ˈfiː.nə.taɪp/",
+              "symbol_or_formula": "",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "lesson_no": 37,
+          "title_vi": "Nucleic acid và ứng dụng",
+          "title_en": "Nucleic Acids: DNA and RNA",
+          "discipline": "biology",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 30,
+              "note_vi": "DNA và RNA điều khiển quá trình tổng hợp protein."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "DNA",
+              "vi": "Deoxyribonucleic acid (DNA)",
+              "ipa": "/ˌdiː.ɒk.si.raɪ.bəʊ.njuːˈkliː.ɪk/",
+              "symbol_or_formula": "DNA",
+              "note": "GDPT 2018 dùng DNA, không dùng ADN"
+            },
+            {
+              "en": "RNA",
+              "vi": "Ribonucleic acid (RNA)",
+              "ipa": "/ˌraɪ.bəʊ.njuːˈkliː.ɪk/",
+              "symbol_or_formula": "RNA",
+              "note": "GDPT 2018 dùng RNA, không dùng ARN"
+            },
+            {
+              "en": "Nucleotide",
+              "vi": "Đơn phân nucleotide",
+              "ipa": "/ˈnjuː.kli.ə.taɪd/",
+              "symbol_or_formula": "",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "lesson_no": 38,
+          "title_vi": "Đột biến gene",
+          "title_en": "Gene Mutations",
+          "discipline": "biology",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 39,
+              "note_vi": "Sai sót khi tái bản DNA có thể phát sinh đột biến gene."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Gene mutation",
+              "vi": "Đột biến gene",
+              "ipa": "/dʒiːn mjuːˈteɪ.ʃən/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Mutagen",
+              "vi": "Tác nhân đột biến",
+              "ipa": "/ˈmjuː.tə.dʒən/",
+              "symbol_or_formula": "",
+              "note": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chapter_no": 11,
+      "code": "CHUONG_XI",
+      "title_vi": "Chương XI. Di truyền nhiễm sắc thể",
+      "title_en": "Chapter XI. Gene Expression and Chromosomes",
+      "discipline": "biology",
+      "lessons": [
+        {
+          "lesson_no": 39,
+          "title_vi": "Quá trình tái bản DNA. Phiên mã và dịch mã",
+          "title_en": "DNA Replication, Transcription and Translation",
+          "discipline": "biology",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 37,
+              "note_vi": "Cơ chế truyền thông tin từ DNA → mRNA → chuỗi polypeptide."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "DNA replication",
+              "vi": "Tái bản DNA",
+              "ipa": "/ˌdiː.enˈeɪ ˌrep.lɪˈkeɪ.ʃən/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Transcription",
+              "vi": "Phiên mã",
+              "ipa": "/trænˈskrɪp.ʃən/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Translation",
+              "vi": "Dịch mã",
+              "ipa": "/trænzˈleɪ.ʃən/",
+              "symbol_or_formula": "",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "lesson_no": 40,
+          "title_vi": "Từ gene đến tính trạng",
+          "title_en": "From Gene to Trait Expression",
+          "discipline": "biology",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 30,
+              "note_vi": "Protein tham gia trực tiếp biểu hiện tính trạng cơ thể."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Gene expression",
+              "vi": "Sự biểu hiện của gene",
+              "ipa": "/dʒiːn ɪkˈspreʃ.ən/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Polypeptide",
+              "vi": "Chuỗi polypeptide",
+              "ipa": "/ˌpɒl.iˈpep.taɪd/",
+              "symbol_or_formula": "",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "lesson_no": 41,
+          "title_vi": "Nhiễm sắc thể và bộ nhiễm sắc thể",
+          "title_en": "Chromosomes and Karyotype",
+          "discipline": "biology",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 42,
+              "note_vi": "Nhiễm sắc thể phân li đồng đều trong nguyên phân và giảm phân."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Chromosome",
+              "vi": "Nhiễm sắc thể",
+              "ipa": "/ˈkrəʊ.mə.səʊm/",
+              "symbol_or_formula": "2n / n",
+              "note": ""
+            },
+            {
+              "en": "Diploid",
+              "vi": "Lưỡng bội (2n)",
+              "ipa": "/ˈdɪp.lɔɪd/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Haploid",
+              "vi": "Đơn bội (n)",
+              "ipa": "/ˈhæp.lɔɪd/",
+              "symbol_or_formula": "",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "lesson_no": 42,
+          "title_vi": "Nguyên phân và giảm phân",
+          "title_en": "Mitosis and Meiosis",
+          "discipline": "biology",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 36,
+              "note_vi": "Giảm phân tạo giao tử là cơ sở tế bào học của quy luật Mendel."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Mitosis",
+              "vi": "Nguyên phân",
+              "ipa": "/maɪˈtəʊ.sɪs/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Meiosis",
+              "vi": "Giảm phân",
+              "ipa": "/maɪˈəʊ.sɪs/",
+              "symbol_or_formula": "",
+              "note": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chapter_no": 12,
+      "code": "CHUONG_XII",
+      "title_vi": "Chương XII. Di truyền liên kết và Di truyền học người",
+      "title_en": "Chapter XII. Sex-Linked and Human Genetics",
+      "discipline": "biology",
+      "lessons": [
+        {
+          "lesson_no": 43,
+          "title_vi": "Cơ chế xác định giới tính và di truyền liên kết",
+          "title_en": "Sex Determination and Linked Inheritance",
+          "discipline": "biology",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 42,
+              "note_vi": "Cặp NST giới tính XX/XY phân li trong giảm phân."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Sex chromosome",
+              "vi": "Nhiễm sắc thể giới tính",
+              "ipa": "/seks ˈkrəʊ.mə.səʊm/",
+              "symbol_or_formula": "XX / XY",
+              "note": ""
+            },
+            {
+              "en": "Genetic linkage",
+              "vi": "Di truyền liên kết",
+              "ipa": "/dʒəˈnet.ɪk ˈlɪŋ.kɪdʒ/",
+              "symbol_or_formula": "",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "lesson_no": 44,
+          "title_vi": "Di truyền học với con người và Đột biến nhiễm sắc thể",
+          "title_en": "Human Genetics and Chromosomal Mutations",
+          "discipline": "biology",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 38,
+              "note_vi": "Phân biệt đột biến gene với đột biến số lượng/cấu trúc NST."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Genetic engineering",
+              "vi": "Công nghệ di truyền",
+              "ipa": "/dʒəˈnet.ɪk ˌen.dʒɪˈnɪə.rɪŋ/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Chromosomal mutation",
+              "vi": "Đột biến nhiễm sắc thể",
+              "ipa": "/ˌkrəʊ.məˈsəʊ.məl mjuːˈteɪ.ʃən/",
+              "symbol_or_formula": "",
+              "note": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chapter_no": 13,
+      "code": "CHUONG_XIII",
+      "title_vi": "Chương XIII. Tiến hóa",
+      "title_en": "Chapter XIII. Evolution and Natural Selection",
+      "discipline": "biology",
+      "lessons": [
+        {
+          "lesson_no": 45,
+          "title_vi": "Giới thiệu về tiến hóa",
+          "title_en": "Introduction to Evolution and Natural Selection",
+          "discipline": "biology",
+          "is_practical": false,
+          "integration_links": [
+            {
+              "target_lesson_no": 38,
+              "note_vi": "Đột biến tạo biến dị di truyền làm nguyên liệu cho chọn lọc tự nhiên."
+            }
+          ],
+          "glossary_seed": [
+            {
+              "en": "Evolution",
+              "vi": "Tiến hóa",
+              "ipa": "/ˌiː.vəˈluː.ʃən/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Natural selection",
+              "vi": "Chọn lọc tự nhiên",
+              "ipa": "/ˈnætʃ.rəl sɪˈlek.ʃən/",
+              "symbol_or_formula": "",
+              "note": ""
+            },
+            {
+              "en": "Adaptation",
+              "vi": "Sự thích nghi",
+              "ipa": "/ˌæd.əpˈteɪ.ʃən/",
+              "symbol_or_formula": "",
+              "note": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -14,6 +14,24 @@ class CurriculumRepository:
     def __init__(self, db: Session) -> None:
         self.db = db
 
+    def list_available_grades(self, textbook_series: str = "kntt") -> list[int]:
+        stmt = (
+            select(Chapter.grade)
+            .where(Chapter.textbook_series == textbook_series)
+            .distinct()
+            .order_by(Chapter.grade)
+        )
+        return [int(g) for g in self.db.scalars(stmt).all()]
+
+    def count_terms_for_grade(self, grade: int, textbook_series: str = "kntt") -> int:
+        stmt = (
+            select(func.count(func.distinct(LessonTerm.term_id)))
+            .join(Lesson, Lesson.id == LessonTerm.lesson_id)
+            .join(Chapter, Chapter.id == Lesson.chapter_id)
+            .where(Chapter.grade == grade, Chapter.textbook_series == textbook_series)
+        )
+        return int(self.db.scalar(stmt) or 0)
+
     def list_chapters_with_lessons(
         self, grade: int = 8, textbook_series: str = "kntt"
     ) -> list[Chapter]:
@@ -73,17 +91,23 @@ class CurriculumRepository:
         *,
         q: str | None = None,
         discipline: str | None = None,
+        grade: int | None = None,
         lesson_no: int | None = None,
         limit: int = 50,
         offset: int = 0,
     ) -> tuple[int, list[Term]]:
         stmt = select(Term)
-        if lesson_no is not None:
+        if grade is not None or lesson_no is not None:
             stmt = (
                 stmt.join(LessonTerm, LessonTerm.term_id == Term.id)
                 .join(Lesson, Lesson.id == LessonTerm.lesson_id)
-                .where(Lesson.lesson_no == lesson_no)
+                .join(Chapter, Chapter.id == Lesson.chapter_id)
             )
+            if grade is not None:
+                stmt = stmt.where(Chapter.grade == grade)
+            if lesson_no is not None:
+                stmt = stmt.where(Lesson.lesson_no == lesson_no)
+            stmt = stmt.distinct()
         if discipline:
             stmt = stmt.where(Term.discipline == discipline)
         if q and q.strip():
@@ -107,7 +131,11 @@ class CurriculumRepository:
     def get_term_by_slug(self, slug: str) -> Term | None:
         stmt = (
             select(Term)
-            .options(selectinload(Term.lesson_terms).joinedload(LessonTerm.lesson))
+            .options(
+                selectinload(Term.lesson_terms)
+                .joinedload(LessonTerm.lesson)
+                .joinedload(Lesson.chapter)
+            )
             .where(Term.slug == slug)
         )
         return self.db.scalar(stmt)

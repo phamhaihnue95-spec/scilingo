@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 
 import { api } from "../../api/client";
-import type { AuthSession, Discipline, GameRewardResult } from "../../api/types";
+import type { AuthSession, Discipline, GameRewardResult, GradeLevel } from "../../api/types";
 import {
   AnimatedScoreCounter,
   FloatingXPBurst,
@@ -35,6 +35,7 @@ interface SequenceStep {
 
 interface SequenceChallenge {
   id: string;
+  grade: GradeLevel;
   titleVi: string;
   titleEn: string;
   discipline: Discipline;
@@ -44,11 +45,12 @@ interface SequenceChallenge {
   steps: SequenceStep[];
 }
 
-type PackFilter = "all" | "bio_earth" | "chem_general";
+type PackFilter = "all" | "current_grade" | "bio_earth" | "chem_general";
 
 const SEQUENCE_BANK: SequenceChallenge[] = [
   {
     id: "respiratory",
+    grade: 8,
     titleVi: "Đường đi của không khí khi hít vào (Hệ hô hấp)",
     titleEn: "Air Pathway During Inhalation",
     discipline: "biology",
@@ -67,6 +69,7 @@ const SEQUENCE_BANK: SequenceChallenge[] = [
   },
   {
     id: "digestive",
+    grade: 8,
     titleVi: "Thứ tự ống tiêu hóa ở người (Hệ tiêu hóa)",
     titleEn: "Human Digestive Tract Sequence",
     discipline: "biology",
@@ -84,6 +87,7 @@ const SEQUENCE_BANK: SequenceChallenge[] = [
   },
   {
     id: "food_chain",
+    grade: 8,
     titleVi: "Chuỗi thức ăn trong hệ sinh thái đồng cỏ",
     titleEn: "Terrestrial Food Chain Trophic Levels",
     discipline: "biology",
@@ -101,10 +105,11 @@ const SEQUENCE_BANK: SequenceChallenge[] = [
   },
   {
     id: "taxonomy",
+    grade: 6,
     titleVi: "Thứ bậc phân loại sinh vật (từ lớn đến nhỏ)",
     titleEn: "Biological Taxonomy Hierarchy",
     discipline: "biology",
-    lessonRef: "Unit 15 · Classification",
+    lessonRef: "KHTN 6 · Bài 22 & Unit 15",
     directionHint: "Từ bậc phân loại rộng nhất (1) xuống hẹp nhất (7)",
     explanationVi:
       "7 bậc phân loại chuẩn quốc tế: Kingdom -> Phylum -> Class -> Order -> Family -> Genus -> Species.",
@@ -120,6 +125,7 @@ const SEQUENCE_BANK: SequenceChallenge[] = [
   },
   {
     id: "ph_scale",
+    grade: 8,
     titleVi: "Thang đo pH tăng dần từ Acid mạnh sang Base mạnh (IUPAC)",
     titleEn: "Ascending pH Scale (Acid to Base)",
     discipline: "chemistry",
@@ -137,6 +143,7 @@ const SEQUENCE_BANK: SequenceChallenge[] = [
   },
   {
     id: "body_org",
+    grade: 8,
     titleVi: "Cấp độ tổ chức cơ thể đa bào (từ nhỏ đến lớn)",
     titleEn: "Levels of Biological Organization",
     discipline: "biology",
@@ -154,6 +161,7 @@ const SEQUENCE_BANK: SequenceChallenge[] = [
   },
   {
     id: "solar_system",
+    grade: 8,
     titleVi: "Các hành tinh Hệ Mặt Trời (từ trong ra ngoài)",
     titleEn: "Planets from the Sun Outward",
     discipline: "physics",
@@ -172,6 +180,7 @@ const SEQUENCE_BANK: SequenceChallenge[] = [
   },
   {
     id: "reaction_flow",
+    grade: 8,
     titleVi: "Diễn biến bản chất của Phản ứng Hóa học",
     titleEn: "Stages of a Chemical Reaction",
     discipline: "chemistry",
@@ -184,6 +193,153 @@ const SEQUENCE_BANK: SequenceChallenge[] = [
       { id: "rx-2", labelEn: "Bond breaking", labelVi: "Phá vỡ liên kết cũ giữa các nguyên tử" },
       { id: "rx-3", labelEn: "Rearrangement of atoms", labelVi: "Sắp xếp lại liên kết các nguyên tử" },
       { id: "rx-4", labelEn: "Products", labelVi: "Tạo thành chất sản phẩm mới" },
+    ],
+  },
+  {
+    id: "microscope_steps",
+    grade: 6,
+    titleVi: "Các bước sử dụng kính hiển vi quang học",
+    titleEn: "Using an Optical Microscope",
+    discipline: "biology",
+    lessonRef: "KHTN 6 · Bài 3 & 18",
+    directionHint: "Từ bước đặt tiêu bản (1) đến chỉnh nét chi tiết (5)",
+    explanationVi:
+      "Quy trình chuẩn an toàn: Place specimen on stage -> Select lowest objective lens -> Look from side & lower tube -> Adjust coarse focus knob -> Adjust fine focus knob.",
+    steps: [
+      { id: "mic-1", labelEn: "Place specimen on stage", labelVi: "Đặt tiêu bản lên bàn kính" },
+      { id: "mic-2", labelEn: "Select lowest objective lens", labelVi: "Chọn vật kính có độ phóng đại nhỏ nhất" },
+      { id: "mic-3", labelEn: "Look from side & lower tube", labelVi: "Nhìn từ ngoài hạ vật kính sát tiêu bản" },
+      { id: "mic-4", labelEn: "Adjust coarse focus knob", labelVi: "Vặn ốc to (ốc sơ cấp) tìm ảnh" },
+      { id: "mic-5", labelEn: "Adjust fine focus knob", labelVi: "Vặn ốc nhỏ (ốc vi cấp) chỉnh ảnh nét" },
+    ],
+  },
+  {
+    id: "matter_states_heat",
+    grade: 6,
+    titleVi: "Sự chuyển thể của nước khi tăng dần nhiệt độ",
+    titleEn: "States of Matter Transition When Heating",
+    discipline: "physics",
+    lessonRef: "KHTN 6 · Bài 8",
+    directionHint: "Từ trạng thái lạnh nhất (1) đến hơi nóng nhất (5)",
+    explanationVi:
+      "Khi gia nhiệt liên tục: Solid (Ice) -> Melting (0°C) -> Liquid (Water) -> Evaporation / Boiling (100°C) -> Gas (Water vapor).",
+    steps: [
+      { id: "st-1", labelEn: "Solid (Ice)", labelVi: "Thể rắn (Nước đá)" },
+      { id: "st-2", labelEn: "Melting", labelVi: "Sự nóng chảy" },
+      { id: "st-3", labelEn: "Liquid (Water)", labelVi: "Thể lỏng (Nước)" },
+      { id: "st-4", labelEn: "Evaporation / Boiling", labelVi: "Sự bay hơi / Sự sôi" },
+      { id: "st-5", labelEn: "Gas (Water vapor)", labelVi: "Thể khí (Hơi nước)" },
+    ],
+  },
+  {
+    id: "five_kingdoms",
+    grade: 6,
+    titleVi: "Năm giới sinh vật theo mức độ tiến hóa",
+    titleEn: "Five Kingdoms of Living Organisms",
+    discipline: "biology",
+    lessonRef: "KHTN 6 · Bài 22",
+    directionHint: "Từ cơ thể nhân sơ đơn giản nhất (1) đến động vật đa bào (5)",
+    explanationVi:
+      "Hệ thống 5 giới: Monera (Khởi sinh, nhân sơ) -> Protista (Nguyên sinh) -> Fungi (Nấm) -> Plantae (Thực vật) -> Animalia (Động vật).",
+    steps: [
+      { id: "fk-1", labelEn: "Monera (Bacteria)", labelVi: "Giới Khởi sinh (Nhân sơ)" },
+      { id: "fk-2", labelEn: "Protista", labelVi: "Giới Nguyên sinh" },
+      { id: "fk-3", labelEn: "Fungi", labelVi: "Giới Nấm" },
+      { id: "fk-4", labelEn: "Plantae", labelVi: "Giới Thực vật" },
+      { id: "fk-5", labelEn: "Animalia", labelVi: "Giới Động vật" },
+    ],
+  },
+  {
+    id: "matter_hierarchy_7",
+    grade: 7,
+    titleVi: "Cấu tạo vật chất từ hạt cơ bản đến hỗn hợp",
+    titleEn: "Hierarchy of Matter (Micro to Macro)",
+    discipline: "chemistry",
+    lessonRef: "KHTN 7 · Bài 2–5",
+    directionHint: "Từ hạt vi mô nhỏ nhất (1) đến hệ nhiều chất trộn lẫn (5)",
+    explanationVi:
+      "Proton, neutron, electron tạo nên Atom -> liên kết tạo Molecule -> hợp thành Pure substance -> trộn lẫn thành Mixture.",
+    steps: [
+      { id: "mh-1", labelEn: "Subatomic particles (p, n, e)", labelVi: "Hạt hạ nguyên tử (p, n, e)" },
+      { id: "mh-2", labelEn: "Atom", labelVi: "Nguyên tử" },
+      { id: "mh-3", labelEn: "Molecule", labelVi: "Phân tử" },
+      { id: "mh-4", labelEn: "Pure substance", labelVi: "Đơn chất / Hợp chất tinh khiết" },
+      { id: "mh-5", labelEn: "Mixture", labelVi: "Hỗn hợp nhiều chất" },
+    ],
+  },
+  {
+    id: "plant_water_transport",
+    grade: 7,
+    titleVi: "Con đường vận chuyển nước ở thực vật",
+    titleEn: "Water Transport Pathway in Plants",
+    discipline: "biology",
+    lessonRef: "KHTN 7 · Bài 30",
+    directionHint: "Từ đất (1) qua thân lên lá thoát ra ngoài (5)",
+    explanationVi:
+      "Nước di chuyển theo dòng: Soil water -> Root hair cell -> Xylem vessel (mạch gỗ) -> Leaf mesophyll -> Transpiration via stomata.",
+    steps: [
+      { id: "pw-1", labelEn: "Soil water", labelVi: "Nước trong đất" },
+      { id: "pw-2", labelEn: "Root hair cell", labelVi: "Tế bào lông hút ở rễ" },
+      { id: "pw-3", labelEn: "Xylem vessel", labelVi: "Mạch gỗ trong thân" },
+      { id: "pw-4", labelEn: "Leaf mesophyll", labelVi: "Thịt lá (tế bào lá)" },
+      { id: "pw-5", labelEn: "Transpiration via stomata", labelVi: "Thoát hơi nước qua khí khổng" },
+    ],
+  },
+  {
+    id: "metal_reactivity_9",
+    grade: 9,
+    titleVi: "Dãy hoạt động hóa học của kim loại (IUPAC)",
+    titleEn: "Reactivity Series of Metals (Strongest to Weakest)",
+    discipline: "chemistry",
+    lessonRef: "KHTN 9 · Bài 19",
+    directionHint: "Từ kim loại hoạt động mạnh nhất (1) đến yếu nhất (7)",
+    explanationVi:
+      "Chiều giảm dần mức độ hoạt động hóa học: Potassium (K) > Magnesium (Mg) > Aluminium (Al) > Zinc (Zn) > Iron (Fe) > Copper (Cu) > Silver (Ag).",
+    steps: [
+      { id: "mr-1", labelEn: "Potassium (K)", labelVi: "Kali (Mạnh nhất)" },
+      { id: "mr-2", labelEn: "Magnesium (Mg)", labelVi: "Magnesium" },
+      { id: "mr-3", labelEn: "Aluminium (Al)", labelVi: "Nhôm" },
+      { id: "mr-4", labelEn: "Zinc (Zn)", labelVi: "Kẽm" },
+      { id: "mr-5", labelEn: "Iron (Fe)", labelVi: "Sắt" },
+      { id: "mr-6", labelEn: "Copper (Cu)", labelVi: "Đồng (Không đẩy H₂ khỏi acid loãng)" },
+      { id: "mr-7", labelEn: "Silver (Ag)", labelVi: "Bạc (Hoạt động rất yếu)" },
+    ],
+  },
+  {
+    id: "central_dogma_9",
+    grade: 9,
+    titleVi: "Truyền đạt thông tin di truyền (Từ DNA tới Tính trạng)",
+    titleEn: "Central Dogma of Molecular Biology",
+    discipline: "biology",
+    lessonRef: "KHTN 9 · Bài 37–38",
+    directionHint: "Từ phân tử DNA mang gene (1) tới biểu hiện bên ngoài (5)",
+    explanationVi:
+      "Dòng thông tin di truyền chuẩn: DNA (Gene) -> Transcription (mRNA) -> Translation (Ribosome) -> Polypeptide / Protein -> Phenotype (Trait).",
+    steps: [
+      { id: "cd-1", labelEn: "DNA (Gene)", labelVi: "Phân tử DNA (Đoạn gene gốc)" },
+      { id: "cd-2", labelEn: "Transcription (mRNA)", labelVi: "Phiên mã tổng hợp mRNA" },
+      { id: "cd-3", labelEn: "Translation (Ribosome)", labelVi: "Dịch mã tại Ribosome" },
+      { id: "cd-4", labelEn: "Polypeptide / Protein", labelVi: "Chuỗi polypeptide / Protein" },
+      { id: "cd-5", labelEn: "Phenotype (Trait)", labelVi: "Biểu hiện thành tính trạng" },
+    ],
+  },
+  {
+    id: "visible_spectrum_9",
+    grade: 9,
+    titleVi: "Phổ ánh sáng nhìn thấy (từ bước sóng dài đến ngắn)",
+    titleEn: "Visible Light Spectrum Wavelength Order",
+    discipline: "physics",
+    lessonRef: "KHTN 9 · Bài 6",
+    directionHint: "Từ tia bị khúc xạ ít nhất / bước sóng dài (1) đến ngắn nhất (6)",
+    explanationVi:
+      "Dải tán sắc qua lăng kính từ đỏ đến tím: Red -> Orange -> Yellow -> Green -> Blue -> Violet.",
+    steps: [
+      { id: "vs-1", labelEn: "Red", labelVi: "Ánh sáng Đỏ (Bước sóng dài nhất)" },
+      { id: "vs-2", labelEn: "Orange", labelVi: "Ánh sáng Cam" },
+      { id: "vs-3", labelEn: "Yellow", labelVi: "Ánh sáng Vàng" },
+      { id: "vs-4", labelEn: "Green", labelVi: "Ánh sáng Lục" },
+      { id: "vs-5", labelEn: "Blue", labelVi: "Ánh sáng Lam" },
+      { id: "vs-6", labelEn: "Violet", labelVi: "Ánh sáng Tím (Lệch nhiều nhất)" },
     ],
   },
 ];
@@ -203,10 +359,11 @@ function shuffleDeranged(steps: SequenceStep[]): SequenceStep[] {
 
 interface Props {
   session: AuthSession | null;
+  grade?: GradeLevel;
   onRewardRecorded?: () => void;
 }
 
-export function SequenceLabGame({ session, onRewardRecorded }: Props) {
+export function SequenceLabGame({ session, grade = 8, onRewardRecorded }: Props) {
   const [pack, setPack] = useState<PackFilter>("all");
   const [phase, setPhase] = useState<"setup" | "playing" | "finished">("setup");
   const [rounds, setRounds] = useState<SequenceChallenge[]>([]);
@@ -228,6 +385,9 @@ export function SequenceLabGame({ session, onRewardRecorded }: Props) {
   const rewardSentRef = useRef(false);
 
   const filteredPool = useMemo(() => {
+    if (pack === "current_grade") {
+      return SEQUENCE_BANK.filter((s) => s.grade === grade);
+    }
     if (pack === "bio_earth") {
       return SEQUENCE_BANK.filter((s) => s.discipline === "biology");
     }
@@ -235,7 +395,7 @@ export function SequenceLabGame({ session, onRewardRecorded }: Props) {
       return SEQUENCE_BANK.filter((s) => s.discipline !== "biology");
     }
     return SEQUENCE_BANK;
-  }, [pack]);
+  }, [pack, grade]);
 
   const currentRound = rounds[roundIdx] ?? null;
 
@@ -333,7 +493,7 @@ export function SequenceLabGame({ session, onRewardRecorded }: Props) {
     if (phase !== "finished" || rewardSentRef.current) return;
     rewardSentRef.current = true;
 
-    if (correctRounds >= 4) {
+    if (correctRounds >= 4 || (rounds.length > 0 && correctRounds >= rounds.length)) {
       fireVictoryCelebration();
       playCelebrationSound();
     } else {
@@ -357,7 +517,7 @@ export function SequenceLabGame({ session, onRewardRecorded }: Props) {
       .catch(() => {
         // Offline or network hiccup keeps game result visible without crash
       });
-  }, [phase, correctRounds, totalChecks, maxCombo, pack, session, onRewardRecorded]);
+  }, [phase, correctRounds, rounds.length, totalChecks, maxCombo, pack, session, onRewardRecorded]);
 
   return (
     <div className="space-y-5">
@@ -368,15 +528,15 @@ export function SequenceLabGame({ session, onRewardRecorded }: Props) {
             <div className="max-w-2xl space-y-3">
               <div className="inline-flex items-center gap-2 rounded-full bg-emerald-100 px-3 py-1 text-xs font-extrabold text-emerald-900">
                 <ListOrdered className="h-3.5 w-3.5" />
-                <span>Mini-Game 3 · Tháp Sắp Xếp Dây Chuyền KHTN 8</span>
+                <span>Mini-Game 3 · Tháp Sắp Xếp Dây Chuyền KHTN 6–9</span>
               </div>
               <h2 className="text-2xl font-extrabold text-slate-900">
                 Kéo thả sắp xếp đúng trật tự quy trình Khoa học!
               </h2>
               <p className="text-sm leading-relaxed text-slate-600">
                 Xếp các thẻ thuật ngữ từ trên xuống dưới theo đúng trình tự hệ hô hấp, ống tiêu hóa,
-                chuỗi thức ăn, 7 bậc phân loại, thang pH Acid–Base chuẩn IUPAC hay thứ tự hành tinh.
-                Kéo thả bằng chuột/tay hoặc bấm nút mũi tên Lên/Xuống siêu mượt!
+                chuỗi thức ăn, 5 giới &amp; phân loại, thang pH Acid–Base chuẩn IUPAC, dãy hoạt động
+                kim loại, truyền thông tin DNA → Protein hay phổ ánh sáng. Kéo thả hoặc bấm Lên/Xuống!
               </p>
             </div>
 
@@ -392,23 +552,28 @@ export function SequenceLabGame({ session, onRewardRecorded }: Props) {
             </div>
           </div>
 
-          <div className="mt-6 grid gap-3 sm:grid-cols-3">
+          <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {(
               [
                 {
+                  id: "current_grade" as const,
+                  title: `Theo Khối đang chọn: KHTN ${grade}`,
+                  desc: "Quy trình & dây chuyền đặc trưng trong SGK khối lớp này",
+                },
+                {
                   id: "all" as const,
-                  title: "Tổng hợp Tích hợp (6 vòng)",
-                  desc: "Gồm Sinh học, Hóa học IUPAC & Thiên văn học",
+                  title: "Tổng hợp THCS 6–9 (6 vòng)",
+                  desc: "Trộn ngẫu nhiên 16 chuỗi Sinh · Hóa IUPAC · Vật lí 6–9",
                 },
                 {
                   id: "bio_earth" as const,
-                  title: "Chuyên sâu Sinh học (5 vòng)",
-                  desc: "Hô hấp, Tiêu hóa, Chuỗi thức ăn, Tế bào & Phân loại",
+                  title: "Chuyên sâu Sinh học",
+                  desc: "Kính hiển vi, Hô hấp, Tiêu hóa, DNA → Protein & Sinh thái",
                 },
                 {
                   id: "chem_general" as const,
-                  title: "Hóa học IUPAC & Hệ Mặt Trời",
-                  desc: "Thang pH Acid-Base, Phản ứng hóa học & Hành tinh",
+                  title: "Hóa học IUPAC & Vật lí",
+                  desc: "Chuyển thể, Thang pH, Kim loại, Quang phổ & Hệ Mặt Trời",
                 },
               ] as const
             ).map((opt) => (
@@ -479,7 +644,12 @@ export function SequenceLabGame({ session, onRewardRecorded }: Props) {
           {/* Round Prompt */}
           <div className="rounded-2xl border border-teal-200 bg-gradient-to-r from-teal-50 via-emerald-50 to-sky-50 p-4">
             <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-extrabold uppercase text-teal-800">
-              <span>{currentRound.lessonRef}</span>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="rounded-full bg-indigo-100 px-2.5 py-0.5 text-indigo-800">
+                  Lớp {currentRound.grade}
+                </span>
+                <span>{currentRound.lessonRef}</span>
+              </div>
               <span className="rounded-full bg-white px-2.5 py-0.5 text-emerald-700 shadow-sm">
                 {currentRound.directionHint}
               </span>
@@ -592,7 +762,7 @@ export function SequenceLabGame({ session, onRewardRecorded }: Props) {
             >
               <div className="font-extrabold">
                 {revealedSolution
-                  ? "Đáp án trình tự chuẩn KHTN 8:"
+                  ? `Đáp án trình tự chuẩn KHTN ${currentRound.grade}:`
                   : "Hoàn hảo! Dây chuyền khoa học chính xác!"}
               </div>
               <p className="mt-1 text-xs leading-relaxed">{currentRound.explanationVi}</p>

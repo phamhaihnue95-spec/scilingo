@@ -74,6 +74,7 @@ class StudentPracticeAttempt(Base):
         nullable=False,
         index=True,
     )
+    grade: Mapped[int] = mapped_column(Integer, nullable=False, default=8, index=True)
     lesson_no: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
     mode: Mapped[str] = mapped_column(String(24), nullable=False)
     total_questions: Mapped[int] = mapped_column(Integer, nullable=False)

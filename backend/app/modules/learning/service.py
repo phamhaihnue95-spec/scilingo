@@ -96,16 +96,17 @@ class LearningService:
         self,
         *,
         student: User,
+        grade: int | None = None,
         lesson_no: int | None = None,
         discipline: str | None = None,
         limit: int = 15,
     ) -> SRSDueResponse:
         if lesson_no is not None:
-            lesson = self.curriculum.get_lesson_detail(lesson_no)
+            lesson = self.curriculum.get_lesson_detail(lesson_no, grade=grade or 8)
             candidate_terms = lesson.terms
         else:
             candidate_terms = self.curriculum.search_terms(
-                discipline=discipline, limit=200
+                grade=grade, discipline=discipline, limit=200
             ).items
 
         term_ids = [t.id for t in candidate_terms]
@@ -218,16 +219,16 @@ class LearningService:
             newly_unlocked_badges=unlocked,
         )
 
-    def get_lesson_mindmap(self, lesson_no: int) -> LessonMindmapOut:
-        lesson = self.curriculum.get_lesson_detail(lesson_no)
-        root_id = f"lesson-{lesson.lesson_no}"
+    def get_lesson_mindmap(self, lesson_no: int, grade: int = 8) -> LessonMindmapOut:
+        lesson = self.curriculum.get_lesson_detail(lesson_no, grade=grade)
+        root_id = f"lesson-{lesson.grade}-{lesson.lesson_no}"
 
         nodes: list[MindmapNodeOut] = [
             MindmapNodeOut(
                 id=root_id,
                 node_type="lesson",
-                label_vi=f"Bài {lesson.lesson_no}: {lesson.title_vi}",
-                label_en=f"Lesson {lesson.lesson_no}: {lesson.title_en}",
+                label_vi=f"KHTN {lesson.grade} · Bài {lesson.lesson_no}: {lesson.title_vi}",
+                label_en=f"Grade {lesson.grade} Lesson {lesson.lesson_no}: {lesson.title_en}",
                 discipline=lesson.discipline,
                 note=lesson.chapter_title_vi,
             )
@@ -258,15 +259,22 @@ class LearningService:
             )
 
         for link in lesson.integration_links:
-            link_id = f"integration-{link.target_lesson_no}"
+            link_id = f"integration-{link.target_grade}-{link.target_lesson_no}"
+            grade_prefix = (
+                f"KHTN {link.target_grade} · " if link.target_grade != lesson.grade else ""
+            )
             nodes.append(
                 MindmapNodeOut(
                     id=link_id,
                     node_type="integration",
-                    label_vi=f"Bài {link.target_lesson_no}: {link.target_title_vi}",
-                    label_en=f"Lesson {link.target_lesson_no}: {link.target_title_en}",
+                    label_vi=f"{grade_prefix}Bài {link.target_lesson_no}: {link.target_title_vi}",
+                    label_en=(
+                        f"G{link.target_grade} Lesson {link.target_lesson_no}: "
+                        f"{link.target_title_en}"
+                    ),
                     discipline=link.target_discipline,
                     note=link.note_vi,
+                    target_grade=link.target_grade,
                     target_lesson_no=link.target_lesson_no,
                 )
             )
@@ -280,6 +288,7 @@ class LearningService:
             )
 
         return LessonMindmapOut(
+            grade=lesson.grade,
             lesson_no=lesson.lesson_no,
             title_vi=lesson.title_vi,
             title_en=lesson.title_en,
@@ -289,9 +298,9 @@ class LearningService:
         )
 
     def start_practice(self, student: User, payload: PracticeStartRequest) -> PracticeSessionOut:
-        lesson = self.curriculum.get_lesson_detail(payload.lesson_no)
+        lesson = self.curriculum.get_lesson_detail(payload.lesson_no, grade=payload.grade)
         discipline_pool = self.curriculum.search_terms(
-            discipline=lesson.discipline, limit=200
+            grade=payload.grade, discipline=lesson.discipline, limit=200
         ).items
         fallback_pool = self.curriculum.search_terms(limit=200).items
 
@@ -305,6 +314,7 @@ class LearningService:
 
         attempt = StudentPracticeAttempt(
             student_id=student.id,
+            grade=payload.grade,
             lesson_no=lesson.lesson_no,
             mode=payload.mode,
             total_questions=built.total_questions,
@@ -328,6 +338,7 @@ class LearningService:
         ]
         return PracticeSessionOut(
             attempt_id=saved.id,
+            grade=saved.grade,
             lesson_no=lesson.lesson_no,
             lesson_title_vi=lesson.title_vi,
             lesson_title_en=lesson.title_en,
@@ -427,6 +438,7 @@ class LearningService:
 
         return PracticeResultOut(
             attempt_id=attempt.id,
+            grade=attempt.grade,
             lesson_no=attempt.lesson_no,
             mode=attempt.mode,  # type: ignore[arg-type]
             score=total_score,
@@ -445,7 +457,7 @@ class LearningService:
         profile = self.repo.get_or_create_gamification(student.id)
         self.db.commit()
         mastered, due = self.repo.count_srs_stats(student.id)
-        recent = self.repo.list_recent_attempts(student.id, limit=8)
+        recent = self.repo.list_recent_attempts(student.id, limit=50)
 
         level = (profile.total_xp // 100) + 1
         next_level_xp = level * 100
@@ -465,6 +477,7 @@ class LearningService:
             recent_attempts=[
                 PracticeHistoryItemOut(
                     attempt_id=item.id,
+                    grade=item.grade,
                     lesson_no=item.lesson_no,
                     mode=item.mode,
                     score=float(item.score or 0.0),

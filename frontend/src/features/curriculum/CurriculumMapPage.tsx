@@ -16,15 +16,18 @@ import {
 } from "lucide-react";
 
 import { api } from "../../api/client";
-import type { AuthSession, CurriculumTreeResponse, Discipline } from "../../api/types";
+import type { AuthSession, CurriculumTreeResponse, Discipline, GradeLevel } from "../../api/types";
 import { ScienceAmbientParticles } from "../../components/motion/MotionPrimitives";
+import { GRADE_INFO, GRADE_LESSON_COUNTS, VALID_GRADES } from "../../utils/grades";
 import { playClickSound } from "../../utils/soundFx";
 import { CurriculumQuestMap } from "./CurriculumQuestMap";
 import { DisciplineBadge } from "./DisciplineBadge";
 
 interface Props {
   session?: AuthSession | null;
-  onSelectLesson: (lessonNo: number) => void;
+  grade: GradeLevel;
+  onGradeChange?: (grade: GradeLevel) => void;
+  onSelectLesson: (lessonNo: number, grade?: GradeLevel) => void;
   onOpenStudyPack?: () => void;
   onOpenGames?: (
     game?: "lightning" | "iupac" | "sequence" | "scidex" | "leaderboard"
@@ -54,8 +57,8 @@ const CHAPTER_ACCENT: Record<Discipline, { headerBg: string; cardHover: string; 
   },
 };
 
-const DISCIPLINE_TABS: Array<{ id: "all" | Discipline; label: string }> = [
-  { id: "all", label: "Tất cả (47 bài)" },
+const DISCIPLINE_BASE_TABS: Array<{ id: "all" | Discipline; label: string }> = [
+  { id: "all", label: "Tất cả" },
   { id: "general_lab", label: "Phòng thí nghiệm" },
   { id: "chemistry", label: "Hóa học (IUPAC)" },
   { id: "physics", label: "Vật lí (SI)" },
@@ -64,6 +67,8 @@ const DISCIPLINE_TABS: Array<{ id: "all" | Discipline; label: string }> = [
 
 export function CurriculumMapPage({
   session,
+  grade,
+  onGradeChange,
   onSelectLesson,
   onOpenStudyPack,
   onOpenGames,
@@ -75,6 +80,9 @@ export function CurriculumMapPage({
   const [filterText, setFilterText] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const gradeInfo = GRADE_INFO[grade];
+  const expectedLessons = GRADE_LESSON_COUNTS[grade];
 
   useEffect(() => {
     if (!session) {
@@ -88,6 +96,7 @@ export function CurriculumMapPage({
         if (!active) return;
         const stars: Record<number, number> = {};
         for (const attempt of summary.recent_attempts) {
+          if ((attempt.grade ?? 8) !== grade) continue;
           const ratio = Math.min(1, Math.max(0, attempt.score / 10));
           const earned = ratio >= 0.85 ? 3 : ratio >= 0.65 ? 2 : attempt.score > 0 ? 1 : 0;
           if (earned > (stars[attempt.lesson_no] ?? 0)) {
@@ -102,13 +111,13 @@ export function CurriculumMapPage({
     return () => {
       active = false;
     };
-  }, [session]);
+  }, [session, grade]);
 
   useEffect(() => {
     let active = true;
     setLoading(true);
     api
-      .getChapters(discipline === "all" ? undefined : discipline)
+      .getChapters(discipline === "all" ? undefined : discipline, grade)
       .then((data) => {
         if (!active) return;
         setTree(data);
@@ -124,7 +133,7 @@ export function CurriculumMapPage({
     return () => {
       active = false;
     };
-  }, [discipline]);
+  }, [discipline, grade]);
 
   const filteredChapters = useMemo(() => {
     if (!tree) return [];
@@ -147,7 +156,9 @@ export function CurriculumMapPage({
   return (
     <div className="space-y-6">
       {/* Hero Summary Card */}
-      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 via-sky-500 to-teal-400 p-6 text-white shadow-lg sm:p-7">
+      <section
+        className={`relative overflow-hidden rounded-3xl bg-gradient-to-br p-6 text-white shadow-lg sm:p-7 ${gradeInfo.gradient}`}
+      >
         <ScienceAmbientParticles />
         <div className="pointer-events-none absolute -right-10 -top-12 h-52 w-52 rounded-full bg-white/15 blur-2xl" />
         <div className="pointer-events-none absolute -bottom-14 left-1/3 h-44 w-44 rounded-full bg-amber-300/25 blur-2xl" />
@@ -159,18 +170,40 @@ export function CurriculumMapPage({
               <span>Trường THCS Cầu Giấy B · Giáo viên Phạm Thị Hải</span>
             </div>
             <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">
-              Bản đồ Chương trình Tiếng Anh KHTN 8
+              Bản đồ Chương trình Tiếng Anh KHTN {grade}
             </h1>
             <p className="max-w-2xl text-sm text-sky-50">
-              Trọn bộ 47 bài học tích hợp SGK Kết nối tri thức (Hóa học IUPAC · Vật lí SI · Sinh học)
-              kèm bộ từ điển & đề luyện 16 Units theo Thông tư 94/2026/TT-BGDĐT.
+              Trọn bộ <strong>{expectedLessons} bài học</strong> KHTN {grade} SGK Kết nối tri thức:{" "}
+              {gradeInfo.focusVi}.
             </p>
+
+            {onGradeChange && (
+              <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                {VALID_GRADES.map((g) => {
+                  const active = grade === g;
+                  return (
+                    <button
+                      key={g}
+                      type="button"
+                      onClick={() => onGradeChange(g)}
+                      className={`relative rounded-xl px-3 py-1.5 text-xs font-extrabold transition ${
+                        active
+                          ? "bg-white text-indigo-700 shadow"
+                          : "bg-white/20 text-white hover:bg-white/30"
+                      }`}
+                    >
+                      {GRADE_INFO[g].label}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-3 gap-3 text-center">
             {[
-              { value: tree?.total_lessons ?? 47, label: "Bài học" },
-              { value: "16", label: "Chuyên đề" },
+              { value: tree?.total_lessons ?? expectedLessons, label: `Bài Lớp ${grade}` },
+              { value: "190", label: "Bài THCS 6–9" },
               { value: "920+", label: "Từ vựng IPA" },
             ].map((stat) => (
               <motion.div
@@ -293,8 +326,10 @@ export function CurriculumMapPage({
       {/* Filter & Quick Jump Controls */}
       <div className="flex flex-col gap-3 rounded-2xl border border-sky-100 bg-white/95 p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-wrap gap-2">
-          {DISCIPLINE_TABS.map((tab) => {
+          {DISCIPLINE_BASE_TABS.map((tab) => {
             const active = discipline === tab.id;
+            const label =
+              tab.id === "all" ? `Tất cả (${expectedLessons} bài)` : tab.label;
             return (
               <button
                 key={tab.id}
@@ -314,7 +349,7 @@ export function CurriculumMapPage({
                     className="absolute inset-0 rounded-xl bg-gradient-to-r from-indigo-600 to-sky-500 shadow-sm"
                   />
                 )}
-                <span className="relative z-10">{tab.label}</span>
+                <span className="relative z-10">{label}</span>
               </button>
             );
           })}
@@ -373,7 +408,7 @@ export function CurriculumMapPage({
       {/* Loading / Error */}
       {loading && (
         <div className="rounded-xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500">
-          Đang tải bản đồ 47 bài KHTN 8...
+          Đang tải bản đồ {expectedLessons} bài KHTN {grade}...
         </div>
       )}
       {error && (

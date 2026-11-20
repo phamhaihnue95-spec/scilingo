@@ -29,34 +29,52 @@ import type {
   ExamDetail,
   ExamSummary,
   GameType,
+  GradeLevel,
   TT94ComplianceReport,
   TeacherResource,
   TeachingSessionLog,
 } from "../../api/types";
 import { ScienceAmbientParticles } from "../../components/motion/MotionPrimitives";
+import { GRADE_LESSON_COUNTS, VALID_GRADES, normalizeGrade } from "../../utils/grades";
 import { playClickSound, playSuccessSound } from "../../utils/soundFx";
 import { ClassroomLeaderboardPanel } from "../games/ClassroomLeaderboardPanel";
 
 interface Props {
   session: AuthSession | null;
+  grade?: GradeLevel;
   onSessionChange: (session: AuthSession) => void;
 }
 
 type StudioTab = "resources" | "exam_builder" | "classrooms" | "tt94_report";
 
-export function TeacherStudioPage({ session, onSessionChange }: Props) {
+const GRADE_LESSON_PRESETS: Record<GradeLevel, string> = {
+  6: "1, 8, 17, 22, 41",
+  7: "2, 5, 8, 22, 30",
+  8: "8, 9, 10, 13, 18",
+  9: "2, 6, 18, 22, 36",
+};
+
+export function TeacherStudioPage({ session, grade = 8, onSessionChange }: Props) {
   const [tab, setTab] = useState<StudioTab>("exam_builder");
+  const [studioGrade, setStudioGrade] = useState<GradeLevel>(grade);
+  const [newClassGrade, setNewClassGrade] = useState<GradeLevel>(grade);
   const [loggingIn, setLoggingIn] = useState(false);
 
+  const studioMaxLessons = GRADE_LESSON_COUNTS[studioGrade];
+
   // Resources state
-  const [resourceLesson, setResourceLesson] = useState(8);
+  const [resourceLesson, setResourceLesson] = useState(() =>
+    Math.min(8, GRADE_LESSON_COUNTS[grade])
+  );
   const [resources, setResources] = useState<TeacherResource[]>([]);
   const [selectedResource, setSelectedResource] = useState<TeacherResource | null>(null);
 
   // Exam Builder state
-  const [examTitle, setExamTitle] = useState("Kiểm tra giữa kỳ KHTN 8 (Chuẩn Thông tư 94)");
+  const [examTitle, setExamTitle] = useState(
+    () => `Kiểm tra giữa kỳ KHTN ${grade} (Chuẩn Thông tư 94)`
+  );
   const [examSourceMode, setExamSourceMode] = useState<"kntt" | "study_pack" | "both">("both");
-  const [lessonRangeText, setLessonRangeText] = useState("8, 9, 10, 13, 18");
+  const [lessonRangeText, setLessonRangeText] = useState(() => GRADE_LESSON_PRESETS[grade]);
   const [studyPackRangeText, setStudyPackRangeText] = useState("1, 7, 14");
   const [targetRatio, setTargetRatio] = useState<number>(0.5);
   const [questionCount, setQuestionCount] = useState<number>(10);
@@ -107,6 +125,28 @@ export function TeacherStudioPage({ session, onSessionChange }: Props) {
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  const selectedLogClass = classrooms.find((c) => c.id === logClassroomId);
+  const logGrade: GradeLevel = normalizeGrade(selectedLogClass?.grade ?? studioGrade);
+  const logMaxLessons = GRADE_LESSON_COUNTS[logGrade];
+
+  const applyStudioGrade = (nextGrade: GradeLevel) => {
+    const nextMax = GRADE_LESSON_COUNTS[nextGrade];
+    setStudioGrade(nextGrade);
+    setExamTitle(`Kiểm tra giữa kỳ KHTN ${nextGrade} (Chuẩn Thông tư 94)`);
+    setLessonRangeText(GRADE_LESSON_PRESETS[nextGrade]);
+    setResourceLesson((prev) => Math.min(Math.max(1, prev), nextMax));
+    setQLessonNo((prev) => Math.min(Math.max(1, prev), nextMax));
+  };
+
+  useEffect(() => {
+    applyStudioGrade(grade);
+    setNewClassGrade(grade);
+  }, [grade]);
+
+  useEffect(() => {
+    setLogLessonNo((prev) => Math.min(Math.max(1, prev), logMaxLessons));
+  }, [logMaxLessons]);
 
   const isTeacherOrAdmin =
     session?.user.role === "teacher" ||
@@ -163,14 +203,15 @@ export function TeacherStudioPage({ session, onSessionChange }: Props) {
 
   useEffect(() => {
     if (!isTeacherOrAdmin) return;
+    const clampedLesson = Math.min(Math.max(1, resourceLesson), GRADE_LESSON_COUNTS[studioGrade]);
     api
-      .getLessonResources(resourceLesson)
+      .getLessonResources(clampedLesson, studioGrade)
       .then((res) => {
         setResources(res);
         setSelectedResource(res[0] ?? null);
       })
       .catch(() => setResources([]));
-  }, [resourceLesson, isTeacherOrAdmin]);
+  }, [resourceLesson, studioGrade, isTeacherOrAdmin]);
 
   const handleDemoLogin = async (email: string, password: string) => {
     setLoggingIn(true);
@@ -243,7 +284,7 @@ export function TeacherStudioPage({ session, onSessionChange }: Props) {
         : lessonRangeText
             .split(/[,\s]+/)
             .map((s) => Number(s.trim()))
-            .filter((n) => Number.isInteger(n) && n >= 1 && n <= 47);
+            .filter((n) => Number.isInteger(n) && n >= 1 && n <= studioMaxLessons);
 
     const parsedUnits =
       examSourceMode === "kntt"
@@ -255,7 +296,7 @@ export function TeacherStudioPage({ session, onSessionChange }: Props) {
 
     if (parsedLessons.length === 0 && parsedUnits.length === 0) {
       setErrorMsg(
-        "Vui lòng nhập ít nhất 1 bài SGK (1–47) hoặc 1 chuyên đề Bộ Đề 16 Units (1–16)."
+        `Vui lòng nhập ít nhất 1 bài SGK KNTT ${studioGrade} (1–${studioMaxLessons}) hoặc 1 chuyên đề Bộ Đề 16 Units (1–16).`
       );
       return;
     }
@@ -264,6 +305,7 @@ export function TeacherStudioPage({ session, onSessionChange }: Props) {
     try {
       const detail = await api.generateExam({
         title: examTitle,
+        grade: studioGrade,
         lesson_nos: parsedLessons,
         study_pack_unit_nos: parsedUnits,
         classroom_id: assignClassroomId || null,
@@ -274,7 +316,7 @@ export function TeacherStudioPage({ session, onSessionChange }: Props) {
       });
       setGeneratedExam(detail);
       setStatusMsg(
-        `Đã tạo đề "${detail.title}" — ${detail.en_points}/${detail.total_points} điểm Tiếng Anh (${Math.round(detail.achieved_en_ratio * 100)}%).`
+        `Đã tạo đề KHTN ${detail.grade ?? studioGrade} "${detail.title}" — ${detail.en_points}/${detail.total_points} điểm Tiếng Anh (${Math.round(detail.achieved_en_ratio * 100)}%).`
       );
       await loadTeacherWorkspace();
     } catch (err) {
@@ -290,6 +332,7 @@ export function TeacherStudioPage({ session, onSessionChange }: Props) {
     setErrorMsg(null);
     try {
       await api.createQuestion({
+        grade: studioGrade,
         lesson_no: qLessonNo,
         language: qLang,
         cognitive_level: "know",
@@ -305,7 +348,9 @@ export function TeacherStudioPage({ session, onSessionChange }: Props) {
       setQOpt2("");
       setQOpt3("");
       setShowAddQuestion(false);
-      setStatusMsg(`Đã lưu câu hỏi mới vào ngân hàng của trường cho Bài ${qLessonNo}.`);
+      setStatusMsg(
+        `Đã lưu câu hỏi KHTN ${studioGrade} mới vào ngân hàng của trường cho Bài ${qLessonNo}.`
+      );
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : "Không lưu được câu hỏi.");
     } finally {
@@ -335,12 +380,14 @@ export function TeacherStudioPage({ session, onSessionChange }: Props) {
     try {
       const created = await api.createClassroom({
         name: newClassName.trim(),
-        grade: 8,
+        grade: newClassGrade,
         academic_year: "2026-2027",
         is_tt94_pilot_class: true,
       });
       setNewClassName("");
-      setStatusMsg(`Đã tạo lớp ${created.name} (Mã tham gia: ${created.join_code}).`);
+      setStatusMsg(
+        `Đã tạo lớp ${created.name} (Khối ${created.grade} · Mã tham gia: ${created.join_code}).`
+      );
       await loadTeacherWorkspace();
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : "Không thể tạo lớp mới.");
@@ -383,6 +430,7 @@ export function TeacherStudioPage({ session, onSessionChange }: Props) {
     try {
       await api.logTeachingSession({
         classroom_id: logClassroomId,
+        grade: logGrade,
         lesson_no: logLessonNo,
         taught_date: logDate,
         periods_count: logPeriods,
@@ -521,10 +569,10 @@ export function TeacherStudioPage({ session, onSessionChange }: Props) {
                   <input
                     type="number"
                     min={1}
-                    max={47}
+                    max={studioMaxLessons}
                     value={qLessonNo}
                     onChange={(e) => setQLessonNo(Number(e.target.value))}
-                    placeholder="Số bài (1-47)"
+                    placeholder={`Số bài (1-${studioMaxLessons})`}
                     className="rounded border border-slate-300 bg-white px-2 py-1.5"
                   />
                   <select
@@ -585,11 +633,36 @@ export function TeacherStudioPage({ session, onSessionChange }: Props) {
 
               <div>
                 <label className="mb-1.5 block text-xs font-semibold text-slate-600">
+                  Khối lớp đề thi (KHTN 6–9)
+                </label>
+                <div className="grid grid-cols-4 gap-1.5 text-xs">
+                  {VALID_GRADES.map((g) => (
+                    <button
+                      key={g}
+                      type="button"
+                      onClick={() => {
+                        playClickSound();
+                        applyStudioGrade(g);
+                      }}
+                      className={`rounded-lg border py-1.5 font-bold transition ${
+                        studioGrade === g
+                          ? "border-teal-600 bg-teal-50 text-teal-900"
+                          : "border-slate-200 text-slate-600 hover:bg-slate-50"
+                      }`}
+                    >
+                      Khối {g}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-1.5 block text-xs font-semibold text-slate-600">
                   Nguồn học liệu sinh đề
                 </label>
                 <div className="grid grid-cols-3 gap-1.5 text-xs">
                   {[
-                    { id: "kntt", label: "SGK 47 bài" },
+                    { id: "kntt", label: `SGK ${studioMaxLessons} bài` },
                     { id: "study_pack", label: "Bộ Đề 16 Units" },
                     { id: "both", label: "Kết hợp" },
                   ].map((src) => (
@@ -612,7 +685,7 @@ export function TeacherStudioPage({ session, onSessionChange }: Props) {
               {examSourceMode !== "study_pack" && (
                 <div>
                   <label className="mb-1 block text-xs font-semibold text-slate-600">
-                    Các bài học SGK KNTT 8 (1–47, cách nhau dấu phẩy)
+                    Các bài học SGK KNTT {studioGrade} (1–{studioMaxLessons}, cách nhau dấu phẩy)
                   </label>
                   <input
                     type="text"
@@ -713,10 +786,15 @@ export function TeacherStudioPage({ session, onSessionChange }: Props) {
                       key={ex.id}
                       type="button"
                       onClick={() => void api.getExamDetail(ex.id).then(setGeneratedExam)}
-                      className="flex w-full items-center justify-between rounded-lg border border-slate-200 px-3 py-2 text-left text-xs hover:bg-slate-50"
+                      className="flex w-full items-center justify-between gap-2 rounded-lg border border-slate-200 px-3 py-2 text-left text-xs hover:bg-slate-50"
                     >
-                      <span className="font-semibold text-slate-800">{ex.title}</span>
-                      <span className="rounded bg-teal-50 px-2 py-0.5 font-bold text-teal-800">
+                      <span className="font-semibold text-slate-800">
+                        <span className="mr-1.5 rounded bg-indigo-50 px-1.5 py-0.5 text-[10px] font-bold text-indigo-800">
+                          K{ex.grade ?? 8}
+                        </span>
+                        {ex.title}
+                      </span>
+                      <span className="shrink-0 rounded bg-teal-50 px-2 py-0.5 font-bold text-teal-800">
                         {Math.round(ex.achieved_en_ratio * 100)}% EN
                       </span>
                     </button>
@@ -734,6 +812,9 @@ export function TeacherStudioPage({ session, onSessionChange }: Props) {
                   <div>
                     <h3 className="text-lg font-bold text-slate-900">{generatedExam.title}</h3>
                     <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-600">
+                      <span className="rounded bg-indigo-50 px-2 py-0.5 font-bold text-indigo-800">
+                        Khối {generatedExam.grade ?? studioGrade}
+                      </span>
                       <span>{generatedExam.duration_minutes} phút</span>
                       <span>·</span>
                       <span>
@@ -781,12 +862,19 @@ export function TeacherStudioPage({ session, onSessionChange }: Props) {
                     <span className="font-semibold text-slate-700">Giao đề trực tuyến cho lớp:</span>
                     <select
                       value={assignClassroomId}
-                      onChange={(e) => setAssignClassroomId(e.target.value)}
+                      onChange={(e) => {
+                        const nextId = e.target.value;
+                        setAssignClassroomId(nextId);
+                        const cls = classrooms.find((c) => c.id === nextId);
+                        if (cls) {
+                          applyStudioGrade(normalizeGrade(cls.grade));
+                        }
+                      }}
                       className="rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 font-medium"
                     >
                       {classrooms.map((c) => (
                         <option key={c.id} value={c.id}>
-                          {c.name} ({c.join_code})
+                          {c.name} (Khối {c.grade} · {c.join_code})
                         </option>
                       ))}
                     </select>
@@ -853,15 +941,34 @@ export function TeacherStudioPage({ session, onSessionChange }: Props) {
       {tab === "resources" && (
         <div className="grid gap-6 lg:grid-cols-3">
           <section className="space-y-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="grid grid-cols-4 gap-1.5 text-xs">
+              {VALID_GRADES.map((g) => (
+                <button
+                  key={g}
+                  type="button"
+                  onClick={() => {
+                    playClickSound();
+                    applyStudioGrade(g);
+                  }}
+                  className={`rounded-lg border py-1.5 font-bold transition ${
+                    studioGrade === g
+                      ? "border-teal-600 bg-teal-50 text-teal-900"
+                      : "border-slate-200 text-slate-600 hover:bg-slate-50"
+                  }`}
+                >
+                  K{g}
+                </button>
+              ))}
+            </div>
             <label className="block text-xs font-bold uppercase text-slate-500">
-              Chọn Bài học KHTN 8 (KNTT)
+              Chọn Bài học KHTN {studioGrade} (KNTT)
             </label>
             <select
               value={resourceLesson}
               onChange={(e) => setResourceLesson(Number(e.target.value))}
               className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold"
             >
-              {Array.from({ length: 47 }, (_, i) => i + 1).map((n) => (
+              {Array.from({ length: studioMaxLessons }, (_, i) => i + 1).map((n) => (
                 <option key={n} value={n}>
                   Bài {n}
                 </option>
@@ -932,13 +1039,24 @@ export function TeacherStudioPage({ session, onSessionChange }: Props) {
         <div className="grid gap-6 lg:grid-cols-5">
           <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-2">
             <h2 className="text-lg font-bold text-slate-900">Danh sách Lớp học</h2>
-            <form onSubmit={(e) => void handleCreateClassroom(e)} className="flex gap-2">
+            <form onSubmit={(e) => void handleCreateClassroom(e)} className="flex flex-wrap gap-2">
+              <select
+                value={newClassGrade}
+                onChange={(e) => setNewClassGrade(normalizeGrade(Number(e.target.value)))}
+                className="rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-xs font-bold text-slate-800"
+              >
+                {VALID_GRADES.map((g) => (
+                  <option key={g} value={g}>
+                    Khối {g}
+                  </option>
+                ))}
+              </select>
               <input
                 required
                 value={newClassName}
                 onChange={(e) => setNewClassName(e.target.value)}
-                placeholder="Tên lớp mới (vd: 8A3 - KHTN)"
-                className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                placeholder="Tên lớp (vd: 6A2, 9A1)"
+                className="min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm"
               />
               <button
                 type="submit"
@@ -962,8 +1080,13 @@ export function TeacherStudioPage({ session, onSessionChange }: Props) {
                         : "border-slate-200 hover:border-teal-500 hover:bg-teal-50/20"
                     }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-slate-900">{c.name}</span>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-slate-900">{c.name}</span>
+                        <span className="rounded bg-indigo-50 px-1.5 py-0.5 text-[11px] font-bold text-indigo-800">
+                          Khối {c.grade}
+                        </span>
+                      </div>
                       <span className="formula-pill rounded bg-teal-100 px-2 py-0.5 text-xs font-bold text-teal-900">
                         {c.join_code}
                       </span>
@@ -1216,7 +1339,7 @@ export function TeacherStudioPage({ session, onSessionChange }: Props) {
                 >
                   {classrooms.map((c) => (
                     <option key={c.id} value={c.id}>
-                      {c.name}
+                      {c.name} (Khối {c.grade})
                     </option>
                   ))}
                 </select>
@@ -1224,11 +1347,13 @@ export function TeacherStudioPage({ session, onSessionChange }: Props) {
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="mb-1 block text-xs font-semibold text-slate-600">Bài học (1–47)</label>
+                  <label className="mb-1 block text-xs font-semibold text-slate-600">
+                    Bài học KHTN {logGrade} (1–{logMaxLessons})
+                  </label>
                   <input
                     type="number"
                     min={1}
-                    max={47}
+                    max={logMaxLessons}
                     value={logLessonNo}
                     onChange={(e) => setLogLessonNo(Number(e.target.value))}
                     className="w-full rounded-lg border border-slate-300 px-3 py-2"
@@ -1306,17 +1431,21 @@ export function TeacherStudioPage({ session, onSessionChange }: Props) {
                   Nhật ký gần đây ({sessions.length})
                 </div>
                 <div className="max-h-48 space-y-1.5 overflow-y-auto text-xs">
-                  {sessions.map((s) => (
-                    <div key={s.id} className="rounded-lg bg-slate-50 px-3 py-2">
-                      <div className="flex justify-between font-semibold text-slate-800">
-                        <span>
-                          Bài {s.lesson_no} · {s.periods_count} tiết ({s.clil_mode})
-                        </span>
-                        <span>{s.taught_date}</span>
+                  {sessions.map((s) => {
+                    const clsGrade = classrooms.find((c) => c.id === s.classroom_id)?.grade;
+                    return (
+                      <div key={s.id} className="rounded-lg bg-slate-50 px-3 py-2">
+                        <div className="flex justify-between font-semibold text-slate-800">
+                          <span>
+                            {clsGrade ? `[K${clsGrade}] ` : ""}Bài {s.lesson_no} · {s.periods_count}{" "}
+                            tiết ({s.clil_mode})
+                          </span>
+                          <span>{s.taught_date}</span>
+                        </div>
+                        {s.notes && <p className="mt-0.5 text-slate-600">{s.notes}</p>}
                       </div>
-                      {s.notes && <p className="mt-0.5 text-slate-600">{s.notes}</p>}
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -1360,6 +1489,50 @@ export function TeacherStudioPage({ session, onSessionChange }: Props) {
                     <div className="text-[11px] text-emerald-800">Đề đạt ≥ 50% EN</div>
                   </div>
                 </div>
+
+                {report.grade_breakdown && report.grade_breakdown.length > 0 && (
+                  <div className="space-y-2.5">
+                    <div className="text-xs font-bold uppercase text-slate-500">
+                      Phân rã Phủ sóng Toàn cấp THCS (Khối 6 · 7 · 8 · 9)
+                    </div>
+                    <div className="overflow-x-auto rounded-xl border border-slate-200">
+                      <table className="w-full text-left text-xs">
+                        <thead className="bg-slate-50 text-[11px] uppercase text-slate-500">
+                          <tr>
+                            <th className="px-3 py-2">Khối</th>
+                            <th className="px-3 py-2">Số lớp</th>
+                            <th className="px-3 py-2">Học sinh</th>
+                            <th className="px-3 py-2">Tiết song ngữ</th>
+                            <th className="px-3 py-2">Đề ≥ 10% EN</th>
+                            <th className="px-3 py-2">Đề ≥ 50% EN</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {report.grade_breakdown.map((row) => (
+                            <tr key={row.grade} className="hover:bg-sky-50/40">
+                              <td className="px-3 py-2 font-extrabold text-indigo-800">
+                                Khối {row.grade}
+                              </td>
+                              <td className="px-3 py-2 font-semibold text-slate-800">
+                                {row.classrooms_count}
+                              </td>
+                              <td className="px-3 py-2 text-slate-700">{row.students_count}</td>
+                              <td className="px-3 py-2 font-semibold text-teal-800">
+                                {row.periods_logged} tiết ({row.english_minutes}p)
+                              </td>
+                              <td className="px-3 py-2 font-bold text-amber-700">
+                                {row.exams_meeting_10_pct}/{row.exams_count}
+                              </td>
+                              <td className="px-3 py-2 font-bold text-emerald-700">
+                                {row.exams_meeting_50_pct}/{row.exams_count}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
 
                 {report.next_level_gaps.length > 0 && (
                   <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-4">
