@@ -20,6 +20,10 @@ from app.modules.learning.schemas import (
     SRSDueResponse,
     SRSReviewRequest,
     SRSReviewResultOut,
+    StudentPetActionOut,
+    StudentPetFeedRequest,
+    StudentPetStateOut,
+    StudentPetUpdateRequest,
 )
 from app.modules.learning.service import LearningService
 
@@ -107,3 +111,41 @@ def record_game_reward(
 ) -> GameRewardOut:
     """Award bounded XP and milestone badges upon completing a mini-game round."""
     return LearningService(db).record_game_reward(current_user, payload)
+
+
+@router.get("/learning/pet/me", response_model=StudentPetStateOut)
+def get_my_pet(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> StudentPetStateOut:
+    """Return personalized SciPet state synced with XP, level, and discipline mastery."""
+    return LearningService(db).get_my_pet(current_user)
+
+
+@router.patch("/learning/pet/me", response_model=StudentPetStateOut)
+def update_my_pet(
+    payload: StudentPetUpdateRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> StudentPetStateOut:
+    """Customize companion species, nickname, or equipped unlocked accessories/habitats."""
+    return LearningService(db).update_my_pet(current_user, payload)
+
+
+@router.post("/learning/pet/feed", response_model=StudentPetActionOut)
+def feed_my_pet(
+    payload: StudentPetFeedRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> StudentPetActionOut:
+    """Feed one earned Science Treat to the user's SciPet."""
+    return LearningService(db).feed_my_pet(current_user, payload)
+
+
+@router.post("/learning/pet/pet", response_model=StudentPetActionOut)
+def pet_my_pet(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> StudentPetActionOut:
+    """Give affection to the user's SciPet and return a cheerful response."""
+    return LearningService(db).pet_my_pet(current_user)

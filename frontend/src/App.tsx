@@ -23,6 +23,7 @@ import { LessonDetailPage } from "./features/curriculum/LessonDetailPage";
 import { type ArenaTab, GameArenaPage } from "./features/games/GameArenaPage";
 import { LearningHubPage, type LearningSubTab } from "./features/learning/LearningHubPage";
 import { TeacherStudioPage } from "./features/lms/TeacherStudioPage";
+import { SciPetWidget } from "./features/pet/SciPetWidget";
 import { StudyPack16Page } from "./features/study_pack/StudyPack16Page";
 import {
   VALID_GRADES,
@@ -425,6 +426,8 @@ export function App() {
             </div>
           </div>
         </footer>
+
+        <SciPetWidget session={session} grade={selectedGrade} />
       </div>
     </MotionConfig>
   );

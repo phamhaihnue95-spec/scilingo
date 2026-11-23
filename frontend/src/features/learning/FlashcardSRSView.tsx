@@ -12,6 +12,7 @@ import {
 import { LottieSticker } from "../../components/visuals/ScienceVisuals";
 import { fireSuccessSpark, fireVictoryCelebration } from "../../utils/confetti";
 import { GRADE_LESSON_COUNTS } from "../../utils/grades";
+import { emitPetCelebration } from "../../utils/petEvents";
 import {
   playCelebrationSound,
   playClickSound,
@@ -102,6 +103,16 @@ export function FlashcardSRSView({ grade = 8, lessonNo, onProgressUpdated }: Pro
         if (nextCombo >= 3) {
           fireSuccessSpark();
         }
+        emitPetCelebration({
+          source: "srs",
+          xpEarned: res.xp_earned,
+          discipline: currentCard.discipline,
+          messageVi: wasLastCard
+            ? "Hoàn thành hàng đợi Flashcard hôm nay!"
+            : nextCombo >= 3
+              ? `Combo Flashcard x${nextCombo}! Đỉnh quá!`
+              : undefined,
+        });
       } else {
         setCombo(0);
         playWrongSound();

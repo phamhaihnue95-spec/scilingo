@@ -604,6 +604,65 @@ export interface LeaderboardEntry {
   scidex_count: number;
   badges: string[];
   avg_assignment_score: number | null;
+  pet_species?: PetSpecies | string | null;
+  pet_nickname?: string | null;
+  pet_stage?: number | null;
+  pet_accessory?: string | null;
+}
+
+export type PetSpecies = "owl" | "fox" | "cat";
+export type PetHabitat = "lab" | "cosmos" | "forest" | "atom";
+export type PetTreatType = "h2o" | "glucose" | "photon";
+export type PetMood = "ecstatic" | "happy" | "sleepy";
+
+export interface PetAccessoryCatalogItem {
+  id: string;
+  name_vi: string;
+  icon: string;
+  unlock_hint_vi: string;
+  unlocked: boolean;
+}
+
+export interface PetHabitatCatalogItem {
+  id: string;
+  name_vi: string;
+  icon: string;
+  unlock_hint_vi: string;
+  unlocked: boolean;
+}
+
+export interface StudentPetState {
+  student_id: string;
+  species: PetSpecies;
+  species_name_vi: string;
+  nickname: string;
+  level: number;
+  total_xp: number;
+  current_streak: number;
+  stage: number;
+  stage_label_vi: string;
+  stage_label_en: string;
+  next_evolution_level: number | null;
+  xp_to_next_level: number;
+  energy: number;
+  mood: PetMood;
+  treat_points_available: number;
+  total_treats_earned: number;
+  fed_count: number;
+  petted_count: number;
+  equipped_accessory: string | null;
+  equipped_habitat: PetHabitat;
+  unlocked_accessories: string[];
+  unlocked_habitats: string[];
+  accessories_catalog: PetAccessoryCatalogItem[];
+  habitats_catalog: PetHabitatCatalogItem[];
+  last_fed_at: string | null;
+}
+
+export interface StudentPetActionResult {
+  pet: StudentPetState;
+  reaction_vi: string;
+  reaction_en: string;
 }
 
 export interface ClassroomLeaderboard {

@@ -45,7 +45,17 @@ export type Icon3DName =
   | "gem_stone"
   | "microbe"
   | "gear"
-  | "party_popper";
+  | "party_popper"
+  | "egg"
+  | "hatching_chick"
+  | "fox"
+  | "cat_face"
+  | "cat"
+  | "goggles"
+  | "droplet"
+  | "candy"
+  | "sparkling_heart"
+  | "zzz";
 
 export type LottieName =
   | "rocket"
@@ -58,7 +68,13 @@ export type LottieName =
   | "star_glow"
   | "owl"
   | "seedling"
-  | "gear";
+  | "gear"
+  | "fox"
+  | "cat_face"
+  | "cat_heart_eyes"
+  | "hatching_chick"
+  | "sparkling_heart"
+  | "droplet";
 
 export type BioDiagramName =
   | "beaker_stir"
@@ -126,6 +142,12 @@ const LOTTIE_DEFAULT_FALLBACK: Record<LottieName, Icon3DName> = {
   owl: "owl",
   seedling: "seedling",
   gear: "gear",
+  fox: "fox",
+  cat_face: "cat_face",
+  cat_heart_eyes: "cat_face",
+  hatching_chick: "hatching_chick",
+  sparkling_heart: "sparkling_heart",
+  droplet: "droplet",
 };
 
 interface Icon3DProps {

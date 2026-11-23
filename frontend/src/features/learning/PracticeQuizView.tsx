@@ -11,6 +11,7 @@ import {
 import { LottieSticker } from "../../components/visuals/ScienceVisuals";
 import { fireVictoryCelebration } from "../../utils/confetti";
 import { GRADE_LESSON_COUNTS } from "../../utils/grades";
+import { emitPetCelebration } from "../../utils/petEvents";
 import {
   playCelebrationSound,
   playClickSound,
@@ -115,6 +116,14 @@ export function PracticeQuizView({ grade = 8, initialLessonNo = 8, onProgressUpd
       const graded = await api.submitPractice(session.attempt_id, payload);
       setResult(graded);
       onProgressUpdated();
+      emitPetCelebration({
+        source: "quiz",
+        xpEarned: graded.xp_earned,
+        messageVi:
+          graded.score >= 7
+            ? `Đạt ${graded.score}/10 điểm Quiz! Tuyệt vời!`
+            : `Hoàn thành bài Quiz (+${graded.xp_earned} XP)!`,
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Không thể nộp bài.");
     } finally {

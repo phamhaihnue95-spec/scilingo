@@ -10,7 +10,23 @@ from sqlalchemy.orm import Session
 
 from app.modules.curriculum.service import CurriculumService
 from app.modules.identity_billing.models import User
-from app.modules.learning.models import SRSCard, StudentPracticeAttempt
+from app.modules.learning.models import (
+    SRSCard,
+    StudentGamification,
+    StudentPet,
+    StudentPracticeAttempt,
+)
+from app.modules.learning.pet_engine import (
+    PET_SPECIES_META,
+    build_unlock_stats,
+    compute_evolution_stage,
+    compute_pet_energy_and_mood,
+    compute_treat_budget,
+    evaluate_accessories,
+    evaluate_habitats,
+    get_petting_reaction,
+    get_treat_reaction,
+)
 from app.modules.learning.quiz_builder import build_lesson_quiz
 from app.modules.learning.repository import LearningRepository
 from app.modules.learning.schemas import (
@@ -20,6 +36,8 @@ from app.modules.learning.schemas import (
     LessonMindmapOut,
     MindmapEdgeOut,
     MindmapNodeOut,
+    PetAccessoryCatalogItemOut,
+    PetHabitatCatalogItemOut,
     PracticeHistoryItemOut,
     PracticeResultOut,
     PracticeSessionOut,
@@ -31,6 +49,10 @@ from app.modules.learning.schemas import (
     SRSDueResponse,
     SRSReviewRequest,
     SRSReviewResultOut,
+    StudentPetActionOut,
+    StudentPetFeedRequest,
+    StudentPetStateOut,
+    StudentPetUpdateRequest,
 )
 from app.modules.learning.srs import (
     compute_level,
@@ -535,3 +557,234 @@ class LearningService:
             }
             for row in rows
         }
+
+    # --- SciPet Companion Engine ---
+    def _build_pet_state(
+        self,
+        *,
+        student_id: str,
+        pet: StudentPet,
+        profile: StudentGamification,
+        mastered_count: int,
+    ) -> StudentPetStateOut:
+        level = compute_level(profile.total_xp)
+        next_level_xp = level * 100
+        xp_to_next = max(0, next_level_xp - profile.total_xp)
+        stage, stage_vi, stage_en, next_evo_level = compute_evolution_stage(level)
+
+        badges = list(profile.badges_json or [])
+        discipline_xp = dict(profile.discipline_xp_json or {})
+        unlock_stats = build_unlock_stats(
+            level=level,
+            total_xp=profile.total_xp,
+            longest_streak=profile.longest_streak,
+            cards_mastered=mastered_count,
+            badges=badges,
+            discipline_xp=discipline_xp,
+        )
+        unlocked_acc, acc_catalog = evaluate_accessories(unlock_stats)
+        unlocked_hab, hab_catalog = evaluate_habitats(unlock_stats)
+
+        energy, mood = compute_pet_energy_and_mood(
+            last_fed_at=pet.last_fed_at,
+            last_petted_at=pet.last_petted_at,
+            last_study_date=profile.last_study_date,
+            current_streak=profile.current_streak,
+        )
+        available_treats, total_treats = compute_treat_budget(
+            total_xp=profile.total_xp,
+            cards_mastered=mastered_count,
+            fed_count=pet.fed_count,
+        )
+
+        species_key = pet.species if pet.species in PET_SPECIES_META else "owl"
+        species_meta = PET_SPECIES_META[species_key]
+
+        return StudentPetStateOut(
+            student_id=student_id,
+            species=species_key,  # type: ignore[arg-type]
+            species_name_vi=species_meta["name_vi"],
+            nickname=pet.nickname,
+            level=level,
+            total_xp=profile.total_xp,
+            current_streak=profile.current_streak,
+            stage=stage,
+            stage_label_vi=stage_vi,
+            stage_label_en=stage_en,
+            next_evolution_level=next_evo_level,
+            xp_to_next_level=xp_to_next,
+            energy=energy,
+            mood=mood,  # type: ignore[arg-type]
+            treat_points_available=available_treats,
+            total_treats_earned=total_treats,
+            fed_count=pet.fed_count,
+            petted_count=pet.petted_count,
+            equipped_accessory=(
+                pet.equipped_accessory if pet.equipped_accessory in unlocked_acc else None
+            ),
+            equipped_habitat=(
+                pet.equipped_habitat  # type: ignore[arg-type]
+                if pet.equipped_habitat in unlocked_hab
+                else "lab"
+            ),
+            unlocked_accessories=unlocked_acc,
+            unlocked_habitats=unlocked_hab,
+            accessories_catalog=[PetAccessoryCatalogItemOut(**item) for item in acc_catalog],
+            habitats_catalog=[PetHabitatCatalogItemOut(**item) for item in hab_catalog],
+            last_fed_at=_as_utc(pet.last_fed_at) if pet.last_fed_at else None,
+        )
+
+    def get_my_pet(self, student: User) -> StudentPetStateOut:
+        """Return personalized SciPet state synced with the user's gamification progress."""
+        pet = self.repo.get_or_create_pet(student.id)
+        profile = self.repo.get_or_create_gamification(student.id)
+        mastered, _ = self.repo.count_srs_stats(student.id)
+        self.db.commit()
+        return self._build_pet_state(
+            student_id=student.id,
+            pet=pet,
+            profile=profile,
+            mastered_count=mastered,
+        )
+
+    def update_my_pet(
+        self, student: User, payload: StudentPetUpdateRequest
+    ) -> StudentPetStateOut:
+        """Customize SciPet species, nickname, or unlocked wardrobe items."""
+        pet = self.repo.get_or_create_pet(student.id)
+        profile = self.repo.get_or_create_gamification(student.id)
+        mastered, _ = self.repo.count_srs_stats(student.id)
+
+        state = self._build_pet_state(
+            student_id=student.id,
+            pet=pet,
+            profile=profile,
+            mastered_count=mastered,
+        )
+
+        if payload.species is not None:
+            default_names = {meta["default_nickname"] for meta in PET_SPECIES_META.values()}
+            if payload.nickname is None and pet.nickname in default_names:
+                pet.nickname = PET_SPECIES_META[payload.species]["default_nickname"]
+            pet.species = payload.species
+
+        if payload.nickname is not None:
+            cleaned = " ".join(payload.nickname.split())
+            if not cleaned:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail="Tên thú cưng không được để trống.",
+                )
+            pet.nickname = cleaned[:24]
+
+        if payload.clear_accessory:
+            pet.equipped_accessory = None
+        elif payload.equipped_accessory is not None:
+            if payload.equipped_accessory not in state.unlocked_accessories:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Phụ kiện này chưa được mở khóa theo tiến độ học của bạn.",
+                )
+            pet.equipped_accessory = payload.equipped_accessory
+
+        if payload.equipped_habitat is not None:
+            if payload.equipped_habitat not in state.unlocked_habitats:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Không gian sống này chưa được mở khóa theo tiến độ học của bạn.",
+                )
+            pet.equipped_habitat = payload.equipped_habitat
+
+        self.db.commit()
+        self.db.refresh(pet)
+        return self._build_pet_state(
+            student_id=student.id,
+            pet=pet,
+            profile=profile,
+            mastered_count=mastered,
+        )
+
+    def feed_my_pet(self, student: User, payload: StudentPetFeedRequest) -> StudentPetActionOut:
+        """Feed one earned Science Treat to the user's SciPet and return a bilingual reaction."""
+        pet = self.repo.get_or_create_pet(student.id)
+        profile = self.repo.get_or_create_gamification(student.id)
+        mastered, _ = self.repo.count_srs_stats(student.id)
+
+        available, _ = compute_treat_budget(
+            total_xp=profile.total_xp,
+            cards_mastered=mastered,
+            fed_count=pet.fed_count,
+        )
+        if available <= 0:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Bạn đã dùng hết Hạt Năng Lượng. Ôn thêm Flashcard/Quiz để nhận thêm nhé!",
+            )
+
+        pet.fed_count += 1
+        pet.last_fed_at = datetime.now(UTC)
+        self.db.commit()
+        self.db.refresh(pet)
+
+        updated_state = self._build_pet_state(
+            student_id=student.id,
+            pet=pet,
+            profile=profile,
+            mastered_count=mastered,
+        )
+        reaction_vi, reaction_en = get_treat_reaction(
+            treat=payload.treat,
+            species=pet.species,
+            nickname=pet.nickname,
+            fed_count=pet.fed_count,
+        )
+        return StudentPetActionOut(
+            pet=updated_state,
+            reaction_vi=reaction_vi,
+            reaction_en=reaction_en,
+        )
+
+    def pet_my_pet(self, student: User) -> StudentPetActionOut:
+        """Record an affectionate pat/interaction with the user's SciPet."""
+        pet = self.repo.get_or_create_pet(student.id)
+        profile = self.repo.get_or_create_gamification(student.id)
+        mastered, _ = self.repo.count_srs_stats(student.id)
+
+        pet.petted_count += 1
+        pet.last_petted_at = datetime.now(UTC)
+        self.db.commit()
+        self.db.refresh(pet)
+
+        updated_state = self._build_pet_state(
+            student_id=student.id,
+            pet=pet,
+            profile=profile,
+            mastered_count=mastered,
+        )
+        reaction_vi, reaction_en = get_petting_reaction(
+            species=pet.species,
+            nickname=pet.nickname,
+            petted_count=pet.petted_count,
+        )
+        return StudentPetActionOut(
+            pet=updated_state,
+            reaction_vi=reaction_vi,
+            reaction_en=reaction_en,
+        )
+
+    def get_students_pet_map(
+        self, student_ids: list[str], gamif_map: dict[str, dict[str, Any]]
+    ) -> dict[str, dict[str, Any]]:
+        """Read-only SciPet summary lookup exposed for Unit 3 classroom leaderboards."""
+        rows = self.repo.list_pets_for_students(student_ids)
+        result: dict[str, dict[str, Any]] = {}
+        for row in rows:
+            lvl = int(gamif_map.get(row.student_id, {}).get("level", 1))
+            stage, _, _, _ = compute_evolution_stage(lvl)
+            result[row.student_id] = {
+                "species": row.species,
+                "nickname": row.nickname,
+                "stage": stage,
+                "accessory": row.equipped_accessory,
+            }
+        return result

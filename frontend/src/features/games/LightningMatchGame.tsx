@@ -29,6 +29,7 @@ import {
 import { LottieSticker } from "../../components/visuals/ScienceVisuals";
 import { fireSuccessSpark, fireVictoryCelebration } from "../../utils/confetti";
 import { GRADE_INFO, VALID_GRADES } from "../../utils/grades";
+import { emitPetCelebration, emitPetFocusMode } from "../../utils/petEvents";
 import { unlockLocalSciDexUnit } from "../../utils/scidex";
 import {
   playCelebrationSound,
@@ -180,11 +181,13 @@ export function LightningMatchGame({
   useEffect(() => {
     const playing = phase === "playing";
     onPlayingChange?.(playing);
+    emitPetFocusMode(playing);
     if (playing) {
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
     return () => {
       onPlayingChange?.(false);
+      emitPetFocusMode(false);
     };
   }, [phase, onPlayingChange]);
 
@@ -291,7 +294,16 @@ export function LightningMatchGame({
       unlockLocalSciDexUnit(selectedUnit);
     }
 
-    if (!session || totalAttempts === 0) return;
+    if (!session || totalAttempts === 0) {
+      if (!session && matchedTotal > 0) {
+        emitPetCelebration({
+          source: "lightning",
+          xpEarned: Math.min(50, matchedTotal * 5),
+          messageVi: `Nối được ${matchedTotal} cặp trong Chớp Nhoáng 60s!`,
+        });
+      }
+      return;
+    }
 
     const unitDiscipline: Discipline =
       sourceMode === "study_pack" && selectedUnit !== "all"
@@ -311,6 +323,12 @@ export function LightningMatchGame({
       .then((res) => {
         setRewardResult(res);
         onRewardRecorded?.();
+        emitPetCelebration({
+          source: "lightning",
+          xpEarned: res.xp_earned,
+          discipline: unitDiscipline,
+          messageVi: `Nối ${matchedTotal} cặp thành công (+${res.xp_earned} XP)!`,
+        });
       })
       .catch(() => {
         // Silently ignore if auth session expired

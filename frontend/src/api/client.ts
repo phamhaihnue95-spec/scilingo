@@ -19,12 +19,17 @@ import type {
   GradeOverview,
   LessonDetail,
   LessonMindmap,
+  PetHabitat,
+  PetSpecies,
+  PetTreatType,
   PracticeMode,
   PracticeResult,
   PracticeSession,
   QuestionBankItem,
   SRSDueResponse,
   SRSReviewResult,
+  StudentPetActionResult,
+  StudentPetState,
   StudyPackOverview,
   StudyPackQuiz,
   StudyPackSearchResponse,
@@ -245,6 +250,36 @@ export const api = {
     return request<GameRewardResult>("/learning/games/reward", {
       method: "POST",
       body: JSON.stringify(payload),
+    });
+  },
+
+  getMyPet(): Promise<StudentPetState> {
+    return request<StudentPetState>("/learning/pet/me");
+  },
+
+  updateMyPet(payload: {
+    species?: PetSpecies;
+    nickname?: string;
+    equipped_accessory?: string | null;
+    clear_accessory?: boolean;
+    equipped_habitat?: PetHabitat;
+  }): Promise<StudentPetState> {
+    return request<StudentPetState>("/learning/pet/me", {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  feedMyPet(treat: PetTreatType): Promise<StudentPetActionResult> {
+    return request<StudentPetActionResult>("/learning/pet/feed", {
+      method: "POST",
+      body: JSON.stringify({ treat }),
+    });
+  },
+
+  petMyPet(): Promise<StudentPetActionResult> {
+    return request<StudentPetActionResult>("/learning/pet/pet", {
+      method: "POST",
     });
   },
 

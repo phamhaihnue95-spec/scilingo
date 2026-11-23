@@ -9,6 +9,10 @@ from pydantic import BaseModel, Field
 
 PracticeMode = Literal["quiz_10", "quiz_50", "quiz_100"]
 GameType = Literal["lightning_match", "iupac_lab", "sequence_lab"]
+PetSpecies = Literal["owl", "fox", "cat"]
+PetHabitat = Literal["lab", "cosmos", "forest", "atom"]
+PetTreatType = Literal["h2o", "glucose", "photon"]
+PetMood = Literal["ecstatic", "happy", "sleepy"]
 
 
 class SRSDueCardOut(BaseModel):
@@ -230,3 +234,77 @@ class GameRewardOut(BaseModel):
     level: int
     current_streak: int
     newly_unlocked_badges: list[str]
+
+
+class PetAccessoryCatalogItemOut(BaseModel):
+    """Unlockable SciPet science accessory item."""
+
+    id: str
+    name_vi: str
+    icon: str
+    unlock_hint_vi: str
+    unlocked: bool
+
+
+class PetHabitatCatalogItemOut(BaseModel):
+    """Unlockable SciPet habitat island item."""
+
+    id: str
+    name_vi: str
+    icon: str
+    unlock_hint_vi: str
+    unlocked: bool
+
+
+class StudentPetStateOut(BaseModel):
+    """Full personalized SciPet companion state synchronized with Unit 2 progress."""
+
+    student_id: str
+    species: PetSpecies
+    species_name_vi: str
+    nickname: str
+    level: int
+    total_xp: int
+    current_streak: int
+    stage: int
+    stage_label_vi: str
+    stage_label_en: str
+    next_evolution_level: int | None = None
+    xp_to_next_level: int
+    energy: int
+    mood: PetMood
+    treat_points_available: int
+    total_treats_earned: int
+    fed_count: int
+    petted_count: int
+    equipped_accessory: str | None = None
+    equipped_habitat: PetHabitat
+    unlocked_accessories: list[str]
+    unlocked_habitats: list[str]
+    accessories_catalog: list[PetAccessoryCatalogItemOut]
+    habitats_catalog: list[PetHabitatCatalogItemOut]
+    last_fed_at: datetime | None = None
+
+
+class StudentPetUpdateRequest(BaseModel):
+    """Request to customize pet species, nickname, accessory, or habitat."""
+
+    species: PetSpecies | None = None
+    nickname: str | None = Field(default=None, min_length=1, max_length=24)
+    equipped_accessory: str | None = None
+    clear_accessory: bool = False
+    equipped_habitat: PetHabitat | None = None
+
+
+class StudentPetFeedRequest(BaseModel):
+    """Request to feed the companion pet one earned Science Treat."""
+
+    treat: PetTreatType
+
+
+class StudentPetActionOut(BaseModel):
+    """Updated pet state alongside a bilingual scientific reaction."""
+
+    pet: StudentPetStateOut
+    reaction_vi: str
+    reaction_en: str

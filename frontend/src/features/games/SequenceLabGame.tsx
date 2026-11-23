@@ -25,6 +25,7 @@ import {
 } from "../../components/motion/MotionPrimitives";
 import { Icon3D, LottieSticker } from "../../components/visuals/ScienceVisuals";
 import { fireSuccessSpark, fireVictoryCelebration } from "../../utils/confetti";
+import { emitPetCelebration } from "../../utils/petEvents";
 import { playCelebrationSound, playClickSound, playSuccessSound, playWrongSound } from "../../utils/soundFx";
 
 interface SequenceStep {
@@ -501,19 +502,36 @@ export function SequenceLabGame({ session, grade = 8, onRewardRecorded }: Props)
       playSuccessSound(1);
     }
 
-    if (!session) return;
+    if (!session) {
+      if (correctRounds > 0) {
+        emitPetCelebration({
+          source: "sequence",
+          xpEarned: Math.min(50, correctRounds * 10),
+          discipline: pack === "chem_general" ? "chemistry" : "biology",
+          messageVi: `Hoàn thành ${correctRounds} chuỗi quy trình KHTN!`,
+        });
+      }
+      return;
+    }
 
+    const disc: Discipline = pack === "chem_general" ? "chemistry" : "biology";
     api
       .recordGameReward({
         game_type: "sequence_lab",
         correct_count: correctRounds,
         total_attempts: Math.max(correctRounds, totalChecks, 1),
         max_combo: maxCombo,
-        discipline: pack === "chem_general" ? "chemistry" : "biology",
+        discipline: disc,
       })
       .then((res) => {
         setRewardResult(res);
         onRewardRecorded?.();
+        emitPetCelebration({
+          source: "sequence",
+          xpEarned: res.xp_earned,
+          discipline: disc,
+          messageVi: `Xếp chuẩn ${correctRounds} dây chuyền (+${res.xp_earned} XP)!`,
+        });
       })
       .catch(() => {
         // Offline or network hiccup keeps game result visible without crash

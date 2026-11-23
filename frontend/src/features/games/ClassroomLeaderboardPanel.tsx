@@ -3,6 +3,7 @@ import { Award, Flame, Sparkles, Trophy } from "lucide-react";
 
 import type { ClassroomLeaderboard } from "../../api/types";
 import { Icon3D, LottieSticker } from "../../components/visuals/ScienceVisuals";
+import { SciPetAvatar } from "../pet/SciPetAvatar";
 
 interface Props {
   leaderboard: ClassroomLeaderboard | null;
@@ -116,6 +117,20 @@ export function ClassroomLeaderboardPanel({
                 <div className="mt-1 text-2xl font-black text-indigo-700">
                   {entry.total_xp} <span className="text-xs font-bold">XP</span>
                 </div>
+                {entry.pet_species && (
+                  <div className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-indigo-100 bg-white/90 px-2.5 py-0.5 text-[11px] font-bold text-slate-700 shadow-sm">
+                    <SciPetAvatar
+                      species={entry.pet_species}
+                      stage={entry.pet_stage ?? 1}
+                      accessory={entry.pet_accessory}
+                      size="xs"
+                      animated={false}
+                    />
+                    <span className="max-w-[90px] truncate">
+                      {entry.pet_nickname ?? "SciPet"}
+                    </span>
+                  </div>
+                )}
                 <div className="mt-2 flex flex-wrap justify-center gap-2 text-xs font-bold text-slate-600">
                   <span>Lv.{entry.level}</span>
                   <span className="inline-flex items-center gap-0.5 text-orange-600">
@@ -181,12 +196,28 @@ export function ClassroomLeaderboardPanel({
                       </span>
                     </td>
                     <td className="px-3.5 py-2.5 font-bold text-slate-900">
-                      {entry.student_name}
-                      {isMe && (
-                        <span className="ml-2 rounded-full bg-indigo-600 px-2 py-0.5 text-[10px] font-extrabold text-white">
-                          Bạn
-                        </span>
-                      )}
+                      <div className="flex items-center gap-2">
+                        {entry.pet_species && (
+                          <span
+                            title={`${entry.pet_nickname ?? "SciPet"} · Giai đoạn ${entry.pet_stage ?? 1}/5`}
+                            className="shrink-0"
+                          >
+                            <SciPetAvatar
+                              species={entry.pet_species}
+                              stage={entry.pet_stage ?? 1}
+                              accessory={entry.pet_accessory}
+                              size="xs"
+                              animated={false}
+                            />
+                          </span>
+                        )}
+                        <span>{entry.student_name}</span>
+                        {isMe && (
+                          <span className="rounded-full bg-indigo-600 px-2 py-0.5 text-[10px] font-extrabold text-white">
+                            Bạn
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-3.5 py-2.5 text-xs">
                       <span className="font-extrabold text-indigo-700">{entry.total_xp} XP</span>{" "}

@@ -212,6 +212,7 @@ class LMSService:
         member_ids = [m.student_id for m in classroom.members]
         names_map = self.identity.get_user_names_map(member_ids)
         gamif_map = self.learning.get_students_gamification_map(member_ids)
+        pet_map = self.learning.get_students_pet_map(member_ids, gamif_map)
 
         sub_scores: dict[str, list[float]] = {}
         for sub, _ in self.repo.list_submissions_for_classroom(classroom.id):
@@ -220,6 +221,7 @@ class LMSService:
         raw_entries: list[LeaderboardEntryOut] = []
         for sid in member_ids:
             stats = gamif_map.get(sid, {})
+            pet_info = pet_map.get(sid, {})
             badges = list(stats.get("badges", []))
             scidex_count = sum(1 for b in badges if str(b).startswith("SciDex: Unit "))
             scores = sub_scores.get(sid, [])
@@ -236,6 +238,10 @@ class LMSService:
                     scidex_count=scidex_count,
                     badges=badges,
                     avg_assignment_score=avg_score,
+                    pet_species=pet_info.get("species"),
+                    pet_nickname=pet_info.get("nickname"),
+                    pet_stage=pet_info.get("stage"),
+                    pet_accessory=pet_info.get("accessory"),
                 )
             )
 

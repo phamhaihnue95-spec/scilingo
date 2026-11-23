@@ -113,3 +113,14 @@ export function playCelebrationSound(): void {
     });
   });
 }
+
+export function playPetPurrSound(): void {
+  playTone(587.33, 0.08, { type: "sine", gain: 0.06, endFreq: 740 });
+  playTone(880, 0.14, { type: "sine", gain: 0.06, delaySec: 0.07, endFreq: 1046.5 });
+}
+
+export function playPetFeedSound(): void {
+  playTone(440, 0.08, { type: "triangle", gain: 0.065, endFreq: 554.37 });
+  playTone(554.37, 0.08, { type: "triangle", gain: 0.065, delaySec: 0.07, endFreq: 659.25 });
+  playTone(880, 0.16, { type: "triangle", gain: 0.07, delaySec: 0.14 });
+}

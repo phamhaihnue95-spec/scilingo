@@ -109,3 +109,28 @@ class StudentGamification(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_utcnow, onupdate=_utcnow
     )
+
+
+class StudentPet(Base):
+    """Evolving KHTN companion pet state persisted per user."""
+
+    __tablename__ = "student_pets"
+    __table_args__ = {"schema": "learning"}
+
+    student_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("identity_billing.users.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    species: Mapped[str] = mapped_column(String(16), nullable=False, default="owl")
+    nickname: Mapped[str] = mapped_column(String(40), nullable=False, default="Lumo")
+    equipped_accessory: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    equipped_habitat: Mapped[str] = mapped_column(String(24), nullable=False, default="lab")
+    fed_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    petted_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    last_fed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_petted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow, onupdate=_utcnow
+    )

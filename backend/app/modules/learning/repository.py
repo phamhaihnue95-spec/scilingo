@@ -7,7 +7,12 @@ from datetime import UTC, datetime
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.modules.learning.models import SRSCard, StudentGamification, StudentPracticeAttempt
+from app.modules.learning.models import (
+    SRSCard,
+    StudentGamification,
+    StudentPet,
+    StudentPracticeAttempt,
+)
 
 
 class LearningRepository:
@@ -104,3 +109,27 @@ class LearningRepository:
             if review_at <= now:
                 due += 1
         return mastered, due
+
+    def get_or_create_pet(self, student_id: str) -> StudentPet:
+        pet = self.db.scalar(
+            select(StudentPet).where(StudentPet.student_id == student_id)
+        )
+        if pet is None:
+            pet = StudentPet(
+                student_id=student_id,
+                species="owl",
+                nickname="Lumo",
+                equipped_accessory=None,
+                equipped_habitat="lab",
+                fed_count=0,
+                petted_count=0,
+            )
+            self.db.add(pet)
+            self.db.flush()
+        return pet
+
+    def list_pets_for_students(self, student_ids: list[str]) -> list[StudentPet]:
+        if not student_ids:
+            return []
+        stmt = select(StudentPet).where(StudentPet.student_id.in_(student_ids))
+        return list(self.db.scalars(stmt).all())

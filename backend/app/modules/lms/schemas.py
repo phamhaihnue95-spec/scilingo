@@ -357,6 +357,10 @@ class LeaderboardEntryOut(BaseModel):
     scidex_count: int
     badges: list[str]
     avg_assignment_score: float | None = None
+    pet_species: str | None = None
+    pet_nickname: str | None = None
+    pet_stage: int | None = None
+    pet_accessory: str | None = None
 
 
 class ClassroomLeaderboardOut(BaseModel):

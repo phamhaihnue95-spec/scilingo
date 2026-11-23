@@ -37,6 +37,7 @@ import {
 } from "../../components/motion/MotionPrimitives";
 import { Icon3D, STUDY_PACK_UNIT_3D_ICON } from "../../components/visuals/ScienceVisuals";
 import { fireSuccessSpark, fireVictoryCelebration } from "../../utils/confetti";
+import { emitPetCelebration } from "../../utils/petEvents";
 import { unlockLocalSciDexUnit } from "../../utils/scidex";
 import {
   playCelebrationSound,
@@ -247,6 +248,12 @@ export function StudyPack16Page({
     } else {
       playSuccessSound(1);
     }
+    emitPetCelebration({
+      source: "study_pack",
+      xpEarned: rounded >= 7 ? 35 : 15,
+      discipline: unitDetail?.unit.discipline ?? "physics",
+      messageVi: `Hoàn thành Quiz 16 Units: ${rounded}/10 điểm!`,
+    });
   };
 
   const handleToggleQuizUnit = (unitNo: number) => {

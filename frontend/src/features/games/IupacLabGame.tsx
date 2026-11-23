@@ -35,6 +35,7 @@ import {
 } from "../../components/motion/MotionPrimitives";
 import { BioDiagram, Icon3D, LottieSticker } from "../../components/visuals/ScienceVisuals";
 import { fireSuccessSpark, fireVictoryCelebration } from "../../utils/confetti";
+import { emitPetCelebration } from "../../utils/petEvents";
 import {
   playCelebrationSound,
   playClickSound,
@@ -390,7 +391,17 @@ export function IupacLabGame({ session, grade = 8, onRewardRecorded }: Props) {
         playSuccessSound(1);
       }
 
-      if (!session || rewardSentRef.current || finalAttempts === 0) return;
+      if (!session || rewardSentRef.current || finalAttempts === 0) {
+        if (!session && finalCorrect > 0) {
+          emitPetCelebration({
+            source: "iupac",
+            xpEarned: Math.min(50, finalCorrect * 5),
+            discipline: labMode === "formula_mixer" && mixerFilter === "physics" ? "physics" : "chemistry",
+            messageVi: `Phá bẫy IUPAC đúng ${finalCorrect}/${finalAttempts} câu!`,
+          });
+        }
+        return;
+      }
       rewardSentRef.current = true;
       const disc: Discipline =
         labMode === "formula_mixer" && mixerFilter === "physics" ? "physics" : "chemistry";
@@ -405,6 +416,12 @@ export function IupacLabGame({ session, grade = 8, onRewardRecorded }: Props) {
         .then((res) => {
           setRewardResult(res);
           onRewardRecorded?.();
+          emitPetCelebration({
+            source: "iupac",
+            xpEarned: res.xp_earned,
+            discipline: disc,
+            messageVi: `Nhận +${res.xp_earned} XP từ Phòng Pha Chế IUPAC!`,
+          });
         })
         .catch(() => {
           // Ignore expired session

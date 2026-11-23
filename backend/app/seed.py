@@ -16,7 +16,7 @@ from app.core.database import Base, get_engine, get_session_factory
 from app.core.security import hash_password
 from app.modules.curriculum.models import Chapter, Lesson, LessonTerm, Term
 from app.modules.identity_billing.models import Subscription, Tenant, User
-from app.modules.learning.models import StudentGamification
+from app.modules.learning.models import StudentGamification, StudentPet
 from app.modules.lms.models import (
     Classroom,
     ClassroomMember,
@@ -376,6 +376,32 @@ def seed_demo_lms(db: Session) -> None:
                         "physics": 70,
                         "biology": xp - 190,
                     },
+                )
+            )
+
+    # Seed starter SciPet companions ONLY for classmates Linh & Khoi
+    # (Keep an.hs8 clean for SciPet onboarding baseline tests)
+    classmate_pets = [
+        ("linh.hs8@demo.scilingo.vn", "fox", "Atom", "test_tube", "atom", 2, 4),
+        ("khoi.hs8@demo.scilingo.vn", "cat", "Neko", "magnet", "forest", 1, 3),
+    ]
+    for email, sp, nick, acc, hab, fed_c, pet_c in classmate_pets:
+        stu = db.scalar(select(User).where(User.email == email))
+        if stu is None:
+            continue
+        existing_pet = db.scalar(
+            select(StudentPet).where(StudentPet.student_id == stu.id)
+        )
+        if existing_pet is None:
+            db.add(
+                StudentPet(
+                    student_id=stu.id,
+                    species=sp,
+                    nickname=nick,
+                    equipped_accessory=acc,
+                    equipped_habitat=hab,
+                    fed_count=fed_c,
+                    petted_count=pet_c,
                 )
             )
 

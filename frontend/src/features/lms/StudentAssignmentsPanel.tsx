@@ -10,6 +10,7 @@ import type {
   SubmissionResult,
 } from "../../api/types";
 import { playClickSound } from "../../utils/soundFx";
+import { emitPetFocusMode } from "../../utils/petEvents";
 
 interface Props {
   onLaunchGameChallenge?: (
@@ -50,6 +51,11 @@ export function StudentAssignmentsPanel({ onLaunchGameChallenge }: Props) {
   useEffect(() => {
     loadAssignments();
   }, []);
+
+  useEffect(() => {
+    emitPetFocusMode(Boolean(taking));
+    return () => emitPetFocusMode(false);
+  }, [taking]);
 
   const handleJoin = async (e: React.FormEvent) => {
     e.preventDefault();
