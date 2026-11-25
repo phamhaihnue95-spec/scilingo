@@ -2,10 +2,18 @@
 
 from __future__ import annotations
 
+from datetime import datetime
+
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session, joinedload
 
-from app.modules.identity_billing.models import CmsAuditLog, Subscription, Tenant, User
+from app.modules.identity_billing.models import (
+    AccessEvent,
+    CmsAuditLog,
+    Subscription,
+    Tenant,
+    User,
+)
 
 
 class IdentityRepository:
@@ -28,7 +36,12 @@ class IdentityRepository:
         return self.db.scalar(select(Tenant).where(Tenant.id == tenant_id))
 
     def list_users_for_tenant(self, tenant_id: str) -> list[User]:
-        stmt = select(User).where(User.tenant_id == tenant_id).order_by(User.role, User.full_name)
+        stmt = (
+            select(User)
+            .options(joinedload(User.tenant))
+            .where(User.tenant_id == tenant_id)
+            .order_by(User.role, User.full_name)
+        )
         return list(self.db.scalars(stmt).all())
 
     def get_users_by_ids(self, user_ids: list[str]) -> dict[str, User]:
@@ -91,7 +104,7 @@ class IdentityRepository:
         q: str | None = None,
         is_active: bool | None = None,
     ) -> list[User]:
-        stmt = select(User)
+        stmt = select(User).options(joinedload(User.tenant))
         if tenant_id is not None:
             stmt = stmt.where(User.tenant_id == tenant_id)
         if role:
@@ -103,6 +116,10 @@ class IdentityRepository:
             stmt = stmt.where(or_(User.full_name.ilike(pattern), User.email.ilike(pattern)))
         stmt = stmt.order_by(User.created_at.desc(), User.full_name)
         return list(self.db.scalars(stmt).all())
+
+    def delete_user(self, user: User) -> None:
+        self.db.delete(user)
+        self.db.flush()
 
     def create_user_in_tenant(self, user: User) -> User:
         self.db.add(user)
@@ -146,4 +163,18 @@ class IdentityRepository:
         if entity_type:
             stmt = stmt.where(CmsAuditLog.entity_type == entity_type)
         stmt = stmt.order_by(CmsAuditLog.created_at.desc()).limit(limit)
+        return list(self.db.scalars(stmt).all())
+
+    def add_access_event(self, event: AccessEvent) -> AccessEvent:
+        self.db.add(event)
+        self.db.flush()
+        return event
+
+    def list_access_events_since(
+        self, *, since: datetime, tenant_id: str | None = None
+    ) -> list[AccessEvent]:
+        stmt = select(AccessEvent).where(AccessEvent.created_at >= since)
+        if tenant_id is not None:
+            stmt = stmt.where(AccessEvent.tenant_id == tenant_id)
+        stmt = stmt.order_by(AccessEvent.created_at.desc())
         return list(self.db.scalars(stmt).all())

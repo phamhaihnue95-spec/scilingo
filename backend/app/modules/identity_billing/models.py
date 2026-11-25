@@ -59,6 +59,8 @@ class User(Base):
     role: Mapped[str] = mapped_column(String(32), nullable=False, default="student")
     grade_level: Mapped[int | None] = mapped_column(Integer, nullable=True, default=8)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    login_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
 
     tenant: Mapped[Tenant] = relationship(back_populates="users")
@@ -114,6 +116,36 @@ class CmsAuditLog(Base):
     entity_id: Mapped[str] = mapped_column(String(64), nullable=False)
     summary: Mapped[str] = mapped_column(String(500), nullable=False)
     diff_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow, index=True
+    )
+
+
+class AccessEvent(Base):
+    """Lightweight traffic and authentication event log for CMS analytics."""
+
+    __tablename__ = "access_events"
+    __table_args__ = {"schema": "identity_billing"}
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_new_uuid)
+    visitor_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    user_id: Mapped[str | None] = mapped_column(
+        String(36),
+        ForeignKey("identity_billing.users.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    tenant_id: Mapped[str | None] = mapped_column(
+        String(36),
+        ForeignKey("identity_billing.tenants.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    event_type: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    path: Mapped[str] = mapped_column(String(160), nullable=False, default="/")
+    grade: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    device_type: Mapped[str] = mapped_column(String(16), nullable=False, default="desktop")
+    referrer: Mapped[str | None] = mapped_column(String(255), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_utcnow, index=True
     )

@@ -36,6 +36,10 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 30
     refresh_token_expire_days: int = 7
 
+    platform_admin_email: str = "phamhaihnue95@gmail.com"
+    platform_admin_password: str = "Hamberger23"
+    platform_admin_full_name: str = "Phạm Thị Hải (Quản trị hệ thống)"
+
     cors_origins: Annotated[list[str], NoDecode] = [
         "http://localhost:5173",
         "http://127.0.0.1:5173",

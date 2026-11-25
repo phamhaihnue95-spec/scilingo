@@ -59,6 +59,9 @@ class UserOut(BaseModel):
     role: str
     grade_level: int | None = None
     is_active: bool
+    last_login_at: datetime | None = None
+    login_count: int = 0
+    tenant_name: str | None = None
     created_at: datetime
 
 
@@ -199,4 +202,65 @@ class CmsOverviewOut(BaseModel):
     verified_questions: int
     total_resources: int
     total_teaching_periods: int
+    visits_today: int = 0
+    visits_7d: int = 0
     recent_audit_logs: list[CmsAuditLogOut] = Field(default_factory=list)
+
+
+class TrackEventRequest(BaseModel):
+    """Client page-view or activity event for anonymous or signed-in visitors."""
+
+    visitor_id: str = Field(min_length=4, max_length=64)
+    event_type: Literal["page_view", "lesson_view", "game_play", "cms_view"] = "page_view"
+    path: str = Field(default="/", max_length=160)
+    grade: int | None = Field(default=None, ge=6, le=9)
+    device_type: Literal["mobile", "tablet", "desktop"] = "desktop"
+    referrer: str | None = Field(default=None, max_length=255)
+
+
+class DailyTrafficPointOut(BaseModel):
+    """Single day bucket in the CMS traffic time-series chart."""
+
+    date: str
+    visits: int
+    unique_visitors: int
+    logins: int
+
+
+class TopPageTrafficOut(BaseModel):
+    """Most visited frontend routes/views."""
+
+    path: str
+    visits: int
+
+
+class RecentAccessEventOut(BaseModel):
+    """Recent access event enriched with actor info when authenticated."""
+
+    id: str
+    event_type: str
+    path: str
+    grade: int | None = None
+    device_type: str
+    visitor_id: str
+    user_email: str | None = None
+    user_name: str | None = None
+    user_role: str | None = None
+    created_at: datetime
+
+
+class CmsTrafficAnalyticsOut(BaseModel):
+    """Aggregated traffic, logins, device, and grade analytics for CMS."""
+
+    scope: Literal["platform", "school"]
+    days: int
+    total_visits: int
+    visits_today: int
+    unique_visitors: int
+    unique_logged_in_users: int
+    total_logins: int
+    daily_series: list[DailyTrafficPointOut]
+    top_pages: list[TopPageTrafficOut]
+    device_breakdown: dict[str, int]
+    grade_breakdown: dict[str, int]
+    recent_events: list[RecentAccessEventOut]

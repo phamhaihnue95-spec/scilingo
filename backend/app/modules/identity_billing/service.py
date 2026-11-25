@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import csv
 import io
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import jwt
@@ -18,7 +19,13 @@ from app.core.security import (
     hash_password,
     verify_password,
 )
-from app.modules.identity_billing.models import CmsAuditLog, Subscription, Tenant, User
+from app.modules.identity_billing.models import (
+    AccessEvent,
+    CmsAuditLog,
+    Subscription,
+    Tenant,
+    User,
+)
 from app.modules.identity_billing.repository import IdentityRepository
 from app.modules.identity_billing.schemas import (
     AuthSessionResponse,
@@ -27,16 +34,26 @@ from app.modules.identity_billing.schemas import (
     CmsTenantCreateRequest,
     CmsTenantDetailOut,
     CmsTenantUpdateRequest,
+    CmsTrafficAnalyticsOut,
     CmsUserCreateRequest,
     CmsUserCsvImportRequest,
     CmsUserCsvImportResult,
     CmsUserUpdateRequest,
+    DailyTrafficPointOut,
     EntitlementsOut,
     LoginRequest,
+    RecentAccessEventOut,
     RegisterRequest,
     TenantOut,
+    TopPageTrafficOut,
+    TrackEventRequest,
     UserOut,
 )
+
+
+def _as_utc(dt: datetime) -> datetime:
+    return dt.replace(tzinfo=UTC) if dt.tzinfo is None else dt.astimezone(UTC)
+
 
 PLAN_FEATURES: dict[str, list[str]] = {
     "free": [
@@ -97,13 +114,20 @@ class IdentityService:
     def __init__(self, db: Session) -> None:
         self.repo = IdentityRepository(db)
 
+    @staticmethod
+    def _to_user_out(user: User, tenant_name: str | None = None) -> UserOut:
+        resolved_tenant = tenant_name or (user.tenant.name if user.tenant else None)
+        base = UserOut.model_validate(user).model_dump()
+        base["tenant_name"] = resolved_tenant
+        return UserOut(**base)
+
     def _build_auth_response(self, user: User, tenant: Tenant) -> AuthSessionResponse:
         access_token = create_access_token(user.id, tenant.id, user.role)
         refresh_token = create_refresh_token(user.id, tenant.id)
         return AuthSessionResponse(
             access_token=access_token,
             refresh_token=refresh_token,
-            user=UserOut.model_validate(user),
+            user=self._to_user_out(user, tenant.name),
             tenant=TenantOut.model_validate(tenant),
         )
 
@@ -122,6 +146,22 @@ class IdentityService:
             role=payload.role,
             grade_level=payload.grade_level,
         )
+        now = datetime.now(UTC)
+        user.last_login_at = now
+        user.login_count = 1
+        self.repo.add_access_event(
+            AccessEvent(
+                visitor_id=f"user-{user.id[:12]}",
+                user_id=user.id,
+                tenant_id=tenant.id,
+                event_type="register",
+                path="/auth/register",
+                grade=user.grade_level,
+                device_type="desktop",
+            )
+        )
+        self.repo.db.commit()
+        self.repo.db.refresh(user)
         return self._build_auth_response(user, tenant)
 
     def login(self, payload: LoginRequest) -> AuthSessionResponse:
@@ -136,7 +176,23 @@ class IdentityService:
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Tài khoản đã bị vô hiệu hóa.",
             )
-        return self._build_auth_response(user, user.tenant)
+        tenant = user.tenant
+        user.last_login_at = datetime.now(UTC)
+        user.login_count = (user.login_count or 0) + 1
+        self.repo.add_access_event(
+            AccessEvent(
+                visitor_id=f"user-{user.id[:12]}",
+                user_id=user.id,
+                tenant_id=user.tenant_id,
+                event_type="login",
+                path="/auth/login",
+                grade=user.grade_level,
+                device_type="desktop",
+            )
+        )
+        self.repo.db.commit()
+        self.repo.db.refresh(user)
+        return self._build_auth_response(user, tenant)
 
     def refresh(self, refresh_token: str) -> AuthSessionResponse:
         try:
@@ -176,7 +232,7 @@ class IdentityService:
 
     def list_tenant_users(self, current_user: User) -> list[UserOut]:
         users = self.repo.list_users_for_tenant(current_user.tenant_id)
-        return [UserOut.model_validate(u) for u in users]
+        return [self._to_user_out(u) for u in users]
 
     def get_user_names_map(self, user_ids: list[str]) -> dict[str, str]:
         users = self.repo.get_users_by_ids(user_ids)
@@ -296,6 +352,13 @@ class IdentityService:
             periods_stmt = periods_stmt.where(TeachingSessionLog.tenant_id == tenant_scope_id)
 
         recent_logs = self.repo.list_audit_logs(tenant_id=tenant_scope_id, limit=12)
+        now_utc = datetime.now(UTC)
+        today_start = now_utc.replace(hour=0, minute=0, second=0, microsecond=0)
+        events_7d = self.repo.list_access_events_since(
+            since=today_start - timedelta(days=6),
+            tenant_id=tenant_scope_id,
+        )
+        visits_today = sum(1 for ev in events_7d if _as_utc(ev.created_at) >= today_start)
 
         return CmsOverviewOut(
             scope="platform" if is_platform else "school",
@@ -318,6 +381,8 @@ class IdentityService:
             verified_questions=int(db.scalar(q_ver_stmt) or 0),
             total_resources=int(db.scalar(res_stmt) or 0),
             total_teaching_periods=int(db.scalar(periods_stmt) or 0),
+            visits_today=visits_today,
+            visits_7d=len(events_7d),
             recent_audit_logs=[CmsAuditLogOut.model_validate(item) for item in recent_logs],
         )
 
@@ -330,11 +395,11 @@ class IdentityService:
         q: str | None = None,
         is_active: bool | None = None,
     ) -> list[UserOut]:
-        scoped_tenant = None if caller.role == "platform_admin" and tenant_id is None else None
-        if caller.role != "platform_admin":
-            scoped_tenant = self._resolve_target_tenant_id(caller, tenant_id)
-        else:
-            scoped_tenant = tenant_id
+        scoped_tenant = (
+            tenant_id
+            if caller.role == "platform_admin"
+            else self._resolve_target_tenant_id(caller, tenant_id)
+        )
 
         users = self.repo.list_users_filtered(
             tenant_id=scoped_tenant,
@@ -342,7 +407,7 @@ class IdentityService:
             q=q,
             is_active=is_active,
         )
-        return [UserOut.model_validate(u) for u in users]
+        return [self._to_user_out(u) for u in users]
 
     def create_cms_user(self, caller: User, payload: CmsUserCreateRequest) -> UserOut:
         if caller.role != "platform_admin" and payload.role not in ("student", "teacher"):
@@ -379,8 +444,9 @@ class IdentityService:
             tenant_id=target_tenant_id,
         )
         self.repo.db.commit()
-        self.repo.db.refresh(user)
-        return UserOut.model_validate(user)
+        refreshed = self.repo.get_user_by_id(user.id)
+        assert refreshed is not None
+        return self._to_user_out(refreshed)
 
     def update_cms_user(self, caller: User, user_id: str, payload: CmsUserUpdateRequest) -> UserOut:
         target = self.repo.get_user_by_id(user_id)
@@ -441,8 +507,9 @@ class IdentityService:
             tenant_id=target.tenant_id,
         )
         self.repo.db.commit()
-        self.repo.db.refresh(target)
-        return UserOut.model_validate(target)
+        refreshed = self.repo.get_user_by_id(target.id)
+        assert refreshed is not None
+        return self._to_user_out(refreshed)
 
     def import_cms_users_csv(
         self, caller: User, payload: CmsUserCsvImportRequest
@@ -646,3 +713,157 @@ class IdentityService:
             limit=limit,
         )
         return [CmsAuditLogOut.model_validate(item) for item in logs]
+
+    def delete_cms_user(self, caller: User, user_id: str) -> dict[str, str]:
+        target = self.repo.get_user_by_id(user_id)
+        if target is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Không tìm thấy tài khoản cần xóa.",
+            )
+        if target.id == caller.id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Không thể tự xóa tài khoản đang đăng nhập.",
+            )
+        if caller.role != "platform_admin":
+            if target.tenant_id != caller.tenant_id:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Không thể xóa tài khoản thuộc trường khác.",
+                )
+            if target.role in ("school_admin", "platform_admin"):
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Admin trường không có quyền xóa tài khoản quản trị cấp cao.",
+                )
+
+        deleted_email = target.email
+        deleted_tenant = target.tenant_id
+        self.record_audit_log(
+            caller,
+            module="identity_billing",
+            action="delete",
+            entity_type="user",
+            entity_id=target.id,
+            summary=f"Xóa tài khoản {deleted_email} ({target.role})",
+            diff={"email": deleted_email, "role": target.role},
+            tenant_id=deleted_tenant,
+        )
+        self.repo.delete_user(target)
+        self.repo.db.commit()
+        return {"deleted_id": user_id, "email": deleted_email}
+
+    def track_access_event(
+        self, payload: TrackEventRequest, current_user: User | None
+    ) -> dict[str, str]:
+        event = AccessEvent(
+            visitor_id=payload.visitor_id.strip(),
+            user_id=current_user.id if current_user else None,
+            tenant_id=current_user.tenant_id if current_user else None,
+            event_type=payload.event_type,
+            path=payload.path.strip() or "/",
+            grade=payload.grade,
+            device_type=payload.device_type,
+            referrer=payload.referrer.strip() if payload.referrer else None,
+        )
+        self.repo.add_access_event(event)
+        self.repo.db.commit()
+        return {"status": "tracked", "id": event.id}
+
+    def get_cms_traffic(self, caller: User, days: int = 14) -> CmsTrafficAnalyticsOut:
+        is_platform = caller.role == "platform_admin"
+        tenant_scope = None if is_platform else caller.tenant_id
+        now_utc = datetime.now(UTC)
+        today_date = now_utc.date()
+        start_date = today_date - timedelta(days=days - 1)
+        since_dt = datetime.combine(start_date, datetime.min.time(), tzinfo=UTC)
+
+        events = self.repo.list_access_events_since(since=since_dt, tenant_id=tenant_scope)
+
+        day_buckets: dict[str, dict[str, Any]] = {}
+        for i in range(days):
+            d_str = (start_date + timedelta(days=i)).isoformat()
+            day_buckets[d_str] = {"visits": 0, "visitors": set(), "logins": 0}
+
+        unique_visitors: set[str] = set()
+        unique_users: set[str] = set()
+        page_counts: dict[str, int] = {}
+        device_breakdown = {"mobile": 0, "tablet": 0, "desktop": 0}
+        grade_breakdown = {"6": 0, "7": 0, "8": 0, "9": 0}
+        visits_today = 0
+        total_logins = 0
+
+        for ev in events:
+            ev_dt = _as_utc(ev.created_at)
+            d_key = ev_dt.date().isoformat()
+            unique_visitors.add(ev.visitor_id)
+            if ev.user_id:
+                unique_users.add(ev.user_id)
+            if ev_dt.date() == today_date:
+                visits_today += 1
+            if ev.event_type == "login":
+                total_logins += 1
+
+            bucket = day_buckets.get(d_key)
+            if bucket is not None:
+                bucket["visits"] += 1
+                bucket["visitors"].add(ev.visitor_id)
+                if ev.event_type == "login":
+                    bucket["logins"] += 1
+
+            page_counts[ev.path] = page_counts.get(ev.path, 0) + 1
+            dev = ev.device_type if ev.device_type in device_breakdown else "desktop"
+            device_breakdown[dev] += 1
+            if ev.grade in (6, 7, 8, 9):
+                g_key = str(ev.grade)
+                grade_breakdown[g_key] += 1
+
+        daily_series = [
+            DailyTrafficPointOut(
+                date=d_key,
+                visits=bucket["visits"],
+                unique_visitors=len(bucket["visitors"]),
+                logins=bucket["logins"],
+            )
+            for d_key, bucket in sorted(day_buckets.items())
+        ]
+
+        top_pages = [
+            TopPageTrafficOut(path=p, visits=cnt)
+            for p, cnt in sorted(page_counts.items(), key=lambda pair: pair[1], reverse=True)[:8]
+        ]
+
+        recent_slice = events[:25]
+        user_ids = list({ev.user_id for ev in recent_slice if ev.user_id})
+        users_map = self.repo.get_users_by_ids(user_ids)
+        recent_events = [
+            RecentAccessEventOut(
+                id=ev.id,
+                event_type=ev.event_type,
+                path=ev.path,
+                grade=ev.grade,
+                device_type=ev.device_type,
+                visitor_id=ev.visitor_id,
+                user_email=users_map[ev.user_id].email if ev.user_id in users_map else None,
+                user_name=users_map[ev.user_id].full_name if ev.user_id in users_map else None,
+                user_role=users_map[ev.user_id].role if ev.user_id in users_map else None,
+                created_at=ev.created_at,
+            )
+            for ev in recent_slice
+        ]
+
+        return CmsTrafficAnalyticsOut(
+            scope="platform" if is_platform else "school",
+            days=days,
+            total_visits=len(events),
+            visits_today=visits_today,
+            unique_visitors=len(unique_visitors),
+            unique_logged_in_users=len(unique_users),
+            total_logins=total_logins,
+            daily_series=daily_series,
+            top_pages=top_pages,
+            device_breakdown=device_breakdown,
+            grade_breakdown=grade_breakdown,
+            recent_events=recent_events,
+        )

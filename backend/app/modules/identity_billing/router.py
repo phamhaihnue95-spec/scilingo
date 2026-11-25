@@ -6,7 +6,11 @@ from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.modules.identity_billing.dependencies import get_current_user, require_roles
+from app.modules.identity_billing.dependencies import (
+    get_current_user,
+    get_optional_current_user,
+    require_roles,
+)
 from app.modules.identity_billing.models import User
 from app.modules.identity_billing.schemas import (
     AuthSessionResponse,
@@ -15,6 +19,7 @@ from app.modules.identity_billing.schemas import (
     CmsTenantCreateRequest,
     CmsTenantDetailOut,
     CmsTenantUpdateRequest,
+    CmsTrafficAnalyticsOut,
     CmsUserCreateRequest,
     CmsUserCsvImportRequest,
     CmsUserCsvImportResult,
@@ -23,6 +28,7 @@ from app.modules.identity_billing.schemas import (
     LoginRequest,
     RefreshRequest,
     RegisterRequest,
+    TrackEventRequest,
     UserOut,
 )
 from app.modules.identity_billing.service import IdentityService
@@ -182,3 +188,33 @@ def list_cms_audit_logs(
     return IdentityService(db).list_cms_audit_logs(
         current_user, module=module, entity_type=entity_type, limit=limit
     )
+
+
+@router.delete("/identity/cms/users/{user_id}")
+def delete_cms_user(
+    user_id: str,
+    current_user: User = Depends(require_roles("school_admin", "platform_admin")),
+    db: Session = Depends(get_db),
+) -> dict[str, str]:
+    """Delete an authorized user account inside caller's scope."""
+    return IdentityService(db).delete_cms_user(current_user, user_id)
+
+
+@router.post("/analytics/track")
+def track_access_event(
+    payload: TrackEventRequest,
+    current_user: User | None = Depends(get_optional_current_user),
+    db: Session = Depends(get_db),
+) -> dict[str, str]:
+    """Record a lightweight page-view or learning activity event."""
+    return IdentityService(db).track_access_event(payload, current_user)
+
+
+@router.get("/identity/cms/traffic", response_model=CmsTrafficAnalyticsOut)
+def get_cms_traffic(
+    days: int = Query(default=14, ge=1, le=90),
+    current_user: User = Depends(require_roles("school_admin", "platform_admin")),
+    db: Session = Depends(get_db),
+) -> CmsTrafficAnalyticsOut:
+    """Return traffic, login counts, devices, top pages, and recent events for CMS."""
+    return IdentityService(db).get_cms_traffic(current_user, days=days)

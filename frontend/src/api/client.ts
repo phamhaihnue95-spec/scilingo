@@ -20,6 +20,7 @@ import type {
   CmsTenantDetail,
   CmsTermList,
   CmsTermMutationOut,
+  CmsTrafficAnalytics,
   CurriculumTreeResponse,
   Discipline,
   Entitlements,
@@ -853,5 +854,30 @@ export const api = {
       `/lms/cms/resources/${encodeURIComponent(resourceId)}`,
       { method: "DELETE" }
     );
+  },
+
+  cmsDeleteUser(userId: string): Promise<{ deleted_id: string; email: string }> {
+    return request<{ deleted_id: string; email: string }>(
+      `/identity/cms/users/${encodeURIComponent(userId)}`,
+      { method: "DELETE" }
+    );
+  },
+
+  trackAccessEvent(payload: {
+    visitor_id: string;
+    event_type: "page_view" | "lesson_view" | "game_play" | "cms_view";
+    path: string;
+    grade?: GradeLevel;
+    device_type: "mobile" | "tablet" | "desktop";
+    referrer?: string | null;
+  }): Promise<{ status: string; id: string }> {
+    return request<{ status: string; id: string }>("/analytics/track", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  cmsGetTraffic(days = 14): Promise<CmsTrafficAnalytics> {
+    return request<CmsTrafficAnalytics>(`/identity/cms/traffic?days=${days}`);
   },
 };

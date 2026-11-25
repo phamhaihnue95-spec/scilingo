@@ -29,12 +29,6 @@ const DEMO_PERSONAS = [
     password: "Admin123!",
     badge: "school_admin",
   },
-  {
-    label: "Quản trị Hệ thống (Platform Admin)",
-    email: "admin@demo.scilingo.vn",
-    password: "Admin123!",
-    badge: "platform_admin",
-  },
 ];
 
 export function AccountPage({ session, onSessionChange }: Props) {

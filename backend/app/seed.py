@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.core.database import Base, get_engine, get_session_factory
-from app.core.security import hash_password
+from app.core.security import hash_password, verify_password
 from app.modules.curriculum.models import Chapter, Lesson, LessonTerm, Term
 from app.modules.identity_billing.models import Subscription, Tenant, User
 from app.modules.learning.models import StudentGamification, StudentPet
@@ -46,12 +46,8 @@ CURRICULUM_FILES: tuple[tuple[int, str], ...] = (
 
 def seed_curriculum(db: Session, data_dir: Path) -> tuple[int, int, int]:
     """Load all KNTT Grade 6, 7, 8, and 9 lessons and glossary terms idempotently."""
-    rules_json = json.loads(
-        (data_dir / "terminology_rules.json").read_text(encoding="utf-8")
-    )
-    exception_names = {
-        item["iupac_en"].lower() for item in rules_json["exception_13_elements"]
-    }
+    rules_json = json.loads((data_dir / "terminology_rules.json").read_text(encoding="utf-8"))
+    exception_names = {item["iupac_en"].lower() for item in rules_json["exception_13_elements"]}
 
     existing_chapters = {
         (c.grade, c.textbook_series, c.chapter_no): c for c in db.scalars(select(Chapter)).all()
@@ -60,9 +56,7 @@ def seed_curriculum(db: Session, data_dir: Path) -> tuple[int, int, int]:
         (les.chapter_id, les.lesson_no): les for les in db.scalars(select(Lesson)).all()
     }
     existing_terms = {t.slug: t for t in db.scalars(select(Term)).all()}
-    existing_links = {
-        (lt.lesson_id, lt.term_id) for lt in db.scalars(select(LessonTerm)).all()
-    }
+    existing_links = {(lt.lesson_id, lt.term_id) for lt in db.scalars(select(LessonTerm)).all()}
 
     chapters_created = 0
     lessons_created = 0
@@ -109,8 +103,7 @@ def seed_curriculum(db: Session, data_dir: Path) -> tuple[int, int, int]:
                             f"(SGK KHTN {grade} Kết nối tri thức)."
                         ),
                         summary_en=(
-                            f"Grade {grade} Lesson {l_data['lesson_no']}: "
-                            f"{l_data['title_en']}."
+                            f"Grade {grade} Lesson {l_data['lesson_no']}: {l_data['title_en']}."
                         ),
                     )
                     db.add(lesson)
@@ -243,14 +236,6 @@ def seed_demo_tenants(db: Session) -> None:
             "school_admin",
             None,
         ),
-        (
-            cgb.id,
-            "admin@demo.scilingo.vn",
-            "Admin123!",
-            "Quản trị SciLingo (Platform Admin)",
-            "platform_admin",
-            None,
-        ),
         (nt.id, "lan.bgh@demo.scilingo.vn", "Admin123!", "Cô Phạm Ngọc Lan", "school_admin", None),
     ]
 
@@ -267,6 +252,40 @@ def seed_demo_tenants(db: Session) -> None:
                     is_active=True,
                 )
             )
+
+    settings = get_settings()
+    admin_email = settings.platform_admin_email.lower().strip()
+    admin_pw = settings.platform_admin_password
+    admin_name = settings.platform_admin_full_name
+    existing_admin = db.scalar(select(User).where(User.email == admin_email))
+    legacy_admin = db.scalar(select(User).where(User.email == "admin@demo.scilingo.vn"))
+
+    if existing_admin is None and legacy_admin is not None:
+        legacy_admin.email = admin_email
+        legacy_admin.password_hash = hash_password(admin_pw)
+        legacy_admin.full_name = admin_name
+        legacy_admin.role = "platform_admin"
+        legacy_admin.is_active = True
+        legacy_admin.tenant_id = cgb.id
+    elif existing_admin is None:
+        db.add(
+            User(
+                tenant_id=cgb.id,
+                email=admin_email,
+                password_hash=hash_password(admin_pw),
+                full_name=admin_name,
+                role="platform_admin",
+                grade_level=None,
+                is_active=True,
+            )
+        )
+    else:
+        existing_admin.role = "platform_admin"
+        existing_admin.is_active = True
+        if not verify_password(admin_pw, existing_admin.password_hash):
+            existing_admin.password_hash = hash_password(admin_pw)
+        if legacy_admin is not None and legacy_admin.id != existing_admin.id:
+            legacy_admin.is_active = False
 
     db.commit()
 
@@ -309,8 +328,7 @@ def seed_demo_lms(db: Session) -> None:
                         clil_mode="bilingual_10",
                         english_minutes=30,
                         notes=(
-                            "Giới thiệu danh pháp Acid (HCl, H₂SO₄) chuẩn IUPAC "
-                            "và liên hệ Bài 32."
+                            "Giới thiệu danh pháp Acid (HCl, H₂SO₄) chuẩn IUPAC và liên hệ Bài 32."
                         ),
                     ),
                     TeachingSessionLog(
@@ -397,9 +415,7 @@ def seed_demo_lms(db: Session) -> None:
         stu = db.scalar(select(User).where(User.email == email))
         if stu is None:
             continue
-        existing_pet = db.scalar(
-            select(StudentPet).where(StudentPet.student_id == stu.id)
-        )
+        existing_pet = db.scalar(select(StudentPet).where(StudentPet.student_id == stu.id))
         if existing_pet is None:
             db.add(
                 StudentPet(

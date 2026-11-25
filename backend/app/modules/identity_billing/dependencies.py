@@ -45,6 +45,23 @@ def get_current_user(
     return user
 
 
+def get_optional_current_user(
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
+    db: Session = Depends(get_db),
+) -> User | None:
+    """Resolve authenticated active user when Bearer JWT is valid, else None."""
+    if credentials is None or not credentials.credentials:
+        return None
+    try:
+        claims = decode_token(credentials.credentials, expected_type="access")
+    except jwt.PyJWTError:
+        return None
+    user = IdentityRepository(db).get_user_by_id(str(claims.get("sub", "")))
+    if user is None or not user.is_active:
+        return None
+    return user
+
+
 def require_roles(*allowed_roles: str) -> Callable[[User], User]:
     """Dependency factory enforcing RBAC role membership."""
 

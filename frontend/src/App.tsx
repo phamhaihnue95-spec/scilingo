@@ -39,6 +39,7 @@ import {
   playClickSound,
   setSoundEnabled,
 } from "./utils/soundFx";
+import { trackPageView } from "./utils/tracker";
 
 type View =
   | { kind: "map" }
@@ -72,6 +73,24 @@ export function App() {
     window.addEventListener(SOUND_CHANGE_EVENT, syncSound);
     return () => window.removeEventListener(SOUND_CHANGE_EVENT, syncSound);
   }, []);
+
+  useEffect(() => {
+    let path = `/${view.kind}`;
+    let eventType: "page_view" | "lesson_view" | "game_play" | "cms_view" = "page_view";
+    if (view.kind === "lesson") {
+      path = `/khtn-${view.grade ?? selectedGrade}/bai-${view.lessonNo}`;
+      eventType = "lesson_view";
+    } else if (view.kind === "games") {
+      path = `/games${view.initialGame ? `/${view.initialGame}` : ""}`;
+      eventType = "game_play";
+    } else if (view.kind === "cms") {
+      path = "/cms";
+      eventType = "cms_view";
+    } else if (view.kind === "map") {
+      path = `/khtn-${selectedGrade}`;
+    }
+    trackPageView(path, selectedGrade, eventType);
+  }, [view, selectedGrade]);
 
   useEffect(() => {
     const token = getStoredAccessToken();

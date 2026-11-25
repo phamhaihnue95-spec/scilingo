@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import {
+  Activity,
   BookOpen,
   BookText,
   FileQuestion,
@@ -16,6 +17,7 @@ import { CmsCurriculumPanel } from "./CmsCurriculumPanel";
 import { CmsGlossaryPanel } from "./CmsGlossaryPanel";
 import { CmsQuestionBankPanel } from "./CmsQuestionBankPanel";
 import { CmsResourcesPanel } from "./CmsResourcesPanel";
+import { CmsTrafficPanel } from "./CmsTrafficPanel";
 import { CmsUsersTenantsPanel } from "./CmsUsersTenantsPanel";
 
 interface Props {
@@ -25,6 +27,7 @@ interface Props {
 
 type CmsSection =
   | "overview"
+  | "traffic"
   | "lessons"
   | "glossary"
   | "questions"
@@ -89,6 +92,13 @@ export function CmsPortalPage({ session, onOpenAccount }: Props) {
     badge?: string;
   }> = [
     { id: "overview", label: "Tổng quan CMS", icon: LayoutDashboard },
+    {
+      id: "traffic",
+      label: "Lượt truy cập",
+      icon: Activity,
+      badge: overview && overview.visits_today ? `${overview.visits_today} hôm nay` : undefined,
+    },
+    { id: "users_audit", label: "Quản lý Tài khoản", icon: Users },
     { id: "lessons", label: "Bài học 6–9 (Unit 1)", icon: BookOpen },
     {
       id: "glossary",
@@ -98,7 +108,6 @@ export function CmsPortalPage({ session, onOpenAccount }: Props) {
     },
     { id: "questions", label: "Ngân hàng câu hỏi", icon: FileQuestion },
     { id: "resources", label: "Học liệu CLIL", icon: FileText },
-    { id: "users_audit", label: "Tài khoản & Nhật ký", icon: Users },
   ];
 
   return (
@@ -175,7 +184,13 @@ export function CmsPortalPage({ session, onOpenAccount }: Props) {
               ) : (
                 overview && (
                   <>
-                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+                      <KpiCard
+                        title="Lượt truy cập"
+                        value={`${overview.visits_today ?? 0}`}
+                        sub={`Hôm nay · ${overview.visits_7d ?? 0} lượt / 7 ngày`}
+                        accent="text-rose-700"
+                      />
                       <KpiCard
                         title="Bài học KNTT 6–9"
                         value={`${overview.total_lessons}`}
@@ -252,6 +267,7 @@ export function CmsPortalPage({ session, onOpenAccount }: Props) {
             </div>
           )}
 
+          {section === "traffic" && <CmsTrafficPanel />}
           {section === "lessons" && <CmsCurriculumPanel isPlatformAdmin={isPlatformAdmin} />}
           {section === "glossary" && <CmsGlossaryPanel isPlatformAdmin={isPlatformAdmin} />}
           {section === "questions" && <CmsQuestionBankPanel isPlatformAdmin={isPlatformAdmin} />}

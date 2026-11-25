@@ -2,11 +2,13 @@ import { useEffect, useState } from "react";
 import {
   Building2,
   CheckCircle2,
+  Edit3,
   FileSpreadsheet,
   History,
   Lock,
   Plus,
   Search,
+  Trash2,
   Unlock,
   UserPlus,
   X,
@@ -43,6 +45,12 @@ export function CmsUsersTenantsPanel({ currentUserId, isPlatformAdmin }: Props) 
   const [uRole, setURole] = useState("student");
   const [uGrade, setUGrade] = useState<GradeLevel>(8);
   const [uTenantId, setUTenantId] = useState("");
+
+  const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editRole, setEditRole] = useState("student");
+  const [editGrade, setEditGrade] = useState<GradeLevel>(8);
+  const [editNewPassword, setEditNewPassword] = useState("");
 
   const [csvOpen, setCsvOpen] = useState(false);
   const [csvText, setCsvText] = useState(SAMPLE_USERS_CSV);
@@ -99,6 +107,36 @@ export function CmsUsersTenantsPanel({ currentUserId, isPlatformAdmin }: Props) 
     }
   };
 
+  const openEditUser = (u: UserProfile) => {
+    setEditingUser(u);
+    setEditName(u.full_name);
+    setEditRole(u.role);
+    setEditGrade(
+      u.grade_level === 6 || u.grade_level === 7 || u.grade_level === 9 ? u.grade_level : 8
+    );
+    setEditNewPassword("");
+    setError(null);
+  };
+
+  const handleSaveEditUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingUser) return;
+    setError(null);
+    try {
+      const updated = await api.cmsUpdateUser(editingUser.id, {
+        full_name: editName,
+        role: editRole,
+        grade_level: editRole === "student" ? editGrade : null,
+        new_password: editNewPassword.trim() ? editNewPassword.trim() : undefined,
+      });
+      setNotice(`Đã cập nhật tài khoản ${updated.email}.`);
+      setEditingUser(null);
+      loadAll();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Cập nhật tài khoản thất bại.");
+    }
+  };
+
   const handleToggleActive = async (u: UserProfile) => {
     setError(null);
     try {
@@ -109,6 +147,18 @@ export function CmsUsersTenantsPanel({ currentUserId, isPlatformAdmin }: Props) 
       loadAll();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Cập nhật trạng thái thất bại.");
+    }
+  };
+
+  const handleDeleteUser = async (u: UserProfile) => {
+    if (!window.confirm(`Xóa vĩnh viễn tài khoản ${u.email} (${u.full_name})?`)) return;
+    setError(null);
+    try {
+      await api.cmsDeleteUser(u.id);
+      setNotice(`Đã xóa tài khoản ${u.email}.`);
+      loadAll();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Không thể xóa tài khoản.");
     }
   };
 
@@ -162,7 +212,7 @@ export function CmsUsersTenantsPanel({ currentUserId, isPlatformAdmin }: Props) 
               subTab === "users" ? "bg-indigo-600 text-white" : "text-slate-600"
             }`}
           >
-            Người dùng ({users.length})
+            Tài khoản ({users.length})
           </button>
           <button
             type="button"
@@ -294,31 +344,44 @@ export function CmsUsersTenantsPanel({ currentUserId, isPlatformAdmin }: Props) 
             <table className="min-w-full text-left text-xs">
               <thead className="border-b border-slate-200 bg-slate-50 text-[11px] uppercase text-slate-500">
                 <tr>
-                  <th className="px-3 py-2.5">Họ tên & Email</th>
-                  <th className="px-3 py-2.5">Vai trò</th>
-                  <th className="px-3 py-2.5">Khối</th>
+                  <th className="px-3 py-2.5">Họ tên, Email & Trường</th>
+                  <th className="px-3 py-2.5">Vai trò / Khối</th>
+                  <th className="px-3 py-2.5">Đăng nhập gần nhất</th>
                   <th className="px-3 py-2.5">Trạng thái</th>
                   <th className="px-3 py-2.5 text-right">Thao tác</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {users.map((u) => {
-                  const canToggle =
-                    u.id !== currentUserId &&
-                    (isPlatformAdmin || (u.role !== "school_admin" && u.role !== "platform_admin"));
+                  const canManage =
+                    isPlatformAdmin || (u.role !== "school_admin" && u.role !== "platform_admin");
+                  const isSelf = u.id === currentUserId;
                   return (
                     <tr key={u.id} className="hover:bg-slate-50/70">
                       <td className="px-3 py-2.5">
                         <div className="font-bold text-slate-900">{u.full_name}</div>
-                        <div className="text-[11px] text-slate-500">{u.email}</div>
+                        <div className="text-[11px] text-slate-600">{u.email}</div>
+                        {u.tenant_name && (
+                          <div className="text-[10px] text-slate-400">{u.tenant_name}</div>
+                        )}
                       </td>
                       <td className="px-3 py-2.5">
                         <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-bold text-indigo-700">
                           {u.role}
                         </span>
+                        <div className="mt-0.5 text-[11px] text-slate-500">
+                          {u.grade_level ? `Khối ${u.grade_level}` : "Quản trị / GV"}
+                        </div>
                       </td>
-                      <td className="px-3 py-2.5 text-slate-700">
-                        {u.grade_level ? `Lớp ${u.grade_level}` : "—"}
+                      <td className="px-3 py-2.5">
+                        <div className="font-semibold text-slate-700">
+                          {u.login_count ?? 0} lần
+                        </div>
+                        <div className="text-[11px] text-slate-500">
+                          {u.last_login_at
+                            ? new Date(u.last_login_at).toLocaleString("vi-VN")
+                            : "Chưa đăng nhập"}
+                        </div>
                       </td>
                       <td className="px-3 py-2.5">
                         <span
@@ -332,29 +395,46 @@ export function CmsUsersTenantsPanel({ currentUserId, isPlatformAdmin }: Props) 
                         </span>
                       </td>
                       <td className="px-3 py-2.5 text-right">
-                        {canToggle ? (
-                          <button
-                            type="button"
-                            onClick={() => handleToggleActive(u)}
-                            className={`inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-[11px] font-bold ${
-                              u.is_active
-                                ? "border-rose-200 text-rose-700 hover:bg-rose-50"
-                                : "border-emerald-200 text-emerald-700 hover:bg-emerald-50"
-                            }`}
-                          >
-                            {u.is_active ? (
-                              <>
-                                <Lock className="h-3 w-3" /> Khóa
-                              </>
-                            ) : (
-                              <>
-                                <Unlock className="h-3 w-3" /> Mở khóa
-                              </>
-                            )}
-                          </button>
-                        ) : (
-                          <span className="text-[11px] text-slate-400">—</span>
-                        )}
+                        <div className="inline-flex items-center gap-1">
+                          {(canManage || isSelf) && (
+                            <button
+                              type="button"
+                              onClick={() => openEditUser(u)}
+                              title="Sửa / Đổi mật khẩu"
+                              className="rounded-lg border border-slate-200 p-1.5 text-slate-700 hover:bg-slate-100"
+                            >
+                              <Edit3 className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                          {canManage && !isSelf && (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => handleToggleActive(u)}
+                                title={u.is_active ? "Khóa tài khoản" : "Mở khóa tài khoản"}
+                                className={`rounded-lg border p-1.5 ${
+                                  u.is_active
+                                    ? "border-amber-200 text-amber-700 hover:bg-amber-50"
+                                    : "border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                                }`}
+                              >
+                                {u.is_active ? (
+                                  <Lock className="h-3.5 w-3.5" />
+                                ) : (
+                                  <Unlock className="h-3.5 w-3.5" />
+                                )}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteUser(u)}
+                                title="Xóa tài khoản"
+                                className="rounded-lg border border-rose-200 p-1.5 text-rose-600 hover:bg-rose-50"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );
@@ -522,6 +602,101 @@ export function CmsUsersTenantsPanel({ currentUserId, isPlatformAdmin }: Props) 
                 className="rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white"
               >
                 Tạo tài khoản
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Modal Edit User / Reset Password */}
+      {editingUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
+          <form
+            onSubmit={handleSaveEditUser}
+            className="w-full max-w-md space-y-3 rounded-2xl bg-white p-5 shadow-2xl"
+          >
+            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+              <div>
+                <div className="text-[11px] font-bold text-indigo-600">{editingUser.email}</div>
+                <h3 className="text-base font-extrabold text-slate-900">
+                  Cập nhật thông tin & Đặt lại mật khẩu
+                </h3>
+              </div>
+              <button type="button" onClick={() => setEditingUser(null)}>
+                <X className="h-5 w-5 text-slate-400" />
+              </button>
+            </div>
+
+            <label className="block space-y-1 text-xs font-bold text-slate-700">
+              <span>Họ và tên</span>
+              <input
+                required
+                minLength={2}
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-normal"
+              />
+            </label>
+
+            <div className="grid grid-cols-2 gap-2">
+              <label className="space-y-1 text-xs font-bold text-slate-700">
+                <span>Vai trò</span>
+                <select
+                  value={editRole}
+                  disabled={!isPlatformAdmin && editingUser.id === currentUserId}
+                  onChange={(e) => setEditRole(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-normal"
+                >
+                  <option value="student">Học sinh</option>
+                  <option value="teacher">Giáo viên</option>
+                  {isPlatformAdmin && <option value="school_admin">Admin trường</option>}
+                  {isPlatformAdmin && <option value="platform_admin">Platform Admin</option>}
+                </select>
+              </label>
+
+              {editRole === "student" && (
+                <label className="space-y-1 text-xs font-bold text-slate-700">
+                  <span>Khối lớp</span>
+                  <select
+                    value={editGrade}
+                    onChange={(e) => setEditGrade(Number(e.target.value) as GradeLevel)}
+                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-normal"
+                  >
+                    {VALID_GRADES.map((g) => (
+                      <option key={g} value={g}>
+                        Khối {g}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+            </div>
+
+            <label className="block space-y-1 text-xs font-bold text-slate-700">
+              <span>Đặt lại mật khẩu mới (để trống nếu giữ nguyên)</span>
+              <input
+                type="password"
+                minLength={8}
+                value={editNewPassword}
+                onChange={(e) => setEditNewPassword(e.target.value)}
+                placeholder="Tối thiểu 8 ký tự..."
+                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-normal"
+              />
+            </label>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setEditingUser(null)}
+                className="rounded-xl border border-slate-200 px-4 py-2 text-xs font-bold text-slate-600"
+              >
+                Hủy
+              </button>
+              <button
+                type="submit"
+                className="rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white"
+              >
+                Lưu thay đổi
               </button>
             </div>
           </form>

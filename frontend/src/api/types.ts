@@ -144,6 +144,9 @@ export interface UserProfile {
   role: "student" | "teacher" | "school_admin" | "platform_admin";
   grade_level: number | null;
   is_active: boolean;
+  last_login_at?: string | null;
+  login_count?: number;
+  tenant_name?: string | null;
   created_at: string;
 }
 
@@ -745,7 +748,49 @@ export interface CmsOverview {
   verified_questions: number;
   total_resources: number;
   total_teaching_periods: number;
+  visits_today?: number;
+  visits_7d?: number;
   recent_audit_logs: CmsAuditLog[];
+}
+
+export interface DailyTrafficPoint {
+  date: string;
+  visits: number;
+  unique_visitors: number;
+  logins: number;
+}
+
+export interface TopPageTraffic {
+  path: string;
+  visits: number;
+}
+
+export interface RecentAccessEvent {
+  id: string;
+  event_type: string;
+  path: string;
+  grade: number | null;
+  device_type: string;
+  visitor_id: string;
+  user_email: string | null;
+  user_name: string | null;
+  user_role: string | null;
+  created_at: string;
+}
+
+export interface CmsTrafficAnalytics {
+  scope: "platform" | "school";
+  days: number;
+  total_visits: number;
+  visits_today: number;
+  unique_visitors: number;
+  unique_logged_in_users: number;
+  total_logins: number;
+  daily_series: DailyTrafficPoint[];
+  top_pages: TopPageTraffic[];
+  device_breakdown: Record<string, number>;
+  grade_breakdown: Record<string, number>;
+  recent_events: RecentAccessEvent[];
 }
 
 export interface CmsTenantDetail {
