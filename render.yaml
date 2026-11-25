@@ -16,7 +16,7 @@ services:
       - key: ENVIRONMENT
         value: production
       - key: CORS_ORIGINS
-        value: https://phamhaihnue95-spec.github.io,http://localhost:5173
+        value: https://khtn.scilingo-edu.workers.dev,http://localhost:5173
 
 databases:
   - name: scilingo-khtn-db

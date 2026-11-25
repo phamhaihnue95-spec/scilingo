@@ -39,7 +39,7 @@ class Settings(BaseSettings):
     cors_origins: Annotated[list[str], NoDecode] = [
         "http://localhost:5173",
         "http://127.0.0.1:5173",
-        "https://phamhaihnue95-spec.github.io",
+        "https://khtn.scilingo-edu.workers.dev",
     ]
     data_dir: Path = REPO_ROOT / "data"
 

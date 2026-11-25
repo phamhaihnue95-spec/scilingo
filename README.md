@@ -91,19 +91,21 @@ Truy cập `http://localhost:5173`. Các tài khoản demo (`an.hs8@demo.sciling
 
 ---
 
-## 5. Hướng dẫn Deploy Production (Render + GitHub Pages)
+## 5. Hướng dẫn Deploy Production (Render + Cloudflare Workers Static Assets)
 
 ### 5.1. Deploy Backend FastAPI + PostgreSQL lên Render (qua `render.yaml`)
 1. Đăng nhập https://dashboard.render.com → chọn **New +** → **Blueprint**.
-2. Kết nối GitHub repository `phamhaihnue95-spec/scilingo`.
+2. Kết nối GitHub repository dự án SciLingo.
 3. Render tự đọc tệp `render.yaml` ở thư mục gốc và khởi tạo đồng thời:
    * Database PostgreSQL miễn phí (`scilingo-khtn-db`).
    * Web Service Docker (`scilingo-khtn-api`) build từ `backend/Dockerfile`, tự động chạy `alembic upgrade head` và `python -m app.seed` khi container khởi động.
-4. Sau khi deploy xong, sao chép URL backend do Render cấp (ví dụ: `https://scilingo-khtn-api.onrender.com`) và kiểm tra endpoint `/api/v1/health`.
+4. Sau khi deploy xong, xác nhận URL backend (`https://scilingo-khtn-api.onrender.com`), kiểm tra endpoint `/api/v1/health`, và đảm bảo biến môi trường `CORS_ORIGINS` trên Render chứa `https://khtn.scilingo-edu.workers.dev,http://localhost:5173`.
 
-### 5.2. Deploy Frontend React lên GitHub Pages
-1. Trên GitHub repository **Settings → Pages → Build and deployment → Source**, chọn **GitHub Actions**.
-2. Vào **Settings → Secrets and variables → Actions → tab Variables → New repository variable**:
-   * Name: `VITE_API_BASE_URL`
-   * Value: URL Render Backend ở bước 5.1 (ví dụ `https://scilingo-khtn-api.onrender.com`, **không** có dấu `/` ở cuối).
-3. Vào tab **Actions → Deploy Frontend to GitHub Pages → Run workflow** (hoặc push vào `main` ở thư mục `frontend/`) → website sẽ hoạt động tại `https://phamhaihnue95-spec.github.io/scilingo/`.
+### 5.2. Deploy Frontend React lên Cloudflare Workers Static Assets
+* **URL Production:** `https://khtn.scilingo-edu.workers.dev` (Worker `khtn` trên subdomain `scilingo-edu.workers.dev`, phục vụ SPA tại đường dẫn gốc `/`).
+* **Tự động deploy qua GitHub Actions (`.github/workflows/deploy-cloudflare.yml`):**
+  1. Vào GitHub repository **Settings → Secrets and variables → Actions → tab Secrets → New repository secret**:
+     * `CLOUDFLARE_API_TOKEN`: API Token có quyền **Edit Cloudflare Workers**.
+     * `CLOUDFLARE_ACCOUNT_ID`: Account ID tài khoản Cloudflare.
+  2. (Tùy chọn) Tại tab **Variables**, đặt `VITE_API_BASE_URL` = `https://scilingo-khtn-api.onrender.com` (mặc định workflow đã dùng URL này).
+  3. Mỗi khi push vào nhánh `main` ở thư mục `frontend/` hoặc chạy thủ công **Actions → Deploy Frontend to Cloudflare Workers**, workflow sẽ build `frontend/dist` và chạy `node scripts/deploy_cloudflare_worker.mjs` để cập nhật website.
