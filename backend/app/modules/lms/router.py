@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, status
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
@@ -18,6 +18,16 @@ from app.modules.lms.schemas import (
     ClassroomCreateRequest,
     ClassroomLeaderboardOut,
     ClassroomOut,
+    CmsQuestionCreateRequest,
+    CmsQuestionCsvImportOut,
+    CmsQuestionCsvImportRequest,
+    CmsQuestionListOut,
+    CmsQuestionOut,
+    CmsQuestionUpdateRequest,
+    CmsResourceCreateRequest,
+    CmsResourceListOut,
+    CmsResourceOut,
+    CmsResourceUpdateRequest,
     ExamDetailOut,
     ExamGenerateRequest,
     ExamSummaryOut,
@@ -88,9 +98,7 @@ def list_my_classrooms(
     return LMSService(db).list_student_classrooms(current_user)
 
 
-@router.get(
-    "/lms/classrooms/{classroom_id}/leaderboard", response_model=ClassroomLeaderboardOut
-)
+@router.get("/lms/classrooms/{classroom_id}/leaderboard", response_model=ClassroomLeaderboardOut)
 def get_classroom_leaderboard(
     classroom_id: str,
     current_user: User = Depends(get_current_user),
@@ -100,9 +108,7 @@ def get_classroom_leaderboard(
     return LMSService(db).get_classroom_leaderboard(current_user, classroom_id)
 
 
-@router.post(
-    "/lms/classrooms/{classroom_id}/game-challenges", response_model=GameChallengeOut
-)
+@router.post("/lms/classrooms/{classroom_id}/game-challenges", response_model=GameChallengeOut)
 def create_game_challenge(
     classroom_id: str,
     payload: GameChallengeCreateRequest,
@@ -113,9 +119,7 @@ def create_game_challenge(
     return LMSService(db).create_game_challenge(current_user, classroom_id, payload)
 
 
-@router.get(
-    "/lms/classrooms/{classroom_id}/game-challenges", response_model=list[GameChallengeOut]
-)
+@router.get("/lms/classrooms/{classroom_id}/game-challenges", response_model=list[GameChallengeOut])
 def list_classroom_game_challenges(
     classroom_id: str,
     current_user: User = Depends(get_current_user),
@@ -287,3 +291,142 @@ def get_tt94_compliance_report(
 ) -> TT94ComplianceReportOut:
     """Generate the Circular 94/2026 self-assessment evidence report for school leadership."""
     return LMSService(db).get_tt94_compliance_report(current_user, academic_year=academic_year)
+
+
+# --- Unit 3 Content CMS: Question Bank & CLIL Resources ---
+@router.get("/lms/cms/questions", response_model=CmsQuestionListOut)
+def list_cms_questions(
+    grade: int | None = Query(default=None, ge=6, le=9),
+    lesson_no: int | None = Query(default=None, ge=1, le=60),
+    language: str | None = Query(default=None),
+    cognitive_level: str | None = Query(default=None),
+    discipline: str | None = Query(default=None),
+    linter_verified: bool | None = Query(default=None),
+    scope: str = Query(default="all", pattern="^(all|official|tenant)$"),
+    q: str | None = Query(default=None, max_length=120),
+    limit: int = Query(default=100, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+    current_user: User = Depends(require_roles(*TEACHER_ROLES)),
+    db: Session = Depends(get_db),
+) -> CmsQuestionListOut:
+    """List question bank items inside CMS with full filters and lint metadata."""
+    return LMSService(db).list_questions_cms(
+        current_user,
+        grade=grade,
+        lesson_no=lesson_no,
+        language=language,
+        cognitive_level=cognitive_level,
+        discipline=discipline,
+        linter_verified=linter_verified,
+        scope=scope,
+        q=q,
+        limit=limit,
+        offset=offset,
+    )
+
+
+@router.post(
+    "/lms/cms/questions",
+    response_model=CmsQuestionOut,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_cms_question(
+    payload: CmsQuestionCreateRequest,
+    current_user: User = Depends(require_roles(*TEACHER_ROLES)),
+    db: Session = Depends(get_db),
+) -> CmsQuestionOut:
+    """Create a question in CMS with automatic IUPAC/SI lint evaluation."""
+    return LMSService(db).create_question_cms(current_user, payload)
+
+
+@router.patch("/lms/cms/questions/{question_id}", response_model=CmsQuestionOut)
+def update_cms_question(
+    question_id: str,
+    payload: CmsQuestionUpdateRequest,
+    current_user: User = Depends(require_roles(*TEACHER_ROLES)),
+    db: Session = Depends(get_db),
+) -> CmsQuestionOut:
+    """Update a question item inside caller's authorized scope."""
+    return LMSService(db).update_question_cms(current_user, question_id, payload)
+
+
+@router.delete("/lms/cms/questions/{question_id}")
+def delete_cms_question(
+    question_id: str,
+    current_user: User = Depends(require_roles(*TEACHER_ROLES)),
+    db: Session = Depends(get_db),
+) -> dict[str, str]:
+    """Delete a question item inside caller's authorized scope."""
+    return LMSService(db).delete_question_cms(current_user, question_id)
+
+
+@router.post("/lms/cms/questions/import-csv", response_model=CmsQuestionCsvImportOut)
+def import_cms_questions_csv(
+    payload: CmsQuestionCsvImportRequest,
+    current_user: User = Depends(require_roles(*TEACHER_ROLES)),
+    db: Session = Depends(get_db),
+) -> CmsQuestionCsvImportOut:
+    """Bulk import MCQ questions from CSV with automatic IUPAC/SI lint verification."""
+    return LMSService(db).import_questions_csv_cms(current_user, payload)
+
+
+@router.get("/lms/cms/resources", response_model=CmsResourceListOut)
+def list_cms_resources(
+    grade: int | None = Query(default=None, ge=6, le=9),
+    lesson_no: int | None = Query(default=None, ge=1, le=60),
+    resource_type: str | None = Query(default=None),
+    clil_mode: str | None = Query(default=None),
+    scope: str = Query(default="all", pattern="^(all|official|tenant)$"),
+    q: str | None = Query(default=None, max_length=120),
+    limit: int = Query(default=100, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+    current_user: User = Depends(require_roles(*TEACHER_ROLES)),
+    db: Session = Depends(get_db),
+) -> CmsResourceListOut:
+    """List CLIL lesson plans, bilingual slides, and worksheets in CMS."""
+    return LMSService(db).list_resources_cms(
+        current_user,
+        grade=grade,
+        lesson_no=lesson_no,
+        resource_type=resource_type,
+        clil_mode=clil_mode,
+        scope=scope,
+        q=q,
+        limit=limit,
+        offset=offset,
+    )
+
+
+@router.post(
+    "/lms/cms/resources",
+    response_model=CmsResourceOut,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_cms_resource(
+    payload: CmsResourceCreateRequest,
+    current_user: User = Depends(require_roles(*TEACHER_ROLES)),
+    db: Session = Depends(get_db),
+) -> CmsResourceOut:
+    """Create a CLIL Markdown resource in CMS with live IUPAC/SI linting."""
+    return LMSService(db).create_resource_cms(current_user, payload)
+
+
+@router.patch("/lms/cms/resources/{resource_id}", response_model=CmsResourceOut)
+def update_cms_resource(
+    resource_id: str,
+    payload: CmsResourceUpdateRequest,
+    current_user: User = Depends(require_roles(*TEACHER_ROLES)),
+    db: Session = Depends(get_db),
+) -> CmsResourceOut:
+    """Update a CLIL Markdown resource inside caller's authorized scope."""
+    return LMSService(db).update_resource_cms(current_user, resource_id, payload)
+
+
+@router.delete("/lms/cms/resources/{resource_id}")
+def delete_cms_resource(
+    resource_id: str,
+    current_user: User = Depends(require_roles(*TEACHER_ROLES)),
+    db: Session = Depends(get_db),
+) -> dict[str, str]:
+    """Delete a CLIL Markdown resource inside caller's authorized scope."""
+    return LMSService(db).delete_resource_cms(current_user, resource_id)

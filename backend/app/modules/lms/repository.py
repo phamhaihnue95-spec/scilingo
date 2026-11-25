@@ -68,9 +68,7 @@ class LMSRepository:
         return member
 
     def list_student_classroom_ids(self, student_id: str) -> list[str]:
-        stmt = select(ClassroomMember.classroom_id).where(
-            ClassroomMember.student_id == student_id
-        )
+        stmt = select(ClassroomMember.classroom_id).where(ClassroomMember.student_id == student_id)
         return list(self.db.scalars(stmt).all())
 
     def list_classrooms_for_student(self, student_id: str) -> list[Classroom]:
@@ -101,6 +99,71 @@ class LMSRepository:
         if lesson_no is not None:
             stmt = stmt.where(TeacherResource.lesson_no == lesson_no)
         return list(self.db.scalars(stmt).all())
+
+    def get_resource_by_id(self, resource_id: str) -> TeacherResource | None:
+        return self.db.scalar(
+            select(TeacherResource).where(
+                TeacherResource.id == resource_id,
+                TeacherResource.resource_type != "game_challenge",
+            )
+        )
+
+    def list_resources_cms(
+        self,
+        *,
+        tenant_id: str | None,
+        grade: int | None = None,
+        lesson_no: int | None = None,
+        resource_type: str | None = None,
+        clil_mode: str | None = None,
+        scope: str = "all",
+        q: str | None = None,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> tuple[int, list[TeacherResource]]:
+        stmt = select(TeacherResource).where(TeacherResource.resource_type != "game_challenge")
+        if tenant_id is not None:
+            if scope == "official":
+                stmt = stmt.where(TeacherResource.tenant_id.is_(None))
+            elif scope == "tenant":
+                stmt = stmt.where(TeacherResource.tenant_id == tenant_id)
+            else:
+                stmt = stmt.where(
+                    or_(TeacherResource.tenant_id.is_(None), TeacherResource.tenant_id == tenant_id)
+                )
+        elif scope == "official":
+            stmt = stmt.where(TeacherResource.tenant_id.is_(None))
+        elif scope == "tenant":
+            stmt = stmt.where(TeacherResource.tenant_id.is_not(None))
+
+        if grade is not None:
+            stmt = stmt.where(TeacherResource.grade == grade)
+        if lesson_no is not None:
+            stmt = stmt.where(TeacherResource.lesson_no == lesson_no)
+        if resource_type:
+            stmt = stmt.where(TeacherResource.resource_type == resource_type)
+        if clil_mode:
+            stmt = stmt.where(TeacherResource.clil_mode == clil_mode)
+        if q and q.strip():
+            pattern = f"%{q.strip()}%"
+            stmt = stmt.where(
+                or_(
+                    TeacherResource.title.ilike(pattern),
+                    TeacherResource.content_markdown.ilike(pattern),
+                )
+            )
+        count_stmt = select(func.count()).select_from(stmt.subquery())
+        total = int(self.db.scalar(count_stmt) or 0)
+        items = list(
+            self.db.scalars(
+                stmt.order_by(TeacherResource.created_at.desc()).limit(limit).offset(offset)
+            ).all()
+        )
+        return total, items
+
+    def delete_resource(self, resource: TeacherResource) -> None:
+        self.db.delete(resource)
+        self.db.flush()
 
     def list_game_challenges_for_tenants(self, tenant_ids: list[str]) -> list[TeacherResource]:
         if not tenant_ids:
@@ -140,6 +203,75 @@ class LMSRepository:
             stmt = stmt.where(QuestionBankItem.language == language)
         stmt = stmt.order_by(QuestionBankItem.created_at.desc())
         return list(self.db.scalars(stmt).all())
+
+    def get_question_by_id(self, question_id: str) -> QuestionBankItem | None:
+        return self.db.scalar(select(QuestionBankItem).where(QuestionBankItem.id == question_id))
+
+    def list_questions_cms(
+        self,
+        *,
+        tenant_id: str | None,
+        grade: int | None = None,
+        lesson_no: int | None = None,
+        language: str | None = None,
+        cognitive_level: str | None = None,
+        discipline: str | None = None,
+        linter_verified: bool | None = None,
+        scope: str = "all",
+        q: str | None = None,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> tuple[int, list[QuestionBankItem]]:
+        stmt = select(QuestionBankItem)
+        if tenant_id is not None:
+            if scope == "official":
+                stmt = stmt.where(QuestionBankItem.tenant_id.is_(None))
+            elif scope == "tenant":
+                stmt = stmt.where(QuestionBankItem.tenant_id == tenant_id)
+            else:
+                stmt = stmt.where(
+                    or_(
+                        QuestionBankItem.tenant_id.is_(None),
+                        QuestionBankItem.tenant_id == tenant_id,
+                    )
+                )
+        elif scope == "official":
+            stmt = stmt.where(QuestionBankItem.tenant_id.is_(None))
+        elif scope == "tenant":
+            stmt = stmt.where(QuestionBankItem.tenant_id.is_not(None))
+
+        if grade is not None:
+            stmt = stmt.where(QuestionBankItem.grade == grade)
+        if lesson_no is not None:
+            stmt = stmt.where(QuestionBankItem.lesson_no == lesson_no)
+        if language:
+            stmt = stmt.where(QuestionBankItem.language == language)
+        if cognitive_level:
+            stmt = stmt.where(QuestionBankItem.cognitive_level == cognitive_level)
+        if discipline:
+            stmt = stmt.where(QuestionBankItem.discipline == discipline)
+        if linter_verified is not None:
+            stmt = stmt.where(QuestionBankItem.linter_verified == linter_verified)
+        if q and q.strip():
+            pattern = f"%{q.strip()}%"
+            stmt = stmt.where(
+                or_(
+                    QuestionBankItem.prompt_text.ilike(pattern),
+                    QuestionBankItem.explanation_vi.ilike(pattern),
+                )
+            )
+        count_stmt = select(func.count()).select_from(stmt.subquery())
+        total = int(self.db.scalar(count_stmt) or 0)
+        items = list(
+            self.db.scalars(
+                stmt.order_by(QuestionBankItem.created_at.desc()).limit(limit).offset(offset)
+            ).all()
+        )
+        return total, items
+
+    def delete_question(self, item: QuestionBankItem) -> None:
+        self.db.delete(item)
+        self.db.flush()
 
     # --- Exams ---
     def create_exam(self, exam: Exam, links: list[ExamQuestion]) -> Exam:

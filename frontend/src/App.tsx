@@ -6,6 +6,7 @@ import {
   Gamepad2,
   GraduationCap,
   Library,
+  ShieldCheck,
   Sparkles,
   UserCircle2,
   Volume2,
@@ -17,6 +18,7 @@ import type { AuthSession, GradeLevel } from "./api/types";
 import { PageTransitionWrapper } from "./components/motion/MotionPrimitives";
 import { Icon3D } from "./components/visuals/ScienceVisuals";
 import { AccountPage } from "./features/auth/AuthModalAndAccount";
+import { CmsPortalPage } from "./features/cms/CmsPortalPage";
 import { CurriculumMapPage } from "./features/curriculum/CurriculumMapPage";
 import { GlossaryAndRulesPage } from "./features/curriculum/GlossaryAndRulesPage";
 import { LessonDetailPage } from "./features/curriculum/LessonDetailPage";
@@ -45,11 +47,16 @@ type View =
   | { kind: "games"; initialGame?: ArenaTab; initialUnitNo?: number }
   | { kind: "learning"; tab: LearningSubTab; lessonNo?: number }
   | { kind: "teacher" }
+  | { kind: "cms" }
   | { kind: "glossary" }
   | { kind: "account" };
 
 export function App() {
-  const [view, setView] = useState<View>({ kind: "map" });
+  const [view, setView] = useState<View>(() =>
+    typeof window !== "undefined" && window.location.pathname.startsWith("/cms")
+      ? { kind: "cms" }
+      : { kind: "map" }
+  );
   const [session, setSession] = useState<AuthSession | null>(null);
   const [selectedGrade, setSelectedGrade] = useState<GradeLevel>(() => getSavedGrade());
   const [soundOn, setSoundOn] = useState<boolean>(() => isSoundEnabled());
@@ -197,6 +204,22 @@ export function App() {
       label: "Teacher Studio",
       hideLabelClass: "hidden md:inline",
     },
+    ...(session && (session.user.role === "school_admin" || session.user.role === "platform_admin")
+      ? [
+          {
+            id: "cms",
+            active: view.kind === "cms",
+            onClick: () => {
+              playClickSound();
+              setView({ kind: "cms" });
+            },
+            icon: ShieldCheck,
+            label: "Quản trị CMS",
+            pillClass: "from-emerald-600 to-teal-600",
+            hideLabelClass: "hidden md:inline",
+          },
+        ]
+      : []),
     {
       id: "account",
       active: view.kind === "account",
@@ -403,6 +426,12 @@ export function App() {
                   onSessionChange={setSession}
                 />
               )}
+              {view.kind === "cms" && (
+                <CmsPortalPage
+                  session={session}
+                  onOpenAccount={() => setView({ kind: "account" })}
+                />
+              )}
               {view.kind === "glossary" && (
                 <GlossaryAndRulesPage grade={selectedGrade} onSelectLesson={openLesson} />
               )}
@@ -427,7 +456,7 @@ export function App() {
           </div>
         </footer>
 
-        <SciPetWidget session={session} grade={selectedGrade} />
+        {view.kind !== "cms" && <SciPetWidget session={session} grade={selectedGrade} />}
       </div>
     </MotionConfig>
   );

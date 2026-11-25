@@ -7,6 +7,8 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from app.modules.curriculum.schemas import LintCheckOut
+
 ClilMode = Literal["term_only", "bilingual_10", "bilingual_50", "full_english"]
 ResourceType = Literal["lesson_plan", "bilingual_slide", "worksheet", "glossary_card"]
 CognitiveLevel = Literal["know", "understand", "apply"]
@@ -398,3 +400,96 @@ class GameChallengeOut(BaseModel):
     instructions: str
     created_by_name: str
     created_at: datetime
+
+
+class CmsQuestionOut(QuestionOut):
+    """CMS view of a QuestionBankItem including tenant ownership and lint check."""
+
+    tenant_id: str | None = None
+    is_official: bool = False
+    author_id: str | None = None
+    created_at: datetime
+    lint_report: LintCheckOut | None = None
+
+
+class CmsQuestionListOut(BaseModel):
+    """Paginated Question Bank CMS results."""
+
+    total: int
+    items: list[CmsQuestionOut]
+
+
+class CmsQuestionCreateRequest(QuestionCreateRequest):
+    """Create question via CMS with optional official flag (platform_admin only)."""
+
+    is_official: bool = False
+
+
+class CmsQuestionUpdateRequest(BaseModel):
+    """Update an existing QuestionBankItem via CMS."""
+
+    grade: int | None = Field(default=None, ge=6, le=9)
+    lesson_no: int | None = Field(default=None, ge=1, le=60)
+    language: QuestionLang | None = None
+    cognitive_level: CognitiveLevel | None = None
+    discipline: str | None = None
+    prompt_text: str | None = Field(default=None, min_length=5, max_length=1000)
+    options: list[str] | None = Field(default=None, min_length=4, max_length=4)
+    correct_index: int | None = Field(default=None, ge=0, le=3)
+    explanation_vi: str | None = Field(default=None, max_length=1000)
+    is_official: bool | None = None
+
+
+class CmsQuestionCsvImportRequest(BaseModel):
+    """Bulk CSV import request for QuestionBankItem records."""
+
+    csv_content: str = Field(min_length=1, max_length=500000)
+    is_official: bool = False
+
+
+class CmsQuestionCsvImportOut(BaseModel):
+    """CSV import summary for Question Bank CMS."""
+
+    imported_count: int
+    verified_count: int
+    flagged_count: int
+    errors: list[str] = Field(default_factory=list)
+
+
+class CmsResourceOut(TeacherResourceOut):
+    """CMS view of a CLIL resource including tenant ownership and IUPAC lint result."""
+
+    tenant_id: str | None = None
+    created_at: datetime
+    lint_report: LintCheckOut | None = None
+
+
+class CmsResourceListOut(BaseModel):
+    """Paginated CLIL resources list for CMS management."""
+
+    total: int
+    items: list[CmsResourceOut]
+
+
+class CmsResourceCreateRequest(BaseModel):
+    """Create a CLIL lesson plan, bilingual slide deck, or worksheet."""
+
+    grade: int = Field(default=8, ge=6, le=9)
+    lesson_no: int = Field(ge=1, le=60)
+    title: str = Field(min_length=3, max_length=255)
+    resource_type: ResourceType = "lesson_plan"
+    clil_mode: ClilMode = "bilingual_10"
+    content_markdown: str = Field(min_length=10, max_length=30000)
+    is_official: bool = False
+
+
+class CmsResourceUpdateRequest(BaseModel):
+    """Update a CLIL resource in CMS."""
+
+    grade: int | None = Field(default=None, ge=6, le=9)
+    lesson_no: int | None = Field(default=None, ge=1, le=60)
+    title: str | None = Field(default=None, min_length=3, max_length=255)
+    resource_type: ResourceType | None = None
+    clil_mode: ClilMode | None = None
+    content_markdown: str | None = Field(default=None, min_length=10, max_length=30000)
+    is_official: bool | None = None

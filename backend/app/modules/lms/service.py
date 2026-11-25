@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import csv
+import io
 import secrets
 import string
 from datetime import UTC, datetime
@@ -9,6 +11,7 @@ from datetime import UTC, datetime
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.modules.curriculum.schemas import LintCheckOut
 from app.modules.curriculum.service import CurriculumService
 from app.modules.identity_billing.models import User
 from app.modules.identity_billing.service import IdentityService
@@ -43,6 +46,16 @@ from app.modules.lms.schemas import (
     ClassroomLeaderboardOut,
     ClassroomOut,
     ClassroomTT94MetricsOut,
+    CmsQuestionCreateRequest,
+    CmsQuestionCsvImportOut,
+    CmsQuestionCsvImportRequest,
+    CmsQuestionListOut,
+    CmsQuestionOut,
+    CmsQuestionUpdateRequest,
+    CmsResourceCreateRequest,
+    CmsResourceListOut,
+    CmsResourceOut,
+    CmsResourceUpdateRequest,
     ExamDetailOut,
     ExamGenerateRequest,
     ExamQuestionOut,
@@ -140,9 +153,7 @@ class LMSService:
             )
         existing = self.repo.get_membership(classroom.id, student.id)
         if existing is None:
-            self.repo.add_member(
-                ClassroomMember(classroom_id=classroom.id, student_id=student.id)
-            )
+            self.repo.add_member(ClassroomMember(classroom_id=classroom.id, student_id=student.id))
             self.db.commit()
             self.db.refresh(classroom, attribute_names=["members"])
 
@@ -205,9 +216,7 @@ class LMSService:
                 )
         return classroom
 
-    def get_classroom_leaderboard(
-        self, caller: User, classroom_id: str
-    ) -> ClassroomLeaderboardOut:
+    def get_classroom_leaderboard(self, caller: User, classroom_id: str) -> ClassroomLeaderboardOut:
         classroom = self._ensure_classroom_access(caller, classroom_id)
         member_ids = [m.student_id for m in classroom.members]
         names_map = self.identity.get_user_names_map(member_ids)
@@ -245,9 +254,7 @@ class LMSService:
                 )
             )
 
-        raw_entries.sort(
-            key=lambda e: (-e.total_xp, -e.current_streak, e.student_name.lower())
-        )
+        raw_entries.sort(key=lambda e: (-e.total_xp, -e.current_streak, e.student_name.lower()))
         ranked = [
             entry.model_copy(update={"rank": idx + 1}) for idx, entry in enumerate(raw_entries)
         ]
@@ -496,9 +503,7 @@ class LMSService:
                     language=language,
                     needed=study_count,
                 )
-                selected.extend(
-                    self._save_synthesized_questions(teacher, grade, synthesized_pack)
-                )
+                selected.extend(self._save_synthesized_questions(teacher, grade, synthesized_pack))
                 shortfall = needed - len(selected)
             if shortfall > 0 and lessons:
                 synthesized = synthesize_questions_from_curriculum(
@@ -1092,3 +1097,503 @@ class LMSService:
             classrooms=classroom_metrics,
             grade_breakdown=grade_breakdown,
         )
+
+    # --- CMS Question Bank & CLIL Resources Management ---
+    def _ensure_question_write_access(self, caller: User, item: QuestionBankItem) -> None:
+        if caller.role == "platform_admin":
+            return
+        if item.tenant_id is None or item.tenant_id != caller.tenant_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=(
+                    "Bạn không có quyền chỉnh sửa câu hỏi chuẩn hệ thống "
+                    "hoặc thuộc trường khác."
+                ),
+            )
+        if caller.role == "teacher" and item.author_id not in (None, caller.id):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Giáo viên chỉ được chỉnh sửa câu hỏi do chính mình biên soạn.",
+            )
+
+    def _to_cms_question(
+        self, item: QuestionBankItem, *, lint_report: LintCheckOut | None = None
+    ) -> CmsQuestionOut:
+        return CmsQuestionOut(
+            id=item.id,
+            grade=item.grade,
+            lesson_no=item.lesson_no,
+            language=item.language,
+            cognitive_level=item.cognitive_level,
+            discipline=item.discipline,
+            prompt_text=item.prompt_text,
+            options=list(item.options_json),
+            correct_answer=item.correct_answer,
+            explanation_vi=item.explanation_vi,
+            linter_verified=item.linter_verified,
+            tenant_id=item.tenant_id,
+            is_official=item.tenant_id is None,
+            author_id=item.author_id,
+            created_at=item.created_at,
+            lint_report=lint_report,
+        )
+
+    def list_questions_cms(
+        self,
+        caller: User,
+        *,
+        grade: int | None = None,
+        lesson_no: int | None = None,
+        language: str | None = None,
+        cognitive_level: str | None = None,
+        discipline: str | None = None,
+        linter_verified: bool | None = None,
+        scope: str = "all",
+        q: str | None = None,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> CmsQuestionListOut:
+        tenant_scope = None if caller.role == "platform_admin" else caller.tenant_id
+        total, items = self.repo.list_questions_cms(
+            tenant_id=tenant_scope,
+            grade=grade,
+            lesson_no=lesson_no,
+            language=language,
+            cognitive_level=cognitive_level,
+            discipline=discipline,
+            linter_verified=linter_verified,
+            scope=scope,
+            q=q,
+            limit=limit,
+            offset=offset,
+        )
+        return CmsQuestionListOut(
+            total=total, items=[self._to_cms_question(item) for item in items]
+        )
+
+    def create_question_cms(
+        self, caller: User, payload: CmsQuestionCreateRequest
+    ) -> CmsQuestionOut:
+        self.curriculum.get_lesson_detail(payload.lesson_no, grade=payload.grade)
+        options = [opt.strip() for opt in payload.options]
+        if any(not opt for opt in options):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cả 4 đáp án A/B/C/D không được để trống.",
+            )
+        combined_text = "\n".join([payload.prompt_text, *options, payload.explanation_vi])
+        lint_report = self.curriculum.lint_content(combined_text, discipline=payload.discipline)
+        is_official = payload.is_official and caller.role == "platform_admin"
+        target_tenant = None if is_official else caller.tenant_id
+
+        item = QuestionBankItem(
+            grade=payload.grade,
+            lesson_no=payload.lesson_no,
+            author_id=caller.id,
+            tenant_id=target_tenant,
+            question_type="mcq",
+            language=payload.language,
+            cognitive_level=payload.cognitive_level,
+            discipline=payload.discipline,
+            prompt_text=payload.prompt_text.strip(),
+            options_json=options,
+            correct_answer=options[payload.correct_index],
+            explanation_vi=payload.explanation_vi.strip(),
+            linked_term_ids_json=[],
+            linter_verified=lint_report.passed,
+        )
+        self.repo.create_question(item)
+        self.identity.record_audit_log(
+            caller,
+            module="lms",
+            action="create",
+            entity_type="question",
+            entity_id=item.id,
+            summary=f"Thêm câu hỏi KHTN {item.grade} Bài {item.lesson_no} ({item.language})",
+            diff={"linter_verified": item.linter_verified, "is_official": is_official},
+            tenant_id=target_tenant,
+        )
+        self.db.commit()
+        self.db.refresh(item)
+        return self._to_cms_question(item, lint_report=lint_report)
+
+    def update_question_cms(
+        self, caller: User, question_id: str, payload: CmsQuestionUpdateRequest
+    ) -> CmsQuestionOut:
+        item = self.repo.get_question_by_id(question_id)
+        if item is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Không tìm thấy câu hỏi cần chỉnh sửa.",
+            )
+        self._ensure_question_write_access(caller, item)
+
+        next_grade = payload.grade if payload.grade is not None else item.grade
+        next_lesson = payload.lesson_no if payload.lesson_no is not None else item.lesson_no
+        if payload.grade is not None or payload.lesson_no is not None:
+            self.curriculum.get_lesson_detail(next_lesson, grade=next_grade)
+
+        options = (
+            [opt.strip() for opt in payload.options]
+            if payload.options is not None
+            else list(item.options_json)
+        )
+        if len(options) != 4 or any(not opt for opt in options):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Câu hỏi trắc nghiệm cần đủ 4 đáp án hợp lệ.",
+            )
+
+        if payload.correct_index is not None:
+            correct_answer = options[payload.correct_index]
+        elif item.correct_answer in options:
+            correct_answer = item.correct_answer
+        else:
+            correct_answer = options[0]
+
+        next_prompt = (
+            payload.prompt_text.strip() if payload.prompt_text is not None else item.prompt_text
+        )
+        next_expl = (
+            payload.explanation_vi.strip()
+            if payload.explanation_vi is not None
+            else item.explanation_vi
+        )
+        next_disc = payload.discipline if payload.discipline is not None else item.discipline
+        lint_report = self.curriculum.lint_content(
+            "\n".join([next_prompt, *options, next_expl]), discipline=next_disc
+        )
+
+        item.grade = next_grade
+        item.lesson_no = next_lesson
+        if payload.language is not None:
+            item.language = payload.language
+        if payload.cognitive_level is not None:
+            item.cognitive_level = payload.cognitive_level
+        item.discipline = next_disc
+        item.prompt_text = next_prompt
+        item.options_json = options
+        item.correct_answer = correct_answer
+        item.explanation_vi = next_expl
+        item.linter_verified = lint_report.passed
+        if payload.is_official is not None and caller.role == "platform_admin":
+            item.tenant_id = None if payload.is_official else caller.tenant_id
+
+        self.identity.record_audit_log(
+            caller,
+            module="lms",
+            action="update",
+            entity_type="question",
+            entity_id=item.id,
+            summary=f"Cập nhật câu hỏi KHTN {item.grade} Bài {item.lesson_no}",
+            diff={"linter_verified": item.linter_verified, "is_official": item.tenant_id is None},
+            tenant_id=item.tenant_id,
+        )
+        self.db.commit()
+        self.db.refresh(item)
+        return self._to_cms_question(item, lint_report=lint_report)
+
+    def delete_question_cms(self, caller: User, question_id: str) -> dict[str, str]:
+        item = self.repo.get_question_by_id(question_id)
+        if item is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Không tìm thấy câu hỏi cần xóa.",
+            )
+        self._ensure_question_write_access(caller, item)
+        self.identity.record_audit_log(
+            caller,
+            module="lms",
+            action="delete",
+            entity_type="question",
+            entity_id=item.id,
+            summary=f"Xóa câu hỏi KHTN {item.grade} Bài {item.lesson_no}",
+            diff={"prompt": item.prompt_text[:120]},
+            tenant_id=item.tenant_id,
+        )
+        self.repo.delete_question(item)
+        self.db.commit()
+        return {"deleted_id": question_id}
+
+    def import_questions_csv_cms(
+        self, caller: User, payload: CmsQuestionCsvImportRequest
+    ) -> CmsQuestionCsvImportOut:
+        cleaned = payload.csv_content.lstrip("\ufeff").strip()
+        reader = csv.DictReader(io.StringIO(cleaned))
+        is_official = payload.is_official and caller.role == "platform_admin"
+        target_tenant = None if is_official else caller.tenant_id
+
+        imported_count = 0
+        verified_count = 0
+        flagged_count = 0
+        errors: list[str] = []
+
+        for line_no, raw_row in enumerate(reader, start=2):
+            row = {str(k or "").strip().lower(): str(v or "").strip() for k, v in raw_row.items()}
+            try:
+                grade = int(row.get("grade") or 8)
+                lesson_no = int(row.get("lesson_no") or 0)
+            except ValueError:
+                errors.append(f"Dòng {line_no}: grade/lesson_no phải là số nguyên.")
+                continue
+
+            if grade not in (6, 7, 8, 9) or lesson_no < 1:
+                errors.append(
+                    f"Dòng {line_no}: Khối ({grade}) hoặc bài ({lesson_no}) không hợp lệ."
+                )
+                continue
+
+            try:
+                self.curriculum.get_lesson_detail(lesson_no, grade=grade)
+            except HTTPException:
+                errors.append(f"Dòng {line_no}: Không tồn tại KHTN {grade} Bài {lesson_no}.")
+                continue
+
+            language = (row.get("language") or "en").lower()
+            cognitive = (row.get("cognitive_level") or "know").lower()
+            discipline = (row.get("discipline") or "chemistry").lower()
+            prompt_text = row.get("prompt_text", "")
+            options = [
+                row.get("option_a", ""),
+                row.get("option_b", ""),
+                row.get("option_c", ""),
+                row.get("option_d", ""),
+            ]
+            if len(prompt_text) < 5 or any(not opt for opt in options):
+                errors.append(f"Dòng {line_no}: Thiếu nội dung câu hỏi hoặc 4 đáp án A/B/C/D.")
+                continue
+            if language not in ("vi", "en"):
+                language = "en"
+            if cognitive not in ("know", "understand", "apply"):
+                cognitive = "know"
+
+            correct_raw = (row.get("correct_index") or "0").strip().upper()
+            letter_map = {"A": 0, "B": 1, "C": 2, "D": 3}
+            if correct_raw in letter_map:
+                correct_idx = letter_map[correct_raw]
+            else:
+                try:
+                    correct_idx = int(correct_raw)
+                except ValueError:
+                    correct_idx = 0
+            if not (0 <= correct_idx <= 3):
+                errors.append(f"Dòng {line_no}: correct_index phải thuộc 0..3 hoặc A..D.")
+                continue
+
+            explanation_vi = row.get("explanation_vi", "")
+            lint_report = self.curriculum.lint_content(
+                "\n".join([prompt_text, *options, explanation_vi]),
+                discipline=discipline,
+            )
+
+            self.repo.create_question(
+                QuestionBankItem(
+                    grade=grade,
+                    lesson_no=lesson_no,
+                    author_id=caller.id,
+                    tenant_id=target_tenant,
+                    question_type="mcq",
+                    language=language,
+                    cognitive_level=cognitive,
+                    discipline=discipline,
+                    prompt_text=prompt_text,
+                    options_json=options,
+                    correct_answer=options[correct_idx],
+                    explanation_vi=explanation_vi,
+                    linked_term_ids_json=[],
+                    linter_verified=lint_report.passed,
+                )
+            )
+            imported_count += 1
+            if lint_report.passed:
+                verified_count += 1
+            else:
+                flagged_count += 1
+
+        if imported_count > 0:
+            self.identity.record_audit_log(
+                caller,
+                module="lms",
+                action="import",
+                entity_type="question_batch",
+                entity_id=target_tenant or "official",
+                summary=(
+                    f"Import CSV câu hỏi: {imported_count} câu "
+                    f"({verified_count} đạt chuẩn, {flagged_count} cảnh báo IUPAC)."
+                ),
+                diff={
+                    "imported": imported_count,
+                    "verified": verified_count,
+                    "flagged": flagged_count,
+                },
+                tenant_id=target_tenant,
+            )
+        self.db.commit()
+        return CmsQuestionCsvImportOut(
+            imported_count=imported_count,
+            verified_count=verified_count,
+            flagged_count=flagged_count,
+            errors=errors[:20],
+        )
+
+    def _ensure_resource_write_access(self, caller: User, res: TeacherResource) -> None:
+        if caller.role == "platform_admin":
+            return
+        if res.tenant_id is None or res.tenant_id != caller.tenant_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=(
+                    "Bạn không có quyền chỉnh sửa học liệu chuẩn quốc gia "
+                    "hoặc thuộc trường khác."
+                ),
+            )
+
+    def _to_cms_resource(
+        self, res: TeacherResource, *, lint_report: LintCheckOut | None = None
+    ) -> CmsResourceOut:
+        return CmsResourceOut(
+            id=res.id,
+            grade=res.grade,
+            lesson_no=res.lesson_no,
+            title=res.title,
+            resource_type=res.resource_type,  # type: ignore[arg-type]
+            clil_mode=res.clil_mode,  # type: ignore[arg-type]
+            content_markdown=res.content_markdown,
+            is_official=res.is_official,
+            tenant_id=res.tenant_id,
+            created_at=res.created_at,
+            lint_report=lint_report,
+        )
+
+    def list_resources_cms(
+        self,
+        caller: User,
+        *,
+        grade: int | None = None,
+        lesson_no: int | None = None,
+        resource_type: str | None = None,
+        clil_mode: str | None = None,
+        scope: str = "all",
+        q: str | None = None,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> CmsResourceListOut:
+        tenant_scope = None if caller.role == "platform_admin" else caller.tenant_id
+        total, items = self.repo.list_resources_cms(
+            tenant_id=tenant_scope,
+            grade=grade,
+            lesson_no=lesson_no,
+            resource_type=resource_type,
+            clil_mode=clil_mode,
+            scope=scope,
+            q=q,
+            limit=limit,
+            offset=offset,
+        )
+        return CmsResourceListOut(total=total, items=[self._to_cms_resource(r) for r in items])
+
+    def create_resource_cms(
+        self, caller: User, payload: CmsResourceCreateRequest
+    ) -> CmsResourceOut:
+        self.curriculum.get_lesson_detail(payload.lesson_no, grade=payload.grade)
+        lint_report = self.curriculum.lint_content(f"{payload.title}\n{payload.content_markdown}")
+        is_official = payload.is_official and caller.role == "platform_admin"
+        target_tenant = None if is_official else caller.tenant_id
+
+        res = TeacherResource(
+            grade=payload.grade,
+            lesson_no=payload.lesson_no,
+            tenant_id=target_tenant,
+            title=payload.title.strip(),
+            resource_type=payload.resource_type,
+            clil_mode=payload.clil_mode,
+            content_markdown=payload.content_markdown,
+            metadata_json={"author_id": caller.id, "lint_passed": lint_report.passed},
+            is_official=is_official,
+        )
+        self.repo.create_teacher_resource(res)
+        self.identity.record_audit_log(
+            caller,
+            module="lms",
+            action="create",
+            entity_type="resource",
+            entity_id=res.id,
+            summary=f"Tạo học liệu CLIL '{res.title}' (KHTN {res.grade} Bài {res.lesson_no})",
+            diff={"resource_type": res.resource_type, "is_official": res.is_official},
+            tenant_id=target_tenant,
+        )
+        self.db.commit()
+        self.db.refresh(res)
+        return self._to_cms_resource(res, lint_report=lint_report)
+
+    def update_resource_cms(
+        self, caller: User, resource_id: str, payload: CmsResourceUpdateRequest
+    ) -> CmsResourceOut:
+        res = self.repo.get_resource_by_id(resource_id)
+        if res is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Không tìm thấy học liệu CLIL cần chỉnh sửa.",
+            )
+        self._ensure_resource_write_access(caller, res)
+
+        next_grade = payload.grade if payload.grade is not None else res.grade
+        next_lesson = payload.lesson_no if payload.lesson_no is not None else res.lesson_no
+        if payload.grade is not None or payload.lesson_no is not None:
+            self.curriculum.get_lesson_detail(next_lesson, grade=next_grade)
+
+        next_title = payload.title.strip() if payload.title is not None else res.title
+        next_md = (
+            payload.content_markdown
+            if payload.content_markdown is not None
+            else res.content_markdown
+        )
+        lint_report = self.curriculum.lint_content(f"{next_title}\n{next_md}")
+
+        res.grade = next_grade
+        res.lesson_no = next_lesson
+        res.title = next_title
+        res.content_markdown = next_md
+        if payload.resource_type is not None:
+            res.resource_type = payload.resource_type
+        if payload.clil_mode is not None:
+            res.clil_mode = payload.clil_mode
+        if payload.is_official is not None and caller.role == "platform_admin":
+            res.is_official = payload.is_official
+            res.tenant_id = None if payload.is_official else caller.tenant_id
+
+        self.identity.record_audit_log(
+            caller,
+            module="lms",
+            action="update",
+            entity_type="resource",
+            entity_id=res.id,
+            summary=f"Cập nhật học liệu CLIL '{res.title}'",
+            diff={"lint_passed": lint_report.passed, "is_official": res.is_official},
+            tenant_id=res.tenant_id,
+        )
+        self.db.commit()
+        self.db.refresh(res)
+        return self._to_cms_resource(res, lint_report=lint_report)
+
+    def delete_resource_cms(self, caller: User, resource_id: str) -> dict[str, str]:
+        res = self.repo.get_resource_by_id(resource_id)
+        if res is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Không tìm thấy học liệu CLIL cần xóa.",
+            )
+        self._ensure_resource_write_access(caller, res)
+        self.identity.record_audit_log(
+            caller,
+            module="lms",
+            action="delete",
+            entity_type="resource",
+            entity_id=res.id,
+            summary=f"Xóa học liệu CLIL '{res.title}'",
+            diff={"grade": res.grade, "lesson_no": res.lesson_no},
+            tenant_id=res.tenant_id,
+        )
+        self.repo.delete_resource(res)
+        self.db.commit()
+        return {"deleted_id": resource_id}

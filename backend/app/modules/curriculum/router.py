@@ -2,14 +2,23 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.modules.curriculum.schemas import (
+    CmsLessonListOut,
+    CmsLessonUpdateRequest,
+    CmsLessonUpdateResponse,
+    CmsTermCreateRequest,
+    CmsTermListOut,
+    CmsTermMutationOut,
+    CmsTermUpdateRequest,
     CurriculumTreeResponse,
     GradeOverviewOut,
     LessonDetailOut,
+    LintCheckOut,
+    LintCheckRequest,
     StudyPackOverviewOut,
     StudyPackQuizOut,
     StudyPackQuizStartRequest,
@@ -20,6 +29,8 @@ from app.modules.curriculum.schemas import (
     TermSearchResponse,
 )
 from app.modules.curriculum.service import CurriculumService
+from app.modules.identity_billing.dependencies import require_roles
+from app.modules.identity_billing.models import User
 
 router = APIRouter(tags=["Curriculum & Terminology (Unit 1)"])
 
@@ -145,3 +156,94 @@ def generate_study_pack_quiz(
 ) -> StudyPackQuizOut:
     """Generate a bilingual 10-point practice quiz from selected Study Pack Unit(s)."""
     return CurriculumService(db).generate_study_pack_quiz(payload)
+
+
+# --- Curriculum & Glossary CMS ---
+@router.post("/curriculum/cms/lint-check", response_model=LintCheckOut)
+def run_terminology_lint_check(
+    payload: LintCheckRequest,
+    _: User = Depends(require_roles("teacher", "school_admin", "platform_admin")),
+    db: Session = Depends(get_db),
+) -> LintCheckOut:
+    """Check arbitrary science text against the 20 IUPAC/SI rules & 13 exceptions."""
+    return CurriculumService(db).lint_content(payload.text, discipline=payload.discipline)
+
+
+@router.get("/curriculum/cms/lessons", response_model=CmsLessonListOut)
+def list_cms_lessons(
+    grade: int | None = Query(default=None, ge=6, le=9),
+    discipline: str | None = Query(default=None),
+    q: str | None = Query(default=None, max_length=120),
+    _: User = Depends(require_roles("school_admin", "platform_admin")),
+    db: Session = Depends(get_db),
+) -> CmsLessonListOut:
+    """List KNTT lessons for CMS management."""
+    return CurriculumService(db).list_cms_lessons(grade=grade, discipline=discipline, q=q)
+
+
+@router.patch("/curriculum/cms/lessons/{lesson_id}", response_model=CmsLessonUpdateResponse)
+def update_cms_lesson(
+    lesson_id: str,
+    payload: CmsLessonUpdateRequest,
+    current_user: User = Depends(require_roles("platform_admin")),
+    db: Session = Depends(get_db),
+) -> CmsLessonUpdateResponse:
+    """Update a national KNTT lesson with IUPAC/SI guardrail check (platform_admin only)."""
+    return CurriculumService(db).update_cms_lesson(current_user, lesson_id, payload)
+
+
+@router.get("/curriculum/cms/terms", response_model=CmsTermListOut)
+def list_cms_terms(
+    q: str | None = Query(default=None, max_length=120),
+    discipline: str | None = Query(default=None),
+    status_filter: str = Query(default="all", pattern="^(all|verified|draft)$"),
+    grade: int | None = Query(default=None, ge=6, le=9),
+    limit: int = Query(default=100, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+    _: User = Depends(require_roles("teacher", "school_admin", "platform_admin")),
+    db: Session = Depends(get_db),
+) -> CmsTermListOut:
+    """List verified and draft glossary terms in CMS."""
+    return CurriculumService(db).list_cms_terms(
+        q=q,
+        discipline=discipline,
+        status_filter=status_filter,
+        grade=grade,
+        limit=limit,
+        offset=offset,
+    )
+
+
+@router.post(
+    "/curriculum/cms/terms",
+    response_model=CmsTermMutationOut,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_cms_term(
+    payload: CmsTermCreateRequest,
+    current_user: User = Depends(require_roles("teacher", "school_admin", "platform_admin")),
+    db: Session = Depends(get_db),
+) -> CmsTermMutationOut:
+    """Create or propose a glossary term with live IUPAC/SI linting."""
+    return CurriculumService(db).create_cms_term(current_user, payload)
+
+
+@router.patch("/curriculum/cms/terms/{term_id}", response_model=CmsTermMutationOut)
+def update_cms_term(
+    term_id: str,
+    payload: CmsTermUpdateRequest,
+    current_user: User = Depends(require_roles("school_admin", "platform_admin")),
+    db: Session = Depends(get_db),
+) -> CmsTermMutationOut:
+    """Update or verify a glossary term (verification requires platform_admin + clean lint)."""
+    return CurriculumService(db).update_cms_term(current_user, term_id, payload)
+
+
+@router.delete("/curriculum/cms/terms/{term_id}")
+def delete_cms_term(
+    term_id: str,
+    current_user: User = Depends(require_roles("platform_admin")),
+    db: Session = Depends(get_db),
+) -> dict[str, str]:
+    """Delete a glossary term (platform_admin only)."""
+    return CurriculumService(db).delete_cms_term(current_user, term_id)

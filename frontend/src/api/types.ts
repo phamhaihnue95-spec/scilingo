@@ -695,3 +695,155 @@ export interface ClassroomGameChallenge {
   created_by_name: string;
   created_at: string;
 }
+
+// --- CMS Types (Phase 1 + Phase 2) ---
+export interface LintIssue {
+  matched_text: string;
+  recommended: string;
+  discipline: string;
+  severity: "error" | "warning" | string;
+  reason: string;
+}
+
+export interface LintCheckResult {
+  passed: boolean;
+  error_count: number;
+  warning_count: number;
+  issues: LintIssue[];
+  exception_notes: string[];
+}
+
+export interface CmsAuditLog {
+  id: string;
+  tenant_id: string | null;
+  actor_user_id: string | null;
+  actor_email: string;
+  actor_name: string;
+  module: string;
+  action: string;
+  entity_type: string;
+  entity_id: string;
+  summary: string;
+  diff_json: Record<string, unknown>;
+  created_at: string;
+}
+
+export interface CmsOverview {
+  scope: "platform" | "school";
+  tenant_name: string;
+  total_tenants: number;
+  total_users: number;
+  active_users: number;
+  users_by_role: Record<string, number>;
+  total_grades: number;
+  total_lessons: number;
+  total_terms: number;
+  verified_terms: number;
+  draft_terms: number;
+  total_classrooms: number;
+  total_questions: number;
+  verified_questions: number;
+  total_resources: number;
+  total_teaching_periods: number;
+  recent_audit_logs: CmsAuditLog[];
+}
+
+export interface CmsTenantDetail {
+  id: string;
+  name: string;
+  tenant_type: string;
+  province: string | null;
+  district: string | null;
+  target_tt94_level: number | null;
+  created_at: string;
+  user_count: number;
+  plan_code: string;
+  ai_monthly_quota: number;
+  ai_used_this_month: number;
+  subscription_status: string;
+}
+
+export interface CmsCsvImportResult {
+  created_count: number;
+  skipped_count: number;
+  errors: string[];
+}
+
+export interface CmsLessonItem {
+  id: string;
+  grade: GradeLevel;
+  chapter_no: number;
+  chapter_title_vi: string;
+  lesson_no: number;
+  title_vi: string;
+  title_en: string;
+  discipline: Discipline;
+  is_practical: boolean;
+  summary_vi: string | null;
+  summary_en: string | null;
+  term_count: number;
+  integration_links_json: Array<Record<string, unknown>>;
+}
+
+export interface CmsLessonList {
+  total: number;
+  items: CmsLessonItem[];
+}
+
+export interface CmsLessonUpdateResponse {
+  lesson: LessonDetail;
+  lint_report: LintCheckResult;
+}
+
+export interface CmsTermItem extends TermSummary {
+  part_of_speech?: string | null;
+  definition_vi?: string | null;
+  definition_en?: string | null;
+  example_en?: string | null;
+  example_vi?: string | null;
+  lesson_ids: string[];
+  lesson_count: number;
+}
+
+export interface CmsTermList {
+  total: number;
+  items: CmsTermItem[];
+}
+
+export interface CmsTermMutationOut {
+  term: CmsTermItem;
+  lint_report: LintCheckResult;
+}
+
+export interface CmsQuestionItem extends QuestionBankItem {
+  grade: GradeLevel;
+  tenant_id: string | null;
+  is_official: boolean;
+  author_id: string | null;
+  created_at: string;
+  lint_report?: LintCheckResult | null;
+}
+
+export interface CmsQuestionList {
+  total: number;
+  items: CmsQuestionItem[];
+}
+
+export interface CmsQuestionCsvImportOut {
+  imported_count: number;
+  verified_count: number;
+  flagged_count: number;
+  errors: string[];
+}
+
+export interface CmsResourceItem extends TeacherResource {
+  grade: GradeLevel;
+  tenant_id: string | null;
+  created_at: string;
+  lint_report?: LintCheckResult | null;
+}
+
+export interface CmsResourceList {
+  total: number;
+  items: CmsResourceItem[];
+}

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -256,3 +256,143 @@ class StudyPackQuizOut(BaseModel):
     vi_points: float
     english_ratio: float
     questions: list[StudyPackQuizQuestionOut]
+
+
+class LintIssueOut(BaseModel):
+    """Single deterministic IUPAC/SI/Biology terminology violation or warning."""
+
+    matched_text: str
+    recommended: str
+    discipline: str
+    severity: str
+    reason: str
+
+
+class LintCheckRequest(BaseModel):
+    """Text snippet submitted for deterministic IUPAC/SI guardrail checking."""
+
+    text: str = Field(min_length=1, max_length=20000)
+    discipline: str | None = None
+
+
+class LintCheckOut(BaseModel):
+    """Structured pedagogical guardrail result returned by Unit 1 Linter."""
+
+    passed: bool
+    error_count: int
+    warning_count: int
+    issues: list[LintIssueOut] = Field(default_factory=list)
+    exception_notes: list[str] = Field(default_factory=list)
+
+
+class CmsLessonItemOut(BaseModel):
+    """Curriculum lesson row for CMS management."""
+
+    id: str
+    grade: int
+    chapter_no: int
+    chapter_title_vi: str
+    lesson_no: int
+    title_vi: str
+    title_en: str
+    discipline: str
+    is_practical: bool
+    summary_vi: str | None = None
+    summary_en: str | None = None
+    term_count: int
+    integration_links_json: list[dict[str, Any]] = Field(default_factory=list)
+
+
+class CmsLessonListOut(BaseModel):
+    """Filtered list of KNTT lessons for CMS management."""
+
+    total: int
+    items: list[CmsLessonItemOut]
+
+
+class CmsLessonUpdateRequest(BaseModel):
+    """Platform-admin update request for a curriculum lesson."""
+
+    title_vi: str | None = Field(default=None, min_length=2, max_length=255)
+    title_en: str | None = Field(default=None, min_length=2, max_length=255)
+    discipline: Literal["general_lab", "chemistry", "physics", "biology", "earth_space"] | None = (
+        None
+    )
+    is_practical: bool | None = None
+    summary_vi: str | None = Field(default=None, max_length=2000)
+    summary_en: str | None = Field(default=None, max_length=2000)
+    integration_links_json: list[dict[str, Any]] | None = None
+    strict_lint: bool = True
+
+
+class CmsLessonUpdateResponse(BaseModel):
+    """Updated lesson details paired with its IUPAC/SI lint evaluation."""
+
+    lesson: LessonDetailOut
+    lint_report: LintCheckOut
+
+
+class CmsTermOut(TermSummaryOut):
+    """CMS glossary term item with full editorial fields and lesson links count."""
+
+    part_of_speech: str | None = None
+    definition_vi: str | None = None
+    definition_en: str | None = None
+    example_en: str | None = None
+    example_vi: str | None = None
+    lesson_ids: list[str] = Field(default_factory=list)
+    lesson_count: int = 0
+
+
+class CmsTermListOut(BaseModel):
+    """Paginated CMS glossary search results (includes draft and verified terms)."""
+
+    total: int
+    items: list[CmsTermOut]
+
+
+class CmsTermCreateRequest(BaseModel):
+    """Create or propose a glossary term in Unit 1."""
+
+    term_en: str = Field(min_length=1, max_length=200)
+    term_vi: str = Field(min_length=1, max_length=255)
+    ipa: str | None = Field(default=None, max_length=200)
+    discipline: Literal["general_lab", "chemistry", "physics", "biology", "earth_space"] = (
+        "chemistry"
+    )
+    part_of_speech: str | None = Field(default="noun", max_length=32)
+    formula_or_symbol: str | None = Field(default=None, max_length=120)
+    iupac_note: str | None = Field(default=None, max_length=1000)
+    definition_vi: str | None = Field(default=None, max_length=1000)
+    definition_en: str | None = Field(default=None, max_length=1000)
+    example_en: str | None = Field(default=None, max_length=1000)
+    example_vi: str | None = Field(default=None, max_length=1000)
+    status: Literal["draft", "verified"] = "draft"
+    lesson_ids: list[str] = Field(default_factory=list)
+
+
+class CmsTermUpdateRequest(BaseModel):
+    """Update or verify a glossary term in Unit 1."""
+
+    term_en: str | None = Field(default=None, min_length=1, max_length=200)
+    term_vi: str | None = Field(default=None, min_length=1, max_length=255)
+    ipa: str | None = Field(default=None, max_length=200)
+    discipline: Literal["general_lab", "chemistry", "physics", "biology", "earth_space"] | None = (
+        None
+    )
+    part_of_speech: str | None = Field(default=None, max_length=32)
+    formula_or_symbol: str | None = Field(default=None, max_length=120)
+    iupac_note: str | None = Field(default=None, max_length=1000)
+    definition_vi: str | None = Field(default=None, max_length=1000)
+    definition_en: str | None = Field(default=None, max_length=1000)
+    example_en: str | None = Field(default=None, max_length=1000)
+    example_vi: str | None = Field(default=None, max_length=1000)
+    status: Literal["draft", "verified"] | None = None
+    lesson_ids: list[str] | None = None
+
+
+class CmsTermMutationOut(BaseModel):
+    """Created/updated glossary term along with its IUPAC/SI lint evaluation."""
+
+    term: CmsTermOut
+    lint_report: LintCheckOut

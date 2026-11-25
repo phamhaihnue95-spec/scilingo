@@ -7,7 +7,21 @@ import type {
   ClassroomGameChallenge,
   ClassroomLeaderboard,
   ClilMode,
+  CmsAuditLog,
+  CmsCsvImportResult,
+  CmsLessonList,
+  CmsLessonUpdateResponse,
+  CmsOverview,
+  CmsQuestionCsvImportOut,
+  CmsQuestionItem,
+  CmsQuestionList,
+  CmsResourceItem,
+  CmsResourceList,
+  CmsTenantDetail,
+  CmsTermList,
+  CmsTermMutationOut,
   CurriculumTreeResponse,
+  Discipline,
   Entitlements,
   ExamDetail,
   ExamSummary,
@@ -19,6 +33,7 @@ import type {
   GradeOverview,
   LessonDetail,
   LessonMindmap,
+  LintCheckResult,
   PetHabitat,
   PetSpecies,
   PetTreatType,
@@ -477,6 +492,366 @@ export const api = {
   getTT94ComplianceReport(academicYear = "2026-2027"): Promise<TT94ComplianceReport> {
     return request<TT94ComplianceReport>(
       `/lms/reports/tt94-compliance?academic_year=${encodeURIComponent(academicYear)}`
+    );
+  },
+
+  // --- CMS Portal API (Units 1, 3, 5) ---
+  cmsGetOverview(): Promise<CmsOverview> {
+    return request<CmsOverview>("/identity/cms/overview");
+  },
+
+  cmsListUsers(params?: {
+    tenant_id?: string;
+    role?: string;
+    q?: string;
+    is_active?: boolean;
+  }): Promise<UserProfile[]> {
+    const sp = new URLSearchParams();
+    if (params?.tenant_id) sp.set("tenant_id", params.tenant_id);
+    if (params?.role) sp.set("role", params.role);
+    if (params?.q) sp.set("q", params.q);
+    if (params?.is_active !== undefined) sp.set("is_active", String(params.is_active));
+    const query = sp.toString();
+    return request<UserProfile[]>(`/identity/cms/users${query ? `?${query}` : ""}`);
+  },
+
+  cmsCreateUser(payload: {
+    email: string;
+    password: string;
+    full_name: string;
+    role: string;
+    grade_level?: GradeLevel | null;
+    tenant_id?: string | null;
+  }): Promise<UserProfile> {
+    return request<UserProfile>("/identity/cms/users", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  cmsUpdateUser(
+    userId: string,
+    payload: {
+      full_name?: string;
+      role?: string;
+      grade_level?: GradeLevel | null;
+      is_active?: boolean;
+      new_password?: string;
+    }
+  ): Promise<UserProfile> {
+    return request<UserProfile>(`/identity/cms/users/${encodeURIComponent(userId)}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  cmsImportUsersCsv(csv_content: string, tenant_id?: string | null): Promise<CmsCsvImportResult> {
+    return request<CmsCsvImportResult>("/identity/cms/users/import-csv", {
+      method: "POST",
+      body: JSON.stringify({ csv_content, tenant_id: tenant_id || null }),
+    });
+  },
+
+  cmsListTenants(): Promise<CmsTenantDetail[]> {
+    return request<CmsTenantDetail[]>("/identity/cms/tenants");
+  },
+
+  cmsCreateTenant(payload: {
+    name: string;
+    tenant_type?: "school" | "b2c_individual";
+    province?: string | null;
+    district?: string | null;
+    target_tt94_level?: number | null;
+    plan_code?: string;
+    ai_monthly_quota?: number;
+  }): Promise<CmsTenantDetail> {
+    return request<CmsTenantDetail>("/identity/cms/tenants", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  cmsUpdateTenant(
+    tenantId: string,
+    payload: {
+      name?: string;
+      province?: string | null;
+      district?: string | null;
+      target_tt94_level?: number | null;
+      plan_code?: string;
+      ai_monthly_quota?: number;
+      subscription_status?: string;
+    }
+  ): Promise<CmsTenantDetail> {
+    return request<CmsTenantDetail>(`/identity/cms/tenants/${encodeURIComponent(tenantId)}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  cmsListAuditLogs(params?: {
+    module?: string;
+    entity_type?: string;
+    limit?: number;
+  }): Promise<CmsAuditLog[]> {
+    const sp = new URLSearchParams();
+    if (params?.module) sp.set("module", params.module);
+    if (params?.entity_type) sp.set("entity_type", params.entity_type);
+    if (params?.limit) sp.set("limit", String(params.limit));
+    const query = sp.toString();
+    return request<CmsAuditLog[]>(`/identity/cms/audit-logs${query ? `?${query}` : ""}`);
+  },
+
+  cmsLintCheck(text: string, discipline?: string | null): Promise<LintCheckResult> {
+    return request<LintCheckResult>("/curriculum/cms/lint-check", {
+      method: "POST",
+      body: JSON.stringify({ text, discipline: discipline || null }),
+    });
+  },
+
+  cmsListLessons(params?: {
+    grade?: GradeLevel;
+    discipline?: string;
+    q?: string;
+  }): Promise<CmsLessonList> {
+    const sp = new URLSearchParams();
+    if (params?.grade) sp.set("grade", String(params.grade));
+    if (params?.discipline) sp.set("discipline", params.discipline);
+    if (params?.q) sp.set("q", params.q);
+    const query = sp.toString();
+    return request<CmsLessonList>(`/curriculum/cms/lessons${query ? `?${query}` : ""}`);
+  },
+
+  cmsUpdateLesson(
+    lessonId: string,
+    payload: {
+      title_vi?: string;
+      title_en?: string;
+      discipline?: Discipline;
+      is_practical?: boolean;
+      summary_vi?: string;
+      summary_en?: string;
+      strict_lint?: boolean;
+    }
+  ): Promise<CmsLessonUpdateResponse> {
+    return request<CmsLessonUpdateResponse>(
+      `/curriculum/cms/lessons/${encodeURIComponent(lessonId)}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify(payload),
+      }
+    );
+  },
+
+  cmsListTerms(params?: {
+    q?: string;
+    discipline?: string;
+    status_filter?: "all" | "verified" | "draft";
+    grade?: GradeLevel;
+    limit?: number;
+    offset?: number;
+  }): Promise<CmsTermList> {
+    const sp = new URLSearchParams();
+    if (params?.q) sp.set("q", params.q);
+    if (params?.discipline) sp.set("discipline", params.discipline);
+    if (params?.status_filter) sp.set("status_filter", params.status_filter);
+    if (params?.grade) sp.set("grade", String(params.grade));
+    if (params?.limit) sp.set("limit", String(params.limit));
+    if (params?.offset) sp.set("offset", String(params.offset));
+    const query = sp.toString();
+    return request<CmsTermList>(`/curriculum/cms/terms${query ? `?${query}` : ""}`);
+  },
+
+  cmsCreateTerm(payload: {
+    term_en: string;
+    term_vi: string;
+    ipa?: string;
+    discipline: Discipline;
+    part_of_speech?: string;
+    formula_or_symbol?: string;
+    iupac_note?: string;
+    definition_vi?: string;
+    definition_en?: string;
+    example_en?: string;
+    example_vi?: string;
+    status?: "draft" | "verified";
+    lesson_ids?: string[];
+  }): Promise<CmsTermMutationOut> {
+    return request<CmsTermMutationOut>("/curriculum/cms/terms", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  cmsUpdateTerm(
+    termId: string,
+    payload: {
+      term_en?: string;
+      term_vi?: string;
+      ipa?: string;
+      discipline?: Discipline;
+      part_of_speech?: string;
+      formula_or_symbol?: string;
+      iupac_note?: string;
+      definition_vi?: string;
+      definition_en?: string;
+      example_en?: string;
+      example_vi?: string;
+      status?: "draft" | "verified";
+      lesson_ids?: string[];
+    }
+  ): Promise<CmsTermMutationOut> {
+    return request<CmsTermMutationOut>(`/curriculum/cms/terms/${encodeURIComponent(termId)}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  cmsDeleteTerm(termId: string): Promise<{ deleted_id: string }> {
+    return request<{ deleted_id: string }>(`/curriculum/cms/terms/${encodeURIComponent(termId)}`, {
+      method: "DELETE",
+    });
+  },
+
+  cmsListQuestions(params?: {
+    grade?: GradeLevel;
+    lesson_no?: number;
+    language?: "vi" | "en";
+    cognitive_level?: "know" | "understand" | "apply";
+    linter_verified?: boolean;
+    scope?: "all" | "official" | "tenant";
+    q?: string;
+    limit?: number;
+  }): Promise<CmsQuestionList> {
+    const sp = new URLSearchParams();
+    if (params?.grade) sp.set("grade", String(params.grade));
+    if (params?.lesson_no) sp.set("lesson_no", String(params.lesson_no));
+    if (params?.language) sp.set("language", params.language);
+    if (params?.cognitive_level) sp.set("cognitive_level", params.cognitive_level);
+    if (params?.linter_verified !== undefined) {
+      sp.set("linter_verified", String(params.linter_verified));
+    }
+    if (params?.scope) sp.set("scope", params.scope);
+    if (params?.q) sp.set("q", params.q);
+    if (params?.limit) sp.set("limit", String(params.limit));
+    const query = sp.toString();
+    return request<CmsQuestionList>(`/lms/cms/questions${query ? `?${query}` : ""}`);
+  },
+
+  cmsCreateQuestion(payload: {
+    grade: GradeLevel;
+    lesson_no: number;
+    language: "vi" | "en";
+    cognitive_level: "know" | "understand" | "apply";
+    discipline: string;
+    prompt_text: string;
+    options: string[];
+    correct_index: number;
+    explanation_vi: string;
+    is_official?: boolean;
+  }): Promise<CmsQuestionItem> {
+    return request<CmsQuestionItem>("/lms/cms/questions", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  cmsUpdateQuestion(
+    questionId: string,
+    payload: {
+      grade?: GradeLevel;
+      lesson_no?: number;
+      language?: "vi" | "en";
+      cognitive_level?: "know" | "understand" | "apply";
+      discipline?: string;
+      prompt_text?: string;
+      options?: string[];
+      correct_index?: number;
+      explanation_vi?: string;
+      is_official?: boolean;
+    }
+  ): Promise<CmsQuestionItem> {
+    return request<CmsQuestionItem>(`/lms/cms/questions/${encodeURIComponent(questionId)}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  cmsDeleteQuestion(questionId: string): Promise<{ deleted_id: string }> {
+    return request<{ deleted_id: string }>(
+      `/lms/cms/questions/${encodeURIComponent(questionId)}`,
+      { method: "DELETE" }
+    );
+  },
+
+  cmsImportQuestionsCsv(
+    csv_content: string,
+    is_official = false
+  ): Promise<CmsQuestionCsvImportOut> {
+    return request<CmsQuestionCsvImportOut>("/lms/cms/questions/import-csv", {
+      method: "POST",
+      body: JSON.stringify({ csv_content, is_official }),
+    });
+  },
+
+  cmsListResources(params?: {
+    grade?: GradeLevel;
+    lesson_no?: number;
+    resource_type?: string;
+    clil_mode?: ClilMode;
+    scope?: "all" | "official" | "tenant";
+    q?: string;
+    limit?: number;
+  }): Promise<CmsResourceList> {
+    const sp = new URLSearchParams();
+    if (params?.grade) sp.set("grade", String(params.grade));
+    if (params?.lesson_no) sp.set("lesson_no", String(params.lesson_no));
+    if (params?.resource_type) sp.set("resource_type", params.resource_type);
+    if (params?.clil_mode) sp.set("clil_mode", params.clil_mode);
+    if (params?.scope) sp.set("scope", params.scope);
+    if (params?.q) sp.set("q", params.q);
+    if (params?.limit) sp.set("limit", String(params.limit));
+    const query = sp.toString();
+    return request<CmsResourceList>(`/lms/cms/resources${query ? `?${query}` : ""}`);
+  },
+
+  cmsCreateResource(payload: {
+    grade: GradeLevel;
+    lesson_no: number;
+    title: string;
+    resource_type: "lesson_plan" | "bilingual_slide" | "worksheet" | "glossary_card";
+    clil_mode: ClilMode;
+    content_markdown: string;
+    is_official?: boolean;
+  }): Promise<CmsResourceItem> {
+    return request<CmsResourceItem>("/lms/cms/resources", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  cmsUpdateResource(
+    resourceId: string,
+    payload: {
+      grade?: GradeLevel;
+      lesson_no?: number;
+      title?: string;
+      resource_type?: "lesson_plan" | "bilingual_slide" | "worksheet" | "glossary_card";
+      clil_mode?: ClilMode;
+      content_markdown?: string;
+      is_official?: boolean;
+    }
+  ): Promise<CmsResourceItem> {
+    return request<CmsResourceItem>(`/lms/cms/resources/${encodeURIComponent(resourceId)}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  cmsDeleteResource(resourceId: string): Promise<{ deleted_id: string }> {
+    return request<{ deleted_id: string }>(
+      `/lms/cms/resources/${encodeURIComponent(resourceId)}`,
+      { method: "DELETE" }
     );
   },
 };

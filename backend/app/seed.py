@@ -243,6 +243,14 @@ def seed_demo_tenants(db: Session) -> None:
             "school_admin",
             None,
         ),
+        (
+            cgb.id,
+            "admin@demo.scilingo.vn",
+            "Admin123!",
+            "Quản trị SciLingo (Platform Admin)",
+            "platform_admin",
+            None,
+        ),
         (nt.id, "lan.bgh@demo.scilingo.vn", "Admin123!", "Cô Phạm Ngọc Lan", "school_admin", None),
     ]
 

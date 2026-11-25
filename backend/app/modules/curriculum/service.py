@@ -5,22 +5,37 @@ from __future__ import annotations
 import json
 import math
 import random
+import re
+import unicodedata
 from functools import lru_cache
 from pathlib import Path
+from typing import Any
 
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
+from app.modules.curriculum.linter import detect_13_exception_element, lint_text
+from app.modules.curriculum.models import Lesson, Term
 from app.modules.curriculum.repository import CurriculumRepository
 from app.modules.curriculum.schemas import (
     ChapterWithLessonsOut,
+    CmsLessonItemOut,
+    CmsLessonListOut,
+    CmsLessonUpdateRequest,
+    CmsLessonUpdateResponse,
+    CmsTermCreateRequest,
+    CmsTermListOut,
+    CmsTermMutationOut,
+    CmsTermOut,
+    CmsTermUpdateRequest,
     CurriculumTreeResponse,
     GradeOverviewOut,
     IntegrationLinkOut,
     LessonDetailOut,
     LessonSummaryOut,
     LinkedLessonRefOut,
+    LintCheckOut,
     StudyPackItemOut,
     StudyPackOverviewOut,
     StudyPackQuizOut,
@@ -244,7 +259,10 @@ class CurriculumService:
                     )
                 )
 
-        ordered_links = sorted(lesson.lesson_terms, key=lambda lt: lt.display_order)
+        ordered_links = sorted(
+            (lt for lt in lesson.lesson_terms if lt.term.status == "verified"),
+            key=lambda lt: lt.display_order,
+        )
         terms = [TermSummaryOut.model_validate(lt.term) for lt in ordered_links]
 
         return LessonDetailOut(
@@ -499,3 +517,349 @@ class CurriculumService:
             english_ratio=round(en_points / 10.0, 4),
             questions=questions,
         )
+
+    # --- Pedagogical Guardrail Linter & CMS Management ---
+    def lint_content(self, text: str, discipline: str | None = None) -> LintCheckOut:
+        rules_file = get_settings().data_dir / "terminology_rules.json"
+        raw = lint_text(text, rules_path=rules_file, discipline=discipline)
+        return LintCheckOut(**raw)
+
+    @staticmethod
+    def _slugify(value: str) -> str:
+        normalized = unicodedata.normalize("NFKD", value).encode("ascii", "ignore").decode("ascii")
+        cleaned = re.sub(r"[^a-zA-Z0-9]+", "-", normalized.lower()).strip("-")
+        return cleaned or "term"
+
+    def _to_cms_lesson(self, lesson: Lesson) -> CmsLessonItemOut:
+        return CmsLessonItemOut(
+            id=lesson.id,
+            grade=lesson.chapter.grade,
+            chapter_no=lesson.chapter.chapter_no,
+            chapter_title_vi=lesson.chapter.title_vi,
+            lesson_no=lesson.lesson_no,
+            title_vi=lesson.title_vi,
+            title_en=lesson.title_en,
+            discipline=lesson.discipline,
+            is_practical=lesson.is_practical,
+            summary_vi=lesson.summary_vi,
+            summary_en=lesson.summary_en,
+            term_count=len(lesson.lesson_terms),
+            integration_links_json=list(lesson.integration_links_json or []),
+        )
+
+    def _to_cms_term(self, term: Term) -> CmsTermOut:
+        base = TermSummaryOut.model_validate(term).model_dump()
+        lesson_ids = [lt.lesson_id for lt in term.lesson_terms]
+        return CmsTermOut(
+            **base,
+            part_of_speech=term.part_of_speech,
+            definition_vi=term.definition_vi,
+            definition_en=term.definition_en,
+            example_en=term.example_en,
+            example_vi=term.example_vi,
+            lesson_ids=lesson_ids,
+            lesson_count=len(lesson_ids),
+        )
+
+    def list_cms_lessons(
+        self,
+        *,
+        grade: int | None = None,
+        discipline: str | None = None,
+        q: str | None = None,
+    ) -> CmsLessonListOut:
+        lessons = self.repo.list_cms_lessons(grade=grade, discipline=discipline, q=q)
+        return CmsLessonListOut(
+            total=len(lessons),
+            items=[self._to_cms_lesson(item) for item in lessons],
+        )
+
+    def update_cms_lesson(
+        self, actor: Any, lesson_id: str, payload: CmsLessonUpdateRequest
+    ) -> CmsLessonUpdateResponse:
+        from app.modules.identity_billing.service import IdentityService
+
+        lesson = self.repo.get_lesson_by_id(lesson_id)
+        if lesson is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Không tìm thấy bài học KHTN cần chỉnh sửa.",
+            )
+
+        next_title_vi = (
+            payload.title_vi.strip() if payload.title_vi is not None else lesson.title_vi
+        )
+        next_title_en = (
+            payload.title_en.strip() if payload.title_en is not None else lesson.title_en
+        )
+        next_summary_vi = (
+            payload.summary_vi.strip()
+            if payload.summary_vi is not None
+            else (lesson.summary_vi or "")
+        )
+        next_summary_en = (
+            payload.summary_en.strip()
+            if payload.summary_en is not None
+            else (lesson.summary_en or "")
+        )
+        next_discipline = (
+            payload.discipline if payload.discipline is not None else lesson.discipline
+        )
+
+        lint_report = self.lint_content(
+            f"{next_title_vi}\n{next_title_en}\n{next_summary_vi}\n{next_summary_en}",
+            discipline=next_discipline,
+        )
+        if payload.strict_lint and not lint_report.passed:
+            first_issue = lint_report.issues[0]
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=(
+                    f"Vi phạm danh pháp IUPAC/SI ('{first_issue.matched_text}' → nên dùng "
+                    f"'{first_issue.recommended}')."
+                ),
+            )
+
+        lesson.title_vi = next_title_vi
+        lesson.title_en = next_title_en
+        lesson.discipline = next_discipline
+        if payload.is_practical is not None:
+            lesson.is_practical = payload.is_practical
+        if payload.summary_vi is not None:
+            lesson.summary_vi = next_summary_vi or None
+        if payload.summary_en is not None:
+            lesson.summary_en = next_summary_en or None
+        if payload.integration_links_json is not None:
+            lesson.integration_links_json = payload.integration_links_json
+
+        IdentityService(self.repo.db).record_audit_log(
+            actor,
+            module="curriculum",
+            action="update",
+            entity_type="lesson",
+            entity_id=lesson.id,
+            summary=(
+                f"Cập nhật KHTN {lesson.chapter.grade} "
+                f"Bài {lesson.lesson_no}: {lesson.title_vi}"
+            ),
+            diff={"title_en": lesson.title_en, "discipline": lesson.discipline},
+            tenant_id=None,
+        )
+        self.repo.db.commit()
+        detail = self.get_lesson_detail(lesson.lesson_no, grade=lesson.chapter.grade)
+        return CmsLessonUpdateResponse(lesson=detail, lint_report=lint_report)
+
+    def list_cms_terms(
+        self,
+        *,
+        q: str | None = None,
+        discipline: str | None = None,
+        status_filter: str = "all",
+        grade: int | None = None,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> CmsTermListOut:
+        total, terms = self.repo.list_cms_terms(
+            q=q,
+            discipline=discipline,
+            status_filter=status_filter,
+            grade=grade,
+            limit=limit,
+            offset=offset,
+        )
+        return CmsTermListOut(total=total, items=[self._to_cms_term(t) for t in terms])
+
+    def create_cms_term(self, actor: Any, payload: CmsTermCreateRequest) -> CmsTermMutationOut:
+        from app.modules.identity_billing.service import IdentityService
+
+        rules_file = get_settings().data_dir / "terminology_rules.json"
+        lint_report = self.lint_content(
+            "\n".join(
+                filter(
+                    None,
+                    [
+                        payload.term_en,
+                        payload.term_vi,
+                        payload.iupac_note,
+                        payload.definition_vi,
+                        payload.definition_en,
+                    ],
+                )
+            ),
+            discipline=payload.discipline,
+        )
+
+        # Non-platform roles may propose terms only as 'draft'.
+        effective_status = payload.status if actor.role == "platform_admin" else "draft"
+        if effective_status == "verified" and not lint_report.passed:
+            first_issue = lint_report.issues[0]
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=(
+                    f"Không thể duyệt 'verified' do lỗi IUPAC/SI ('{first_issue.matched_text}' "
+                    f"→ '{first_issue.recommended}')."
+                ),
+            )
+
+        base_slug = self._slugify(payload.term_en)
+        slug = base_slug
+        counter = 2
+        while self.repo.slug_exists(slug):
+            slug = f"{base_slug}-{counter}"
+            counter += 1
+
+        term = Term(
+            slug=slug,
+            term_en=payload.term_en.strip(),
+            term_vi=payload.term_vi.strip(),
+            ipa=payload.ipa.strip() if payload.ipa else None,
+            discipline=payload.discipline,
+            part_of_speech=payload.part_of_speech,
+            formula_or_symbol=payload.formula_or_symbol.strip()
+            if payload.formula_or_symbol
+            else None,
+            iupac_note=payload.iupac_note.strip() if payload.iupac_note else None,
+            definition_vi=payload.definition_vi.strip() if payload.definition_vi else None,
+            definition_en=payload.definition_en.strip() if payload.definition_en else None,
+            example_en=payload.example_en.strip() if payload.example_en else None,
+            example_vi=payload.example_vi.strip() if payload.example_vi else None,
+            is_13_exception_element=detect_13_exception_element(
+                payload.term_en, rules_path=rules_file
+            ),
+            status=effective_status,
+        )
+        self.repo.create_term(term)
+        if payload.lesson_ids:
+            self.repo.set_term_lessons(term, payload.lesson_ids)
+
+        IdentityService(self.repo.db).record_audit_log(
+            actor,
+            module="curriculum",
+            action="create",
+            entity_type="term",
+            entity_id=term.id,
+            summary=f"Tạo thuật ngữ '{term.term_en}' ({term.status})",
+            diff={"slug": term.slug, "status": term.status, "lint_passed": lint_report.passed},
+            tenant_id=actor.tenant_id if term.status == "draft" else None,
+        )
+        self.repo.db.commit()
+        refreshed = self.repo.get_term_by_id(term.id)
+        assert refreshed is not None
+        return CmsTermMutationOut(term=self._to_cms_term(refreshed), lint_report=lint_report)
+
+    def update_cms_term(
+        self, actor: Any, term_id: str, payload: CmsTermUpdateRequest
+    ) -> CmsTermMutationOut:
+        from app.modules.identity_billing.service import IdentityService
+
+        term = self.repo.get_term_by_id(term_id)
+        if term is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Không tìm thấy thuật ngữ trong từ điển.",
+            )
+
+        if actor.role != "platform_admin":
+            if term.status != "draft":
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Chỉ Platform Admin mới được sửa thuật ngữ chuẩn quốc gia đã duyệt.",
+                )
+            if payload.status == "verified":
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Chỉ Platform Admin mới được duyệt trạng thái 'verified'.",
+                )
+
+        rules_file = get_settings().data_dir / "terminology_rules.json"
+        next_en = payload.term_en.strip() if payload.term_en is not None else term.term_en
+        next_vi = payload.term_vi.strip() if payload.term_vi is not None else term.term_vi
+        next_note = (
+            payload.iupac_note.strip() if payload.iupac_note is not None else term.iupac_note
+        )
+        next_def_vi = (
+            payload.definition_vi.strip()
+            if payload.definition_vi is not None
+            else term.definition_vi
+        )
+        next_def_en = (
+            payload.definition_en.strip()
+            if payload.definition_en is not None
+            else term.definition_en
+        )
+        next_disc = payload.discipline if payload.discipline is not None else term.discipline
+        next_status = payload.status if payload.status is not None else term.status
+
+        lint_report = self.lint_content(
+            "\n".join(filter(None, [next_en, next_vi, next_note, next_def_vi, next_def_en])),
+            discipline=next_disc,
+        )
+        if next_status == "verified" and not lint_report.passed:
+            first_issue = lint_report.issues[0]
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=(
+                    f"Không thể xuất bản 'verified' do lỗi IUPAC/SI ('{first_issue.matched_text}' "
+                    f"→ '{first_issue.recommended}')."
+                ),
+            )
+
+        term.term_en = next_en
+        term.term_vi = next_vi
+        term.discipline = next_disc
+        term.iupac_note = next_note or None
+        term.definition_vi = next_def_vi or None
+        term.definition_en = next_def_en or None
+        term.status = next_status
+        term.is_13_exception_element = detect_13_exception_element(next_en, rules_path=rules_file)
+        if payload.ipa is not None:
+            term.ipa = payload.ipa.strip() or None
+        if payload.part_of_speech is not None:
+            term.part_of_speech = payload.part_of_speech
+        if payload.formula_or_symbol is not None:
+            term.formula_or_symbol = payload.formula_or_symbol.strip() or None
+        if payload.example_en is not None:
+            term.example_en = payload.example_en.strip() or None
+        if payload.example_vi is not None:
+            term.example_vi = payload.example_vi.strip() or None
+        if payload.lesson_ids is not None:
+            self.repo.set_term_lessons(term, payload.lesson_ids)
+
+        IdentityService(self.repo.db).record_audit_log(
+            actor,
+            module="curriculum",
+            action="verify" if payload.status == "verified" else "update",
+            entity_type="term",
+            entity_id=term.id,
+            summary=f"Cập nhật thuật ngữ '{term.term_en}' ({term.status})",
+            diff={"term_en": term.term_en, "status": term.status},
+            tenant_id=actor.tenant_id if term.status == "draft" else None,
+        )
+        self.repo.db.commit()
+        refreshed = self.repo.get_term_by_id(term.id)
+        assert refreshed is not None
+        return CmsTermMutationOut(term=self._to_cms_term(refreshed), lint_report=lint_report)
+
+    def delete_cms_term(self, actor: Any, term_id: str) -> dict[str, str]:
+        from app.modules.identity_billing.service import IdentityService
+
+        term = self.repo.get_term_by_id(term_id)
+        if term is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Không tìm thấy thuật ngữ cần xóa.",
+            )
+        label = term.term_en
+        IdentityService(self.repo.db).record_audit_log(
+            actor,
+            module="curriculum",
+            action="delete",
+            entity_type="term",
+            entity_id=term.id,
+            summary=f"Xóa thuật ngữ '{label}'",
+            diff={"slug": term.slug},
+            tenant_id=None,
+        )
+        self.repo.delete_term(term)
+        self.repo.db.commit()
+        return {"deleted_id": term_id, "term_en": label}
