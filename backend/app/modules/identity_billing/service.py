@@ -231,6 +231,24 @@ class IdentityService:
             features=PLAN_FEATURES.get(plan_code, PLAN_FEATURES["free"]),
         )
 
+    def consume_ai_quota(self, user: User, units: int = 1) -> tuple[int, int]:
+        sub = self.repo.get_active_subscription(user.tenant_id)
+        if sub is None:
+            return (0, 0)
+        if sub.ai_used_this_month + units > sub.ai_monthly_quota:
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail=(
+                    "Đơn vị/tài khoản đã hết hạn mức AI trong tháng này. "
+                    "Liên hệ quản trị viên để nâng hạn mức."
+                ),
+            )
+        sub.ai_used_this_month += units
+        self.repo.db.flush()
+        self.repo.db.commit()
+        remaining = max(0, sub.ai_monthly_quota - sub.ai_used_this_month)
+        return (sub.ai_used_this_month, remaining)
+
     def list_tenant_users(self, current_user: User) -> list[UserOut]:
         users = self.repo.list_users_for_tenant(current_user.tenant_id)
         return [self._to_user_out(u) for u in users]

@@ -40,6 +40,8 @@ class Settings(BaseSettings):
     platform_admin_email: str = "phamhaihnue95@gmail.com"
     platform_admin_password: str = ""
     platform_admin_full_name: str = "Phạm Thị Hải (Quản trị hệ thống)"
+    gemini_api_key: str = ""
+    gemini_model: str = "gemini-2.5-flash"
 
     cors_origins: Annotated[list[str], NoDecode] = [
         "http://localhost:5173",

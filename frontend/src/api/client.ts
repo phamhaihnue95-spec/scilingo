@@ -6,6 +6,7 @@ import type {
   ClassroomAnalytics,
   ClassroomGameChallenge,
   ClassroomLeaderboard,
+  ClilGenerateResult,
   ClilMode,
   CmsAuditLog,
   CmsCsvImportResult,
@@ -24,6 +25,8 @@ import type {
   CmsTermMutationOut,
   CmsTrafficAnalytics,
   CmsTrafficPruneOut,
+  CopilotLintResult,
+  CopilotStatus,
   CurriculumTreeResponse,
   Discipline,
   Entitlements,
@@ -44,6 +47,7 @@ import type {
   PracticeMode,
   PracticeResult,
   PracticeSession,
+  PronunciationEvalResult,
   QuestionBankItem,
   SRSDueResponse,
   SRSReviewResult,
@@ -60,6 +64,7 @@ import type {
   TermDetail,
   TermSearchResponse,
   TerminologyRulebook,
+  TutorAskResult,
   UserProfile,
 } from "./types";
 
@@ -1140,5 +1145,54 @@ export const api = {
       `/curriculum/cms/study-pack/items/${encodeURIComponent(itemId)}`,
       { method: "DELETE" }
     );
+  },
+
+  // --- Unit 4: AI Copilot API ---
+  copilotGetStatus(): Promise<CopilotStatus> {
+    return request<CopilotStatus>("/copilot/status");
+  },
+
+  copilotLintTerminology(text: string, discipline?: string | null): Promise<CopilotLintResult> {
+    return request<CopilotLintResult>("/copilot/lint-terminology", {
+      method: "POST",
+      body: JSON.stringify({ text, discipline: discipline || null }),
+    });
+  },
+
+  copilotAskTutor(payload: {
+    grade: GradeLevel;
+    lesson_no?: number | null;
+    question: string;
+    response_mode?: "bilingual" | "vi" | "en";
+  }): Promise<TutorAskResult> {
+    return request<TutorAskResult>("/copilot/tutor/ask", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  copilotGenerateClilQuestions(payload: {
+    grade: GradeLevel;
+    lesson_no: number;
+    language: "en" | "vi" | "bilingual";
+    cognitive_level: "know" | "understand" | "apply";
+    count: number;
+    focus_topic?: string | null;
+  }): Promise<ClilGenerateResult> {
+    return request<ClilGenerateResult>("/copilot/generate-clil-questions", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  copilotEvaluatePronunciation(payload: {
+    target_term: string;
+    spoken_transcript: string;
+    ipa?: string | null;
+  }): Promise<PronunciationEvalResult> {
+    return request<PronunciationEvalResult>("/copilot/pronunciation/evaluate", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
   },
 };

@@ -3,6 +3,7 @@ import { AnimatePresence, MotionConfig, motion } from "framer-motion";
 import {
   BookOpen,
   BookText,
+  Bot,
   Gamepad2,
   GraduationCap,
   Library,
@@ -32,6 +33,9 @@ import { SciPetWidget } from "./features/pet/SciPetWidget";
 
 const AccountPage = lazy(() =>
   import("./features/auth/AuthModalAndAccount").then((m) => ({ default: m.AccountPage }))
+);
+const AiCopilotPage = lazy(() =>
+  import("./features/copilot/AiCopilotPage").then((m) => ({ default: m.AiCopilotPage }))
 );
 const CmsPortalPage = lazy(() =>
   import("./features/cms/CmsPortalPage").then((m) => ({ default: m.CmsPortalPage }))
@@ -77,6 +81,7 @@ type View =
   | { kind: "games"; initialGame?: ArenaTab; initialUnitNo?: number }
   | { kind: "learning"; tab: LearningSubTab; lessonNo?: number }
   | { kind: "teacher" }
+  | { kind: "copilot" }
   | { kind: "cms" }
   | { kind: "glossary" }
   | { kind: "account" };
@@ -273,6 +278,18 @@ export function App() {
       },
       icon: GraduationCap,
       label: "Teacher Studio",
+      hideLabelClass: "hidden md:inline",
+    },
+    {
+      id: "copilot",
+      active: view.kind === "copilot",
+      onClick: () => {
+        playClickSound();
+        setView({ kind: "copilot" });
+      },
+      icon: Bot,
+      label: "AI Copilot",
+      pillClass: "from-violet-600 to-indigo-600",
       hideLabelClass: "hidden md:inline",
     },
     ...(session && (session.user.role === "school_admin" || session.user.role === "platform_admin")
@@ -547,6 +564,13 @@ export function App() {
                       setSession(next);
                       if (next) setAuthNotice(null);
                     }}
+                  />
+                )}
+                {view.kind === "copilot" && (
+                  <AiCopilotPage
+                    session={session}
+                    grade={selectedGrade}
+                    onOpenAccount={() => setView({ kind: "account" })}
                   />
                 )}
                 {view.kind === "cms" && (

@@ -922,3 +922,71 @@ export interface CmsTrafficPruneOut {
   retention_days: number;
   cutoff_iso: string;
 }
+
+// --- Unit 4: AI Copilot ---
+export interface CopilotStatus {
+  provider_mode: "gemini" | "grounded_rag";
+  plan_code: string;
+  ai_monthly_quota: number;
+  ai_used_this_month: number;
+  ai_remaining: number;
+}
+
+export interface CopilotLintResult extends LintCheckResult {
+  corrected_preview: string;
+}
+
+export interface RagCitation {
+  source_type: "lesson" | "term" | "study_pack";
+  title: string;
+  detail: string;
+  grade?: number | null;
+  lesson_no?: number | null;
+}
+
+export interface TutorAskResult {
+  on_topic: boolean;
+  provider: "gemini" | "grounded_rag";
+  answer_vi: string;
+  answer_en: string;
+  citations: RagCitation[];
+  lint_report: LintCheckResult;
+  quota_remaining: number;
+  refusal_reason?: string | null;
+}
+
+export interface GeneratedClilQuestion {
+  grade: GradeLevel;
+  lesson_no: number;
+  language: "vi" | "en";
+  cognitive_level: "know" | "understand" | "apply";
+  discipline: string;
+  prompt_text: string;
+  options: string[];
+  correct_index: number;
+  explanation_vi: string;
+  classroom_english_tip: string;
+  linter_verified: boolean;
+  lint_report: LintCheckResult;
+}
+
+export interface ClilGenerateResult {
+  grade: GradeLevel;
+  lesson_no: number;
+  lesson_title_vi: string;
+  lesson_title_en: string;
+  provider: "gemini" | "grounded_rag";
+  questions: GeneratedClilQuestion[];
+  quota_remaining: number;
+}
+
+export interface PronunciationEvalResult {
+  target_term: string;
+  spoken_transcript: string;
+  score: number;
+  grade_band: "excellent" | "good" | "needs_practice";
+  ipa?: string | null;
+  feedback_vi: string;
+  feedback_en: string;
+  tips: string[];
+}

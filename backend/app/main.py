@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.core.database import get_db
+from app.modules.ai_copilot.router import router as copilot_router
 from app.modules.curriculum.router import router as curriculum_router
 from app.modules.identity_billing.router import router as identity_router
 from app.modules.learning.router import router as learning_router
@@ -44,6 +45,7 @@ def create_app() -> FastAPI:
     app.include_router(curriculum_router, prefix=settings.api_v1_prefix)
     app.include_router(learning_router, prefix=settings.api_v1_prefix)
     app.include_router(lms_router, prefix=settings.api_v1_prefix)
+    app.include_router(copilot_router, prefix=settings.api_v1_prefix)
     return app
 
 
