@@ -264,3 +264,17 @@ class CmsTrafficAnalyticsOut(BaseModel):
     device_breakdown: dict[str, int]
     grade_breakdown: dict[str, int]
     recent_events: list[RecentAccessEventOut]
+
+
+class CmsTrafficPruneRequest(BaseModel):
+    """Request to prune old access events older than retention_days."""
+
+    retention_days: int = Field(default=90, ge=7, le=365)
+
+
+class CmsTrafficPruneOut(BaseModel):
+    """Summary after pruning expired traffic events."""
+
+    deleted_count: int
+    retention_days: int
+    cutoff_iso: str

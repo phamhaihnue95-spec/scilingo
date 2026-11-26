@@ -35,6 +35,7 @@ from app.modules.identity_billing.schemas import (
     CmsTenantDetailOut,
     CmsTenantUpdateRequest,
     CmsTrafficAnalyticsOut,
+    CmsTrafficPruneOut,
     CmsUserCreateRequest,
     CmsUserCsvImportRequest,
     CmsUserCsvImportResult,
@@ -866,4 +867,110 @@ class IdentityService:
             device_breakdown=device_breakdown,
             grade_breakdown=grade_breakdown,
             recent_events=recent_events,
+        )
+
+    def export_cms_users_csv(
+        self,
+        caller: User,
+        *,
+        tenant_id: str | None = None,
+        role: str | None = None,
+        q: str | None = None,
+        is_active: bool | None = None,
+    ) -> bytes:
+        users = self.list_cms_users(
+            caller, tenant_id=tenant_id, role=role, q=q, is_active=is_active
+        )
+        output = io.StringIO()
+        writer = csv.writer(output)
+        writer.writerow(
+            [
+                "email",
+                "full_name",
+                "role",
+                "grade_level",
+                "tenant_name",
+                "is_active",
+                "login_count",
+                "last_login_at",
+                "created_at",
+            ]
+        )
+        for u in users:
+            writer.writerow(
+                [
+                    u.email,
+                    u.full_name,
+                    u.role,
+                    u.grade_level if u.grade_level is not None else "",
+                    u.tenant_name or "",
+                    "true" if u.is_active else "false",
+                    u.login_count,
+                    u.last_login_at.isoformat() if u.last_login_at else "",
+                    u.created_at.isoformat() if u.created_at else "",
+                ]
+            )
+        return output.getvalue().encode("utf-8-sig")
+
+    def export_cms_traffic_csv(self, caller: User, *, days: int = 14) -> bytes:
+        traffic = self.get_cms_traffic(caller, days=days)
+        output = io.StringIO()
+        writer = csv.writer(output)
+        writer.writerow(["date", "visits", "unique_visitors", "logins"])
+        for pt in traffic.daily_series:
+            writer.writerow([pt.date, pt.visits, pt.unique_visitors, pt.logins])
+        writer.writerow([])
+        writer.writerow(
+            [
+                "created_at",
+                "event_type",
+                "path",
+                "grade",
+                "device_type",
+                "user_email",
+                "user_name",
+                "user_role",
+                "visitor_id",
+            ]
+        )
+        for ev in traffic.recent_events:
+            writer.writerow(
+                [
+                    ev.created_at.isoformat() if ev.created_at else "",
+                    ev.event_type,
+                    ev.path,
+                    ev.grade if ev.grade is not None else "",
+                    ev.device_type,
+                    ev.user_email or "",
+                    ev.user_name or "",
+                    ev.user_role or "",
+                    ev.visitor_id,
+                ]
+            )
+        return output.getvalue().encode("utf-8-sig")
+
+    def prune_access_events(
+        self, caller: User, retention_days: int = 90
+    ) -> CmsTrafficPruneOut:
+        cutoff = datetime.now(UTC) - timedelta(days=retention_days)
+        deleted_count = self.repo.prune_access_events_before(cutoff)
+        self.record_audit_log(
+            caller,
+            module="identity",
+            action="prune",
+            entity_type="access_events",
+            entity_id=f"retention-{retention_days}d",
+            summary=f"Dọn {deleted_count} bản ghi truy cập cũ hơn {retention_days} ngày",
+            diff={
+                "deleted_count": deleted_count,
+                "retention_days": retention_days,
+                "cutoff_iso": cutoff.isoformat(),
+            },
+            tenant_id=None,
+        )
+        self.repo.db.commit()
+        return CmsTrafficPruneOut(
+            deleted_count=deleted_count,
+            retention_days=retention_days,
+            cutoff_iso=cutoff.isoformat(),
         )

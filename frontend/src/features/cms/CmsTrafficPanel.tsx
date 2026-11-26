@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import {
   Activity,
+  Download,
   Monitor,
   RefreshCw,
   Smartphone,
   Tablet,
+  Trash2,
   TrendingUp,
   UserCheck,
   Users,
@@ -13,11 +15,16 @@ import {
 import { api } from "../../api/client";
 import type { CmsTrafficAnalytics } from "../../api/types";
 
-export function CmsTrafficPanel() {
+interface Props {
+  isPlatformAdmin?: boolean;
+}
+
+export function CmsTrafficPanel({ isPlatformAdmin = false }: Props) {
   const [days, setDays] = useState<7 | 14 | 30>(14);
   const [data, setData] = useState<CmsTrafficAnalytics | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const loadTraffic = () => {
     setLoading(true);
@@ -48,7 +55,7 @@ export function CmsTrafficPanel() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <div className="flex items-center gap-1 rounded-xl bg-slate-100 p-1">
             {([7, 14, 30] as const).map((d) => (
               <button
@@ -65,6 +72,44 @@ export function CmsTrafficPanel() {
           </div>
           <button
             type="button"
+            onClick={() =>
+              api
+                .cmsDownloadTrafficCsv(days)
+                .catch((err) =>
+                  setError(err instanceof Error ? err.message : "Xuất CSV truy cập thất bại.")
+                )
+            }
+            className="inline-flex items-center gap-1 rounded-xl border border-sky-200 bg-sky-50 px-3 py-1.5 text-xs font-bold text-sky-800 hover:bg-sky-100"
+          >
+            <Download className="h-3.5 w-3.5" />
+            Xuất CSV
+          </button>
+          {isPlatformAdmin && (
+            <button
+              type="button"
+              onClick={async () => {
+                if (!window.confirm("Xóa toàn bộ log truy cập cũ hơn 90 ngày để tối ưu dung lượng?")) {
+                  return;
+                }
+                setError(null);
+                try {
+                  const res = await api.cmsPruneTraffic(90);
+                  setNotice(
+                    `Đã dọn ${res.deleted_count} bản ghi truy cập cũ hơn ${res.retention_days} ngày.`
+                  );
+                  loadTraffic();
+                } catch (err) {
+                  setError(err instanceof Error ? err.message : "Dọn log truy cập thất bại.");
+                }
+              }}
+              className="inline-flex items-center gap-1 rounded-xl border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-800 hover:bg-amber-100"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              Dọn log &gt; 90 ngày
+            </button>
+          )}
+          <button
+            type="button"
             onClick={loadTraffic}
             disabled={loading}
             className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50"
@@ -74,6 +119,12 @@ export function CmsTrafficPanel() {
           </button>
         </div>
       </div>
+
+      {notice && (
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800">
+          {notice}
+        </div>
+      )}
 
       {error && (
         <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-800">

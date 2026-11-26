@@ -5,7 +5,7 @@ from __future__ import annotations
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session, joinedload, selectinload
 
-from app.modules.curriculum.models import Chapter, Lesson, LessonTerm, Term
+from app.modules.curriculum.models import Chapter, Lesson, LessonTerm, StudyPackItem, Term
 
 
 class CurriculumRepository:
@@ -253,4 +253,69 @@ class CurriculumRepository:
 
     def delete_term(self, term: Term) -> None:
         self.db.delete(term)
+        self.db.flush()
+
+    # --- 16-Unit Study Pack Repository ---
+    def count_study_pack_items_by_unit(self) -> dict[int, int]:
+        stmt = select(StudyPackItem.unit_no, func.count(StudyPackItem.id)).group_by(
+            StudyPackItem.unit_no
+        )
+        return {int(unit_no): int(cnt or 0) for unit_no, cnt in self.db.execute(stmt).all()}
+
+    def list_study_pack_items(
+        self,
+        *,
+        unit_no: int | None = None,
+        q: str | None = None,
+        limit: int | None = None,
+        offset: int = 0,
+    ) -> tuple[int, list[StudyPackItem]]:
+        stmt = select(StudyPackItem)
+        if unit_no is not None:
+            stmt = stmt.where(StudyPackItem.unit_no == unit_no)
+        if q and q.strip():
+            pattern = f"%{q.strip()}%"
+            stmt = stmt.where(
+                or_(
+                    StudyPackItem.term_en.ilike(pattern),
+                    StudyPackItem.meaning_vi.ilike(pattern),
+                    StudyPackItem.ipa.ilike(pattern),
+                    StudyPackItem.iupac_note.ilike(pattern),
+                )
+            )
+        count_stmt = select(func.count()).select_from(stmt.subquery())
+        total = int(self.db.scalar(count_stmt) or 0)
+
+        ordered = stmt.order_by(StudyPackItem.unit_no, StudyPackItem.order_no)
+        if limit is not None:
+            ordered = ordered.limit(limit).offset(offset)
+        items = list(self.db.scalars(ordered).all())
+        return total, items
+
+    def get_study_pack_item_by_id(self, item_id: str) -> StudyPackItem | None:
+        return self.db.scalar(select(StudyPackItem).where(StudyPackItem.id == item_id))
+
+    def get_max_study_pack_order(self, unit_no: int) -> int:
+        val = self.db.scalar(
+            select(func.max(StudyPackItem.order_no)).where(StudyPackItem.unit_no == unit_no)
+        )
+        return int(val or 0)
+
+    def study_pack_unit_order_exists(
+        self, unit_no: int, order_no: int, exclude_id: str | None = None
+    ) -> bool:
+        stmt = select(StudyPackItem.id).where(
+            StudyPackItem.unit_no == unit_no, StudyPackItem.order_no == order_no
+        )
+        if exclude_id is not None:
+            stmt = stmt.where(StudyPackItem.id != exclude_id)
+        return self.db.scalar(stmt) is not None
+
+    def create_study_pack_item(self, item: StudyPackItem) -> StudyPackItem:
+        self.db.add(item)
+        self.db.flush()
+        return item
+
+    def delete_study_pack_item(self, item: StudyPackItem) -> None:
+        self.db.delete(item)
         self.db.flush()

@@ -3,9 +3,11 @@ import {
   Activity,
   BookOpen,
   BookText,
+  Download,
   FileQuestion,
   FileText,
   History,
+  Layers,
   LayoutDashboard,
   ShieldCheck,
   Users,
@@ -17,6 +19,7 @@ import { CmsCurriculumPanel } from "./CmsCurriculumPanel";
 import { CmsGlossaryPanel } from "./CmsGlossaryPanel";
 import { CmsQuestionBankPanel } from "./CmsQuestionBankPanel";
 import { CmsResourcesPanel } from "./CmsResourcesPanel";
+import { CmsStudyPackPanel } from "./CmsStudyPackPanel";
 import { CmsTrafficPanel } from "./CmsTrafficPanel";
 import { CmsUsersTenantsPanel } from "./CmsUsersTenantsPanel";
 
@@ -30,6 +33,7 @@ type CmsSection =
   | "traffic"
   | "lessons"
   | "glossary"
+  | "study_pack"
   | "questions"
   | "resources"
   | "users_audit";
@@ -106,6 +110,7 @@ export function CmsPortalPage({ session, onOpenAccount }: Props) {
       icon: BookText,
       badge: overview && overview.draft_terms > 0 ? `${overview.draft_terms} nháp` : undefined,
     },
+    { id: "study_pack", label: "Bộ Đề 16 Units", icon: Layers },
     { id: "questions", label: "Ngân hàng câu hỏi", icon: FileQuestion },
     { id: "resources", label: "Học liệu CLIL", icon: FileText },
   ];
@@ -184,6 +189,26 @@ export function CmsPortalPage({ session, onOpenAccount }: Props) {
               ) : (
                 overview && (
                   <>
+                    <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                      <div className="text-xs font-bold text-slate-700">
+                        Báo cáo minh chứng Thông tư 94/2026/TT-BGDĐT (năm học 2026–2027)
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          api
+                            .downloadTT94ReportCsv("2026-2027")
+                            .catch((err) =>
+                              setError(err instanceof Error ? err.message : "Xuất CSV TT94 thất bại.")
+                            )
+                        }
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-800 hover:bg-emerald-100"
+                      >
+                        <Download className="h-3.5 w-3.5" />
+                        Xuất báo cáo TT94 (CSV)
+                      </button>
+                    </div>
+
                     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
                       <KpiCard
                         title="Lượt truy cập"
@@ -267,9 +292,10 @@ export function CmsPortalPage({ session, onOpenAccount }: Props) {
             </div>
           )}
 
-          {section === "traffic" && <CmsTrafficPanel />}
+          {section === "traffic" && <CmsTrafficPanel isPlatformAdmin={isPlatformAdmin} />}
           {section === "lessons" && <CmsCurriculumPanel isPlatformAdmin={isPlatformAdmin} />}
           {section === "glossary" && <CmsGlossaryPanel isPlatformAdmin={isPlatformAdmin} />}
+          {section === "study_pack" && <CmsStudyPackPanel isPlatformAdmin={isPlatformAdmin} />}
           {section === "questions" && <CmsQuestionBankPanel isPlatformAdmin={isPlatformAdmin} />}
           {section === "resources" && <CmsResourcesPanel isPlatformAdmin={isPlatformAdmin} />}
           {section === "users_audit" && (

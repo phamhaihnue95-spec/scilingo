@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Query, status
+from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -21,6 +22,8 @@ from app.modules.identity_billing.schemas import (
     CmsTenantDetailOut,
     CmsTenantUpdateRequest,
     CmsTrafficAnalyticsOut,
+    CmsTrafficPruneOut,
+    CmsTrafficPruneRequest,
     CmsUserCreateRequest,
     CmsUserCsvImportRequest,
     CmsUserCsvImportResult,
@@ -227,3 +230,50 @@ def get_cms_traffic(
 ) -> CmsTrafficAnalyticsOut:
     """Return traffic, login counts, devices, top pages, and recent events for CMS."""
     return IdentityService(db).get_cms_traffic(current_user, days=days)
+
+
+@router.get("/identity/cms/users/export-csv")
+def export_cms_users_csv(
+    tenant_id: str | None = Query(default=None),
+    role: str | None = Query(default=None),
+    q: str | None = Query(default=None, max_length=120),
+    is_active: bool | None = Query(default=None),
+    current_user: User = Depends(require_roles("school_admin", "platform_admin")),
+    db: Session = Depends(get_db),
+) -> Response:
+    """Export filtered CMS user accounts to Excel-compatible UTF-8 BOM CSV."""
+    csv_bytes = IdentityService(db).export_cms_users_csv(
+        current_user, tenant_id=tenant_id, role=role, q=q, is_active=is_active
+    )
+    return Response(
+        content=csv_bytes,
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": 'attachment; filename="scilingo-users.csv"'},
+    )
+
+
+@router.get("/identity/cms/traffic/export-csv")
+def export_cms_traffic_csv(
+    days: int = Query(default=14, ge=1, le=90),
+    current_user: User = Depends(require_roles("school_admin", "platform_admin")),
+    db: Session = Depends(get_db),
+) -> Response:
+    """Export CMS traffic daily summary and recent events to UTF-8 BOM CSV."""
+    csv_bytes = IdentityService(db).export_cms_traffic_csv(current_user, days=days)
+    return Response(
+        content=csv_bytes,
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="scilingo-traffic-{days}d.csv"'},
+    )
+
+
+@router.post("/identity/cms/traffic/prune", response_model=CmsTrafficPruneOut)
+def prune_cms_traffic(
+    payload: CmsTrafficPruneRequest,
+    current_user: User = Depends(require_roles("platform_admin")),
+    db: Session = Depends(get_db),
+) -> CmsTrafficPruneOut:
+    """Delete access_events older than retention_days (platform_admin only)."""
+    return IdentityService(db).prune_access_events(
+        current_user, retention_days=payload.retention_days
+    )

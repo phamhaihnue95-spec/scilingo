@@ -10,6 +10,10 @@ from app.modules.curriculum.schemas import (
     CmsLessonListOut,
     CmsLessonUpdateRequest,
     CmsLessonUpdateResponse,
+    CmsStudyPackCreateRequest,
+    CmsStudyPackListOut,
+    CmsStudyPackMutationOut,
+    CmsStudyPackUpdateRequest,
     CmsTermCreateRequest,
     CmsTermListOut,
     CmsTermMutationOut,
@@ -247,3 +251,53 @@ def delete_cms_term(
 ) -> dict[str, str]:
     """Delete a glossary term (platform_admin only)."""
     return CurriculumService(db).delete_cms_term(current_user, term_id)
+
+
+@router.get("/curriculum/cms/study-pack/items", response_model=CmsStudyPackListOut)
+def list_cms_study_pack_items(
+    unit_no: int | None = Query(default=None, ge=1, le=16),
+    q: str | None = Query(default=None, max_length=120),
+    limit: int = Query(default=100, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+    _: User = Depends(require_roles("school_admin", "platform_admin")),
+    db: Session = Depends(get_db),
+) -> CmsStudyPackListOut:
+    """List editable 16-Unit Study Pack entries for CMS management."""
+    return CurriculumService(db).list_cms_study_pack_items(
+        unit_no=unit_no, q=q, limit=limit, offset=offset
+    )
+
+
+@router.post(
+    "/curriculum/cms/study-pack/items",
+    response_model=CmsStudyPackMutationOut,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_cms_study_pack_item(
+    payload: CmsStudyPackCreateRequest,
+    current_user: User = Depends(require_roles("platform_admin")),
+    db: Session = Depends(get_db),
+) -> CmsStudyPackMutationOut:
+    """Create a 16-Unit Study Pack entry with live IUPAC/SI linting (platform_admin only)."""
+    return CurriculumService(db).create_cms_study_pack_item(current_user, payload)
+
+
+@router.patch("/curriculum/cms/study-pack/items/{item_id}", response_model=CmsStudyPackMutationOut)
+def update_cms_study_pack_item(
+    item_id: str,
+    payload: CmsStudyPackUpdateRequest,
+    current_user: User = Depends(require_roles("platform_admin")),
+    db: Session = Depends(get_db),
+) -> CmsStudyPackMutationOut:
+    """Update a 16-Unit Study Pack entry with live IUPAC/SI linting (platform_admin only)."""
+    return CurriculumService(db).update_cms_study_pack_item(current_user, item_id, payload)
+
+
+@router.delete("/curriculum/cms/study-pack/items/{item_id}")
+def delete_cms_study_pack_item(
+    item_id: str,
+    current_user: User = Depends(require_roles("platform_admin")),
+    db: Session = Depends(get_db),
+) -> dict[str, str]:
+    """Delete a 16-Unit Study Pack entry (platform_admin only)."""
+    return CurriculumService(db).delete_cms_study_pack_item(current_user, item_id)

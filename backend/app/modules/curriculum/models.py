@@ -123,3 +123,22 @@ class LessonTerm(Base):
 
     lesson: Mapped[Lesson] = relationship(back_populates="lesson_terms")
     term: Mapped[Term] = relationship(back_populates="lesson_terms")
+
+
+class StudyPackItem(Base):
+    """Vocabulary item in the 16-Unit English Dictionary for Science study pack."""
+
+    __tablename__ = "study_pack_items"
+    __table_args__ = (
+        UniqueConstraint("unit_no", "order_no", name="uq_study_pack_unit_order"),
+        {"schema": "curriculum"},
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_new_uuid)
+    unit_no: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    order_no: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    term_en: Mapped[str] = mapped_column(String(200), nullable=False, index=True)
+    ipa: Mapped[str] = mapped_column(String(200), nullable=False, default="")
+    pos: Mapped[str] = mapped_column(String(64), nullable=False, default="n")
+    meaning_vi: Mapped[str] = mapped_column(String(255), nullable=False)
+    iupac_note: Mapped[str | None] = mapped_column(Text, nullable=True)

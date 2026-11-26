@@ -396,3 +396,57 @@ class CmsTermMutationOut(BaseModel):
 
     term: CmsTermOut
     lint_report: LintCheckOut
+
+
+class CmsStudyPackItemOut(BaseModel):
+    """Editable Study Pack vocabulary item returned by CMS."""
+
+    id: str
+    unit_no: int
+    unit_title_en: str
+    unit_title_vi: str
+    discipline: str
+    order_no: int
+    term_en: str
+    ipa: str
+    pos: str
+    meaning_vi: str
+    iupac_note: str | None = None
+
+
+class CmsStudyPackListOut(BaseModel):
+    """Paginated Study Pack items for CMS management."""
+
+    total: int
+    items: list[CmsStudyPackItemOut]
+
+
+class CmsStudyPackCreateRequest(BaseModel):
+    """Create a Study Pack entry inside Unit 1..16."""
+
+    unit_no: int = Field(ge=1, le=16)
+    order_no: int | None = Field(default=None, ge=1, le=9999)
+    term_en: str = Field(min_length=1, max_length=200)
+    ipa: str = Field(default="", max_length=200)
+    pos: str = Field(default="n", max_length=64)
+    meaning_vi: str = Field(min_length=1, max_length=255)
+    iupac_note: str | None = Field(default=None, max_length=1000)
+
+
+class CmsStudyPackUpdateRequest(BaseModel):
+    """Update fields of a Study Pack item in CMS."""
+
+    unit_no: int | None = Field(default=None, ge=1, le=16)
+    order_no: int | None = Field(default=None, ge=1, le=9999)
+    term_en: str | None = Field(default=None, min_length=1, max_length=200)
+    ipa: str | None = Field(default=None, max_length=200)
+    pos: str | None = Field(default=None, max_length=64)
+    meaning_vi: str | None = Field(default=None, min_length=1, max_length=255)
+    iupac_note: str | None = Field(default=None, max_length=1000)
+
+
+class CmsStudyPackMutationOut(BaseModel):
+    """Created/updated Study Pack item paired with IUPAC/SI lint evaluation."""
+
+    item: CmsStudyPackItemOut
+    lint_report: LintCheckOut

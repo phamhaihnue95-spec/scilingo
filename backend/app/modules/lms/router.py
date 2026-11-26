@@ -293,6 +293,22 @@ def get_tt94_compliance_report(
     return LMSService(db).get_tt94_compliance_report(current_user, academic_year=academic_year)
 
 
+@router.get("/lms/reports/tt94-compliance/export-csv")
+def export_tt94_compliance_csv(
+    academic_year: str = Query(default="2026-2027"),
+    current_user: User = Depends(require_roles(*TEACHER_ROLES)),
+    db: Session = Depends(get_db),
+) -> Response:
+    """Export Circular 94/2026 evidence metrics by grade and classroom as UTF-8 BOM CSV."""
+    csv_bytes = LMSService(db).export_tt94_compliance_csv(current_user, academic_year=academic_year)
+    safe_year = "".join(ch for ch in academic_year if ch.isalnum() or ch in "-_") or "report"
+    return Response(
+        content=csv_bytes,
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="scilingo-tt94-{safe_year}.csv"'},
+    )
+
+
 # --- Unit 3 Content CMS: Question Bank & CLIL Resources ---
 @router.get("/lms/cms/questions", response_model=CmsQuestionListOut)
 def list_cms_questions(

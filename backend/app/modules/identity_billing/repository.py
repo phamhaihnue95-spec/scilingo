@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import func, or_, select
+from sqlalchemy import delete, func, or_, select
 from sqlalchemy.orm import Session, joinedload
 
 from app.modules.identity_billing.models import (
@@ -178,3 +178,7 @@ class IdentityRepository:
             stmt = stmt.where(AccessEvent.tenant_id == tenant_id)
         stmt = stmt.order_by(AccessEvent.created_at.desc())
         return list(self.db.scalars(stmt).all())
+
+    def prune_access_events_before(self, cutoff: datetime) -> int:
+        res = self.db.execute(delete(AccessEvent).where(AccessEvent.created_at < cutoff))
+        return int(res.rowcount or 0)

@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 from app.core.config import get_settings
 from app.core.database import Base, get_engine, get_session_factory
 from app.core.security import hash_password, verify_password
-from app.modules.curriculum.models import Chapter, Lesson, LessonTerm, Term
+from app.modules.curriculum.models import Chapter, Lesson, LessonTerm, StudyPackItem, Term
 from app.modules.identity_billing.models import Subscription, Tenant, User
 from app.modules.learning.models import StudentGamification, StudentPet
 from app.modules.lms.models import (
@@ -532,10 +532,48 @@ def seed_demo_lms(db: Session) -> None:
     db.commit()
 
 
+def seed_study_pack_items(db: Session, data_dir: Path) -> int:
+    """Seed all 16-Unit English Dictionary for Science items idempotently into DB."""
+    pack_path = data_dir / "english_for_science_study_pack.json"
+    if not pack_path.is_file():
+        return 0
+    raw = json.loads(pack_path.read_text(encoding="utf-8"))
+    existing_keys = {
+        (int(u_no), int(o_no))
+        for u_no, o_no in db.execute(select(StudyPackItem.unit_no, StudyPackItem.order_no)).all()
+    }
+    to_insert: list[StudyPackItem] = []
+    for unit_raw in raw.get("units", []):
+        unit_no = int(unit_raw["unit_no"])
+        for entry in unit_raw.get("items", []):
+            order_no = int(entry["order_no"])
+            if (unit_no, order_no) in existing_keys:
+                continue
+            existing_keys.add((unit_no, order_no))
+            to_insert.append(
+                StudyPackItem(
+                    unit_no=unit_no,
+                    order_no=order_no,
+                    term_en=str(entry["term_en"]).strip(),
+                    ipa=str(entry.get("ipa") or "").strip(),
+                    pos=str(entry.get("pos") or "n").strip(),
+                    meaning_vi=str(entry["meaning_vi"]).strip(),
+                    iupac_note=str(entry["iupac_note"]).strip()
+                    if entry.get("iupac_note")
+                    else None,
+                )
+            )
+    if to_insert:
+        db.add_all(to_insert)
+        db.commit()
+    return len(to_insert)
+
+
 def seed_all(db: Session, data_dir: Path | None = None) -> tuple[int, int, int]:
     """Run all Bolt 1-3 idempotent seeders."""
     resolved_dir = data_dir or get_settings().data_dir
     counts = seed_curriculum(db, resolved_dir)
+    seed_study_pack_items(db, resolved_dir)
     seed_demo_tenants(db)
     seed_demo_lms(db)
     return counts

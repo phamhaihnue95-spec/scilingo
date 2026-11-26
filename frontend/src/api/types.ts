@@ -892,3 +892,33 @@ export interface CmsResourceList {
   total: number;
   items: CmsResourceItem[];
 }
+
+export interface CmsStudyPackItem {
+  id: string;
+  unit_no: number;
+  unit_title_en: string;
+  unit_title_vi: string;
+  discipline: Discipline;
+  order_no: number;
+  term_en: string;
+  ipa: string;
+  pos: string;
+  meaning_vi: string;
+  iupac_note: string | null;
+}
+
+export interface CmsStudyPackList {
+  total: number;
+  items: CmsStudyPackItem[];
+}
+
+export interface CmsStudyPackMutationOut {
+  item: CmsStudyPackItem;
+  lint_report: LintCheckResult;
+}
+
+export interface CmsTrafficPruneOut {
+  deleted_count: number;
+  retention_days: number;
+  cutoff_iso: string;
+}

@@ -17,10 +17,13 @@ import type {
   CmsQuestionList,
   CmsResourceItem,
   CmsResourceList,
+  CmsStudyPackList,
+  CmsStudyPackMutationOut,
   CmsTenantDetail,
   CmsTermList,
   CmsTermMutationOut,
   CmsTrafficAnalytics,
+  CmsTrafficPruneOut,
   CurriculumTreeResponse,
   Discipline,
   Entitlements,
@@ -190,6 +193,35 @@ export async function refreshAccessToken(): Promise<string | null> {
   })();
 
   return refreshPromise;
+}
+
+async function downloadCsvFile(path: string, filename: string): Promise<void> {
+  const url = `${API_BASE}${path}`;
+  let token = getStoredAccessToken();
+  let res = await fetchWithColdStartAndRetry(url, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (res.status === 401 && token) {
+    const refreshed = await refreshAccessToken();
+    if (refreshed) {
+      token = refreshed;
+      res = await fetchWithColdStartAndRetry(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    }
+  }
+  if (!res.ok) {
+    throw new Error(`Không thể tải file CSV (HTTP ${res.status})`);
+  }
+  const blob = await res.blob();
+  const objectUrl = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = objectUrl;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(objectUrl);
 }
 
 async function request<T>(path: string, init: RequestInit = {}, retried = false): Promise<T> {
@@ -1011,5 +1043,102 @@ export const api = {
 
   cmsGetTraffic(days = 14): Promise<CmsTrafficAnalytics> {
     return request<CmsTrafficAnalytics>(`/identity/cms/traffic?days=${days}`);
+  },
+
+  cmsPruneTraffic(retentionDays = 90): Promise<CmsTrafficPruneOut> {
+    return request<CmsTrafficPruneOut>("/identity/cms/traffic/prune", {
+      method: "POST",
+      body: JSON.stringify({ retention_days: retentionDays }),
+    });
+  },
+
+  cmsDownloadUsersCsv(params?: {
+    tenant_id?: string;
+    role?: string;
+    q?: string;
+    is_active?: boolean;
+  }): Promise<void> {
+    const sp = new URLSearchParams();
+    if (params?.tenant_id) sp.set("tenant_id", params.tenant_id);
+    if (params?.role) sp.set("role", params.role);
+    if (params?.q) sp.set("q", params.q);
+    if (params?.is_active !== undefined) sp.set("is_active", String(params.is_active));
+    const qs = sp.toString();
+    return downloadCsvFile(
+      `/identity/cms/users/export-csv${qs ? `?${qs}` : ""}`,
+      "scilingo-users.csv"
+    );
+  },
+
+  cmsDownloadTrafficCsv(days = 14): Promise<void> {
+    return downloadCsvFile(
+      `/identity/cms/traffic/export-csv?days=${days}`,
+      `scilingo-traffic-${days}d.csv`
+    );
+  },
+
+  downloadTT94ReportCsv(academicYear = "2026-2027"): Promise<void> {
+    return downloadCsvFile(
+      `/lms/reports/tt94-compliance/export-csv?academic_year=${encodeURIComponent(academicYear)}`,
+      `scilingo-tt94-${academicYear}.csv`
+    );
+  },
+
+  cmsListStudyPackItems(params?: {
+    unit_no?: number;
+    q?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<CmsStudyPackList> {
+    const sp = new URLSearchParams();
+    if (params?.unit_no) sp.set("unit_no", String(params.unit_no));
+    if (params?.q) sp.set("q", params.q);
+    if (params?.limit) sp.set("limit", String(params.limit));
+    if (params?.offset) sp.set("offset", String(params.offset));
+    const qs = sp.toString();
+    return request<CmsStudyPackList>(`/curriculum/cms/study-pack/items${qs ? `?${qs}` : ""}`);
+  },
+
+  cmsCreateStudyPackItem(payload: {
+    unit_no: number;
+    order_no?: number | null;
+    term_en: string;
+    ipa?: string;
+    pos?: string;
+    meaning_vi: string;
+    iupac_note?: string | null;
+  }): Promise<CmsStudyPackMutationOut> {
+    return request<CmsStudyPackMutationOut>("/curriculum/cms/study-pack/items", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  cmsUpdateStudyPackItem(
+    itemId: string,
+    payload: {
+      unit_no?: number;
+      order_no?: number;
+      term_en?: string;
+      ipa?: string;
+      pos?: string;
+      meaning_vi?: string;
+      iupac_note?: string | null;
+    }
+  ): Promise<CmsStudyPackMutationOut> {
+    return request<CmsStudyPackMutationOut>(
+      `/curriculum/cms/study-pack/items/${encodeURIComponent(itemId)}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify(payload),
+      }
+    );
+  },
+
+  cmsDeleteStudyPackItem(itemId: string): Promise<{ deleted_id: string; term_en: string }> {
+    return request<{ deleted_id: string; term_en: string }>(
+      `/curriculum/cms/study-pack/items/${encodeURIComponent(itemId)}`,
+      { method: "DELETE" }
+    );
   },
 };

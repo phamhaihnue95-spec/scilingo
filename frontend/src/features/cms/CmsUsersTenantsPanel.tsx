@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import {
   Building2,
   CheckCircle2,
+  Download,
   Edit3,
   FileSpreadsheet,
   History,
@@ -235,7 +236,24 @@ export function CmsUsersTenantsPanel({ currentUserId, isPlatformAdmin }: Props) 
         </div>
 
         {subTab === "users" && (
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() =>
+                api
+                  .cmsDownloadUsersCsv({
+                    role: roleFilter || undefined,
+                    q: query.trim() || undefined,
+                  })
+                  .catch((err) =>
+                    setError(err instanceof Error ? err.message : "Xuất CSV tài khoản thất bại.")
+                  )
+              }
+              className="inline-flex items-center gap-1.5 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-xs font-bold text-sky-800 hover:bg-sky-100"
+            >
+              <Download className="h-4 w-4" />
+              Xuất CSV
+            </button>
             <button
               type="button"
               onClick={() => setCsvOpen((v) => !v)}

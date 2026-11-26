@@ -16,7 +16,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.modules.curriculum.linter import detect_13_exception_element, lint_text
-from app.modules.curriculum.models import Lesson, Term
+from app.modules.curriculum.models import Lesson, StudyPackItem, Term
 from app.modules.curriculum.repository import CurriculumRepository
 from app.modules.curriculum.schemas import (
     ChapterWithLessonsOut,
@@ -24,6 +24,11 @@ from app.modules.curriculum.schemas import (
     CmsLessonListOut,
     CmsLessonUpdateRequest,
     CmsLessonUpdateResponse,
+    CmsStudyPackCreateRequest,
+    CmsStudyPackItemOut,
+    CmsStudyPackListOut,
+    CmsStudyPackMutationOut,
+    CmsStudyPackUpdateRequest,
     CmsTermCreateRequest,
     CmsTermListOut,
     CmsTermMutationOut,
@@ -349,9 +354,15 @@ class CurriculumService:
         pack_file = get_settings().data_dir / "english_for_science_study_pack.json"
         return _load_study_pack_raw(str(pack_file))
 
+    def _study_pack_unit_meta_map(self) -> dict[int, dict[str, Any]]:
+        raw = self._get_study_pack_raw()
+        return {int(u["unit_no"]): u for u in raw["units"]}
+
     def get_english_science_pack_overview(self) -> StudyPackOverviewOut:
         raw = self._get_study_pack_raw()
         meta = raw["metadata"]
+        db_counts = self.repo.count_study_pack_items_by_unit()
+        use_db = sum(db_counts.values()) > 0
         unit_summaries = [
             StudyPackUnitSummaryOut(
                 unit_no=u["unit_no"],
@@ -360,10 +371,11 @@ class CurriculumService:
                 discipline=u["discipline"],
                 kntt8_related_lessons=u["kntt8_related_lessons"],
                 related_lessons_by_grade=_build_related_lessons_by_grade(u),
-                item_count=u["item_count"],
+                item_count=db_counts.get(int(u["unit_no"]), 0) if use_db else u["item_count"],
             )
             for u in raw["units"]
         ]
+        total_items = sum(db_counts.values()) if use_db else meta["total_items"]
         return StudyPackOverviewOut(
             id=meta["id"],
             title=meta["title"],
@@ -372,20 +384,52 @@ class CurriculumService:
             source_org=meta["source_org"],
             school_context=meta["school_context"],
             total_units=meta["total_units"],
-            total_items=meta["total_items"],
+            total_items=total_items,
             units=unit_summaries,
         )
 
     def get_english_science_unit(self, unit_no: int) -> StudyPackUnitDetailOut:
         raw = self._get_study_pack_raw()
-        for u in raw["units"]:
-            if u["unit_no"] == unit_no:
-                summary, items = _flatten_study_pack_unit(u)
-                return StudyPackUnitDetailOut(unit=summary, items=items)
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Không tìm thấy Unit {unit_no} trong bộ The English Dictionary for SCIENCE.",
-        )
+        unit_raw = next((u for u in raw["units"] if u["unit_no"] == unit_no), None)
+        if unit_raw is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=(
+                    f"Không tìm thấy Unit {unit_no} trong bộ The English Dictionary for SCIENCE."
+                ),
+            )
+
+        db_counts = self.repo.count_study_pack_items_by_unit()
+        if sum(db_counts.values()) > 0:
+            _, rows = self.repo.list_study_pack_items(unit_no=unit_no)
+            summary = StudyPackUnitSummaryOut(
+                unit_no=unit_raw["unit_no"],
+                title_en=unit_raw["title_en"],
+                title_vi=unit_raw["title_vi"],
+                discipline=unit_raw["discipline"],
+                kntt8_related_lessons=unit_raw["kntt8_related_lessons"],
+                related_lessons_by_grade=_build_related_lessons_by_grade(unit_raw),
+                item_count=len(rows),
+            )
+            items = [
+                StudyPackItemOut(
+                    unit_no=row.unit_no,
+                    unit_title_en=unit_raw["title_en"],
+                    unit_title_vi=unit_raw["title_vi"],
+                    discipline=unit_raw["discipline"],
+                    order_no=row.order_no,
+                    term_en=row.term_en,
+                    ipa=row.ipa,
+                    pos=row.pos,
+                    meaning_vi=row.meaning_vi,
+                    iupac_note=row.iupac_note,
+                )
+                for row in rows
+            ]
+            return StudyPackUnitDetailOut(unit=summary, items=items)
+
+        summary, items = _flatten_study_pack_unit(unit_raw)
+        return StudyPackUnitDetailOut(unit=summary, items=items)
 
     def search_english_science_items(
         self,
@@ -395,6 +439,31 @@ class CurriculumService:
         limit: int = 100,
         offset: int = 0,
     ) -> StudyPackSearchResponse:
+        db_counts = self.repo.count_study_pack_items_by_unit()
+        if sum(db_counts.values()) > 0:
+            unit_meta = self._study_pack_unit_meta_map()
+            total, rows = self.repo.list_study_pack_items(
+                unit_no=unit_no, q=q, limit=limit, offset=offset
+            )
+            items = []
+            for row in rows:
+                u = unit_meta.get(row.unit_no, {})
+                items.append(
+                    StudyPackItemOut(
+                        unit_no=row.unit_no,
+                        unit_title_en=u.get("title_en", f"Unit {row.unit_no}"),
+                        unit_title_vi=u.get("title_vi", f"Chủ đề {row.unit_no}"),
+                        discipline=u.get("discipline", "general_lab"),
+                        order_no=row.order_no,
+                        term_en=row.term_en,
+                        ipa=row.ipa,
+                        pos=row.pos,
+                        meaning_vi=row.meaning_vi,
+                        iupac_note=row.iupac_note,
+                    )
+                )
+            return StudyPackSearchResponse(total=total, items=items)
+
         raw = self._get_study_pack_raw()
         all_items: list[StudyPackItemOut] = []
         for u in raw["units"]:
@@ -863,3 +932,181 @@ class CurriculumService:
         self.repo.delete_term(term)
         self.repo.db.commit()
         return {"deleted_id": term_id, "term_en": label}
+
+    # --- 16-Unit Study Pack CMS ---
+    def _to_cms_study_pack_item(
+        self, row: StudyPackItem, unit_meta_map: dict[int, dict[str, Any]]
+    ) -> CmsStudyPackItemOut:
+        u = unit_meta_map.get(row.unit_no, {})
+        return CmsStudyPackItemOut(
+            id=row.id,
+            unit_no=row.unit_no,
+            unit_title_en=u.get("title_en", f"Unit {row.unit_no}"),
+            unit_title_vi=u.get("title_vi", f"Chủ đề {row.unit_no}"),
+            discipline=u.get("discipline", "general_lab"),
+            order_no=row.order_no,
+            term_en=row.term_en,
+            ipa=row.ipa,
+            pos=row.pos,
+            meaning_vi=row.meaning_vi,
+            iupac_note=row.iupac_note,
+        )
+
+    def list_cms_study_pack_items(
+        self,
+        *,
+        unit_no: int | None = None,
+        q: str | None = None,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> CmsStudyPackListOut:
+        unit_meta_map = self._study_pack_unit_meta_map()
+        total, rows = self.repo.list_study_pack_items(
+            unit_no=unit_no, q=q, limit=limit, offset=offset
+        )
+        return CmsStudyPackListOut(
+            total=total,
+            items=[self._to_cms_study_pack_item(r, unit_meta_map) for r in rows],
+        )
+
+    def create_cms_study_pack_item(
+        self, actor: Any, payload: CmsStudyPackCreateRequest
+    ) -> CmsStudyPackMutationOut:
+        from app.modules.identity_billing.service import IdentityService
+
+        unit_meta_map = self._study_pack_unit_meta_map()
+        unit_meta = unit_meta_map.get(payload.unit_no)
+        if unit_meta is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Không tìm thấy Unit {payload.unit_no}.",
+            )
+
+        order_no = (
+            payload.order_no
+            if payload.order_no is not None
+            else self.repo.get_max_study_pack_order(payload.unit_no) + 1
+        )
+        if self.repo.study_pack_unit_order_exists(payload.unit_no, order_no):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Số thứ tự #{order_no} đã tồn tại trong Unit {payload.unit_no}.",
+            )
+
+        item = StudyPackItem(
+            unit_no=payload.unit_no,
+            order_no=order_no,
+            term_en=payload.term_en.strip(),
+            ipa=payload.ipa.strip(),
+            pos=payload.pos.strip() or "n",
+            meaning_vi=payload.meaning_vi.strip(),
+            iupac_note=payload.iupac_note.strip() if payload.iupac_note else None,
+        )
+        self.repo.create_study_pack_item(item)
+
+        lint_report = self.lint_content(
+            "\n".join(filter(None, [item.term_en, item.meaning_vi, item.iupac_note])),
+            discipline=unit_meta.get("discipline"),
+        )
+        IdentityService(self.repo.db).record_audit_log(
+            actor,
+            module="curriculum",
+            action="create",
+            entity_type="study_pack_item",
+            entity_id=item.id,
+            summary=f"Thêm mục Bộ Đề Unit {item.unit_no} #{item.order_no}: '{item.term_en}'",
+            diff={"unit_no": item.unit_no, "order_no": item.order_no, "term_en": item.term_en},
+            tenant_id=None,
+        )
+        self.repo.db.commit()
+        return CmsStudyPackMutationOut(
+            item=self._to_cms_study_pack_item(item, unit_meta_map),
+            lint_report=lint_report,
+        )
+
+    def update_cms_study_pack_item(
+        self, actor: Any, item_id: str, payload: CmsStudyPackUpdateRequest
+    ) -> CmsStudyPackMutationOut:
+        from app.modules.identity_billing.service import IdentityService
+
+        item = self.repo.get_study_pack_item_by_id(item_id)
+        if item is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Không tìm thấy mục từ vựng trong Bộ Đề 16 Units.",
+            )
+
+        next_unit = payload.unit_no if payload.unit_no is not None else item.unit_no
+        next_order = payload.order_no if payload.order_no is not None else item.order_no
+        unit_meta_map = self._study_pack_unit_meta_map()
+        unit_meta = unit_meta_map.get(next_unit)
+        if unit_meta is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Không tìm thấy Unit {next_unit}.",
+            )
+
+        if self.repo.study_pack_unit_order_exists(next_unit, next_order, exclude_id=item.id):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Số thứ tự #{next_order} đã tồn tại trong Unit {next_unit}.",
+            )
+
+        item.unit_no = next_unit
+        item.order_no = next_order
+        if payload.term_en is not None:
+            item.term_en = payload.term_en.strip()
+        if payload.ipa is not None:
+            item.ipa = payload.ipa.strip()
+        if payload.pos is not None:
+            item.pos = payload.pos.strip() or "n"
+        if payload.meaning_vi is not None:
+            item.meaning_vi = payload.meaning_vi.strip()
+        if payload.iupac_note is not None:
+            item.iupac_note = payload.iupac_note.strip() or None
+
+        lint_report = self.lint_content(
+            "\n".join(filter(None, [item.term_en, item.meaning_vi, item.iupac_note])),
+            discipline=unit_meta.get("discipline"),
+        )
+        IdentityService(self.repo.db).record_audit_log(
+            actor,
+            module="curriculum",
+            action="update",
+            entity_type="study_pack_item",
+            entity_id=item.id,
+            summary=f"Cập nhật mục Bộ Đề Unit {item.unit_no} #{item.order_no}: '{item.term_en}'",
+            diff={"unit_no": item.unit_no, "order_no": item.order_no, "term_en": item.term_en},
+            tenant_id=None,
+        )
+        self.repo.db.commit()
+        return CmsStudyPackMutationOut(
+            item=self._to_cms_study_pack_item(item, unit_meta_map),
+            lint_report=lint_report,
+        )
+
+    def delete_cms_study_pack_item(self, actor: Any, item_id: str) -> dict[str, str]:
+        from app.modules.identity_billing.service import IdentityService
+
+        item = self.repo.get_study_pack_item_by_id(item_id)
+        if item is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Không tìm thấy mục từ vựng cần xóa.",
+            )
+        label = item.term_en
+        unit_no = item.unit_no
+        order_no = item.order_no
+        IdentityService(self.repo.db).record_audit_log(
+            actor,
+            module="curriculum",
+            action="delete",
+            entity_type="study_pack_item",
+            entity_id=item.id,
+            summary=f"Xóa mục Bộ Đề Unit {unit_no} #{order_no}: '{label}'",
+            diff={"unit_no": unit_no, "order_no": order_no, "term_en": label},
+            tenant_id=None,
+        )
+        self.repo.delete_study_pack_item(item)
+        self.repo.db.commit()
+        return {"deleted_id": item_id, "term_en": label}

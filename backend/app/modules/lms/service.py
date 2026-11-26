@@ -1098,6 +1098,75 @@ class LMSService:
             grade_breakdown=grade_breakdown,
         )
 
+    def export_tt94_compliance_csv(
+        self, caller: User, academic_year: str = "2026-2027"
+    ) -> bytes:
+        report = self.get_tt94_compliance_report(caller, academic_year=academic_year)
+        output = io.StringIO()
+        writer = csv.writer(output)
+        writer.writerow(["school_name", report.tenant_name])
+        writer.writerow(["academic_year", report.academic_year])
+        writer.writerow(["estimated_tt94_level", report.estimated_tt94_level])
+        writer.writerow(["level_label", report.level_label])
+        writer.writerow(["total_classrooms", report.total_classrooms])
+        writer.writerow(["classrooms_meeting_35_periods", report.classrooms_meeting_35_periods])
+        writer.writerow(["classrooms_meeting_105_periods", report.classrooms_meeting_105_periods])
+        writer.writerow(["total_periods_logged", report.total_periods_logged])
+        writer.writerow(["total_exams_generated", report.total_exams_generated])
+        writer.writerow(["exams_meeting_10_pct", report.exams_meeting_10_pct])
+        writer.writerow(["exams_meeting_50_pct", report.exams_meeting_50_pct])
+        writer.writerow([])
+        writer.writerow(
+            [
+                "grade",
+                "classrooms_count",
+                "students_count",
+                "periods_logged",
+                "english_minutes",
+                "exams_count",
+                "exams_meeting_10_pct",
+                "exams_meeting_50_pct",
+            ]
+        )
+        for gb in report.grade_breakdown:
+            writer.writerow(
+                [
+                    gb.grade,
+                    gb.classrooms_count,
+                    gb.students_count,
+                    gb.periods_logged,
+                    gb.english_minutes,
+                    gb.exams_count,
+                    gb.exams_meeting_10_pct,
+                    gb.exams_meeting_50_pct,
+                ]
+            )
+        writer.writerow([])
+        writer.writerow(
+            [
+                "classroom_name",
+                "is_tt94_pilot_class",
+                "student_count",
+                "total_periods_logged",
+                "total_english_minutes",
+                "meets_35_periods",
+                "meets_105_periods",
+            ]
+        )
+        for cls in report.classrooms:
+            writer.writerow(
+                [
+                    cls.classroom_name,
+                    "true" if cls.is_tt94_pilot_class else "false",
+                    cls.student_count,
+                    cls.total_periods_logged,
+                    cls.total_english_minutes,
+                    "true" if cls.meets_35_periods else "false",
+                    "true" if cls.meets_105_periods else "false",
+                ]
+            )
+        return output.getvalue().encode("utf-8-sig")
+
     # --- CMS Question Bank & CLIL Resources Management ---
     def _ensure_question_write_access(self, caller: User, item: QuestionBankItem) -> None:
         if caller.role == "platform_admin":
