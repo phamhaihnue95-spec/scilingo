@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import re
 import unicodedata
 from datetime import date
@@ -23,6 +24,8 @@ from app.modules.lms.models import (
     TeacherResource,
     TeachingSessionLog,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def _slugify(value: str) -> str:
@@ -255,37 +258,49 @@ def seed_demo_tenants(db: Session) -> None:
 
     settings = get_settings()
     admin_email = settings.platform_admin_email.lower().strip()
-    admin_pw = settings.platform_admin_password
+    admin_pw = settings.platform_admin_password.strip()
     admin_name = settings.platform_admin_full_name
     existing_admin = db.scalar(select(User).where(User.email == admin_email))
     legacy_admin = db.scalar(select(User).where(User.email == "admin@demo.scilingo.vn"))
 
-    if existing_admin is None and legacy_admin is not None:
-        legacy_admin.email = admin_email
-        legacy_admin.password_hash = hash_password(admin_pw)
-        legacy_admin.full_name = admin_name
-        legacy_admin.role = "platform_admin"
-        legacy_admin.is_active = True
-        legacy_admin.tenant_id = cgb.id
-    elif existing_admin is None:
-        db.add(
-            User(
-                tenant_id=cgb.id,
-                email=admin_email,
-                password_hash=hash_password(admin_pw),
-                full_name=admin_name,
-                role="platform_admin",
-                grade_level=None,
-                is_active=True,
+    if admin_pw:
+        if existing_admin is None and legacy_admin is not None:
+            legacy_admin.email = admin_email
+            legacy_admin.password_hash = hash_password(admin_pw)
+            legacy_admin.full_name = admin_name
+            legacy_admin.role = "platform_admin"
+            legacy_admin.is_active = True
+            legacy_admin.tenant_id = cgb.id
+        elif existing_admin is None:
+            db.add(
+                User(
+                    tenant_id=cgb.id,
+                    email=admin_email,
+                    password_hash=hash_password(admin_pw),
+                    full_name=admin_name,
+                    role="platform_admin",
+                    grade_level=None,
+                    is_active=True,
+                )
             )
-        )
+        else:
+            existing_admin.role = "platform_admin"
+            existing_admin.is_active = True
+            if not verify_password(admin_pw, existing_admin.password_hash):
+                existing_admin.password_hash = hash_password(admin_pw)
+            if legacy_admin is not None and legacy_admin.id != existing_admin.id:
+                legacy_admin.is_active = False
     else:
-        existing_admin.role = "platform_admin"
-        existing_admin.is_active = True
-        if not verify_password(admin_pw, existing_admin.password_hash):
-            existing_admin.password_hash = hash_password(admin_pw)
-        if legacy_admin is not None and legacy_admin.id != existing_admin.id:
-            legacy_admin.is_active = False
+        if existing_admin is not None:
+            existing_admin.role = "platform_admin"
+            existing_admin.is_active = True
+            if legacy_admin is not None and legacy_admin.id != existing_admin.id:
+                legacy_admin.is_active = False
+        else:
+            logger.warning(
+                "PLATFORM_ADMIN_PASSWORD is not set; skipping bootstrap creation for %s.",
+                admin_email,
+            )
 
     db.commit()
 

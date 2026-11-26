@@ -4,6 +4,13 @@ from __future__ import annotations
 
 from fastapi.testclient import TestClient
 
+from app.core.config import get_settings
+
+
+def _platform_admin_creds() -> tuple[str, str]:
+    settings = get_settings()
+    return settings.platform_admin_email, settings.platform_admin_password
+
 
 def _auth_headers(client: TestClient, email: str, password: str) -> tuple[dict[str, str], dict]:
     resp = client.post("/api/v1/auth/login", json={"email": email, "password": password})
@@ -82,7 +89,8 @@ def test_cms_rbac_and_school_isolation(client: TestClient) -> None:
 
 def test_iupac_linter_and_unit1_glossary_lesson_cms(client: TestClient) -> None:
     teacher_hdr, _ = _auth_headers(client, "hai.gv@demo.scilingo.vn", "Teacher123!")
-    platform_hdr, _ = _auth_headers(client, "phamhaihnue95@gmail.com", "Hamberger23")
+    platform_email, platform_pw = _platform_admin_creds()
+    platform_hdr, _ = _auth_headers(client, platform_email, platform_pw)
 
     # Legacy demo admin email must no longer authenticate
     old_admin_resp = client.post(
@@ -166,7 +174,8 @@ def test_unit3_cms_questions_csv_and_clil_resources(client: TestClient) -> None:
     teacher_hdr, _ = _auth_headers(client, "hai.gv@demo.scilingo.vn", "Teacher123!")
     cgb_admin_hdr, _ = _auth_headers(client, "hung.bgh@demo.scilingo.vn", "Admin123!")
     nt_admin_hdr, _ = _auth_headers(client, "lan.bgh@demo.scilingo.vn", "Admin123!")
-    platform_hdr, _ = _auth_headers(client, "phamhaihnue95@gmail.com", "Hamberger23")
+    platform_email, platform_pw = _platform_admin_creds()
+    platform_hdr, _ = _auth_headers(client, platform_email, platform_pw)
 
     # Platform admin creates an official question; school_admin cannot modify it
     official_q = client.post(
@@ -271,7 +280,8 @@ def test_unit3_cms_questions_csv_and_clil_resources(client: TestClient) -> None:
 
 
 def test_unit5_cms_tenants_users_csv_and_audit_logs(client: TestClient) -> None:
-    platform_hdr, _ = _auth_headers(client, "phamhaihnue95@gmail.com", "Hamberger23")
+    platform_email, platform_pw = _platform_admin_creds()
+    platform_hdr, _ = _auth_headers(client, platform_email, platform_pw)
 
     ov_resp = client.get("/api/v1/identity/cms/overview", headers=platform_hdr)
     assert ov_resp.status_code == 200
@@ -320,7 +330,8 @@ def test_traffic_tracking_and_user_delete_management(client: TestClient) -> None
     stu_hdr, _ = _auth_headers(client, "an.hs8@demo.scilingo.vn", "Student123!")
     nt_admin_hdr, nt_admin_data = _auth_headers(client, "lan.bgh@demo.scilingo.vn", "Admin123!")
     cgb_admin_hdr, _ = _auth_headers(client, "hung.bgh@demo.scilingo.vn", "Admin123!")
-    platform_hdr, platform_data = _auth_headers(client, "phamhaihnue95@gmail.com", "Hamberger23")
+    platform_email, platform_pw = _platform_admin_creds()
+    platform_hdr, platform_data = _auth_headers(client, platform_email, platform_pw)
 
     # Login incremented login_count and set last_login_at
     assert platform_data["user"]["login_count"] >= 1

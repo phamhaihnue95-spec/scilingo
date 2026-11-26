@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from collections.abc import Generator
 from pathlib import Path
 
@@ -13,6 +14,10 @@ from app.core.config import get_settings
 from app.core.database import Base, create_engine_for_url, get_db
 from app.main import create_app
 from app.seed import seed_all
+
+os.environ.setdefault("PLATFORM_ADMIN_PASSWORD", "TestPlatformAdmin123!")
+os.environ.setdefault("RATE_LIMIT_ENABLED", "false")
+get_settings.cache_clear()
 
 
 @pytest.fixture()

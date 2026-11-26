@@ -17,6 +17,10 @@ services:
         value: production
       - key: CORS_ORIGINS
         value: https://khtn.scilingo-edu.workers.dev,http://localhost:5173
+      - key: PLATFORM_ADMIN_EMAIL
+        value: phamhaihnue95@gmail.com
+      - key: PLATFORM_ADMIN_PASSWORD
+        sync: false
 
 databases:
   - name: scilingo-khtn-db

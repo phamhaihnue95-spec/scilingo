@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.core.rate_limit import rate_limit
 from app.modules.identity_billing.dependencies import (
     get_current_user,
     get_optional_current_user,
@@ -40,13 +41,18 @@ router = APIRouter(tags=["Identity & Billing (Unit 5)"])
     "/auth/register",
     response_model=AuthSessionResponse,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(rate_limit("auth_register", max_requests=10, window_seconds=600))],
 )
 def register(payload: RegisterRequest, db: Session = Depends(get_db)) -> AuthSessionResponse:
     """Register a new B2C student or teacher account."""
     return IdentityService(db).register(payload)
 
 
-@router.post("/auth/login", response_model=AuthSessionResponse)
+@router.post(
+    "/auth/login",
+    response_model=AuthSessionResponse,
+    dependencies=[Depends(rate_limit("auth_login", max_requests=15, window_seconds=300))],
+)
 def login(payload: LoginRequest, db: Session = Depends(get_db)) -> AuthSessionResponse:
     """Authenticate with email and password."""
     return IdentityService(db).login(payload)
@@ -200,7 +206,10 @@ def delete_cms_user(
     return IdentityService(db).delete_cms_user(current_user, user_id)
 
 
-@router.post("/analytics/track")
+@router.post(
+    "/analytics/track",
+    dependencies=[Depends(rate_limit("analytics_track", max_requests=60, window_seconds=60))],
+)
 def track_access_event(
     payload: TrackEventRequest,
     current_user: User | None = Depends(get_optional_current_user),

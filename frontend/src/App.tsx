@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { Suspense, lazy, useEffect, useState } from "react";
 import { AnimatePresence, MotionConfig, motion } from "framer-motion";
 import {
   BookOpen,
@@ -6,6 +6,7 @@ import {
   Gamepad2,
   GraduationCap,
   Library,
+  Loader2,
   ShieldCheck,
   Sparkles,
   UserCircle2,
@@ -13,20 +14,48 @@ import {
   VolumeX,
 } from "lucide-react";
 
-import { api, clearAuthTokens, getStoredAccessToken } from "./api/client";
+import {
+  API_COLD_START_EVENT,
+  AUTH_EXPIRED_EVENT,
+  api,
+  clearAuthTokens,
+  getStoredAccessToken,
+  getStoredRefreshToken,
+} from "./api/client";
 import type { AuthSession, GradeLevel } from "./api/types";
 import { PageTransitionWrapper } from "./components/motion/MotionPrimitives";
 import { Icon3D } from "./components/visuals/ScienceVisuals";
-import { AccountPage } from "./features/auth/AuthModalAndAccount";
-import { CmsPortalPage } from "./features/cms/CmsPortalPage";
 import { CurriculumMapPage } from "./features/curriculum/CurriculumMapPage";
-import { GlossaryAndRulesPage } from "./features/curriculum/GlossaryAndRulesPage";
-import { LessonDetailPage } from "./features/curriculum/LessonDetailPage";
-import { type ArenaTab, GameArenaPage } from "./features/games/GameArenaPage";
-import { LearningHubPage, type LearningSubTab } from "./features/learning/LearningHubPage";
-import { TeacherStudioPage } from "./features/lms/TeacherStudioPage";
+import type { ArenaTab } from "./features/games/GameArenaPage";
+import type { LearningSubTab } from "./features/learning/LearningHubPage";
 import { SciPetWidget } from "./features/pet/SciPetWidget";
-import { StudyPack16Page } from "./features/study_pack/StudyPack16Page";
+
+const AccountPage = lazy(() =>
+  import("./features/auth/AuthModalAndAccount").then((m) => ({ default: m.AccountPage }))
+);
+const CmsPortalPage = lazy(() =>
+  import("./features/cms/CmsPortalPage").then((m) => ({ default: m.CmsPortalPage }))
+);
+const GlossaryAndRulesPage = lazy(() =>
+  import("./features/curriculum/GlossaryAndRulesPage").then((m) => ({
+    default: m.GlossaryAndRulesPage,
+  }))
+);
+const LessonDetailPage = lazy(() =>
+  import("./features/curriculum/LessonDetailPage").then((m) => ({ default: m.LessonDetailPage }))
+);
+const GameArenaPage = lazy(() =>
+  import("./features/games/GameArenaPage").then((m) => ({ default: m.GameArenaPage }))
+);
+const LearningHubPage = lazy(() =>
+  import("./features/learning/LearningHubPage").then((m) => ({ default: m.LearningHubPage }))
+);
+const TeacherStudioPage = lazy(() =>
+  import("./features/lms/TeacherStudioPage").then((m) => ({ default: m.TeacherStudioPage }))
+);
+const StudyPack16Page = lazy(() =>
+  import("./features/study_pack/StudyPack16Page").then((m) => ({ default: m.StudyPack16Page }))
+);
 import {
   VALID_GRADES,
   getSavedGrade,
@@ -61,6 +90,8 @@ export function App() {
   const [session, setSession] = useState<AuthSession | null>(null);
   const [selectedGrade, setSelectedGrade] = useState<GradeLevel>(() => getSavedGrade());
   const [soundOn, setSoundOn] = useState<boolean>(() => isSoundEnabled());
+  const [isColdStarting, setIsColdStarting] = useState(false);
+  const [authNotice, setAuthNotice] = useState<string | null>(null);
 
   const handleGradeChange = (nextGrade: GradeLevel) => {
     playClickSound();
@@ -93,13 +124,34 @@ export function App() {
   }, [view, selectedGrade]);
 
   useEffect(() => {
+    const onColdStart = (ev: Event) => {
+      const detail = (ev as CustomEvent<{ active?: boolean }>).detail;
+      setIsColdStarting(Boolean(detail?.active));
+    };
+    const onAuthExpired = () => {
+      setSession((prev) => {
+        if (prev) {
+          setAuthNotice("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại để tiếp tục.");
+        }
+        return null;
+      });
+    };
+    window.addEventListener(API_COLD_START_EVENT, onColdStart);
+    window.addEventListener(AUTH_EXPIRED_EVENT, onAuthExpired);
+    return () => {
+      window.removeEventListener(API_COLD_START_EVENT, onColdStart);
+      window.removeEventListener(AUTH_EXPIRED_EVENT, onAuthExpired);
+    };
+  }, []);
+
+  useEffect(() => {
     const token = getStoredAccessToken();
     if (!token) return;
     Promise.all([api.getMe(), api.getEntitlements()])
       .then(([user, ent]) => {
         setSession({
-          access_token: token,
-          refresh_token: localStorage.getItem("scilingo_refresh_token") ?? "",
+          access_token: getStoredAccessToken() ?? token,
+          refresh_token: getStoredRefreshToken() ?? "",
           token_type: "bearer",
           user,
           tenant: ent.tenant,
@@ -367,96 +419,155 @@ export function App() {
           </div>
         </header>
 
+        {(isColdStarting || authNotice) && (
+          <div className="mx-auto mt-3 flex w-full max-w-6xl flex-col gap-2 px-3 sm:px-6">
+            {isColdStarting && (
+              <div className="flex items-center gap-2 rounded-2xl border border-amber-200 bg-amber-50/90 px-4 py-2.5 text-xs font-semibold text-amber-800 shadow-sm">
+                <Loader2 className="h-4 w-4 shrink-0 animate-spin text-amber-600" />
+                <span>Đang đánh thức máy chủ SciLingo... vui lòng chờ vài giây.</span>
+              </div>
+            )}
+            {authNotice && (
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-xs font-semibold text-rose-800 shadow-sm">
+                <span>{authNotice}</span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAuthNotice(null);
+                      setView({ kind: "account" });
+                    }}
+                    className="rounded-lg bg-rose-600 px-3 py-1 font-bold text-white hover:bg-rose-700"
+                  >
+                    Đăng nhập lại
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAuthNotice(null)}
+                    className="rounded-lg px-2 py-1 text-rose-600 hover:bg-rose-100"
+                  >
+                    Đóng
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Main Content */}
         <main className="mx-auto w-full max-w-6xl flex-1 px-3 py-3 sm:px-6 sm:py-8">
           <AnimatePresence mode="wait">
             <PageTransitionWrapper key={viewKey}>
-              {view.kind === "map" && (
-                <CurriculumMapPage
-                  session={session}
-                  grade={selectedGrade}
-                  onGradeChange={handleGradeChange}
-                  onSelectLesson={openLesson}
-                  onOpenStudyPack={() => {
-                    playClickSound();
-                    setView({ kind: "study_pack" });
-                  }}
-                  onOpenGames={(initialGame) => {
-                    playClickSound();
-                    setView({ kind: "games", initialGame });
-                    window.scrollTo({ top: 0, behavior: "smooth" });
-                  }}
-                />
-              )}
-              {view.kind === "study_pack" && (
-                <StudyPack16Page
-                  session={session}
-                  grade={selectedGrade}
-                  initialUnitNo={view.initialUnitNo}
-                  onSelectLesson={openLesson}
-                  onLaunchLightningUnit={(unitNo) => {
-                    playClickSound();
-                    setView({ kind: "games", initialGame: "lightning", initialUnitNo: unitNo });
-                    window.scrollTo({ top: 0, behavior: "smooth" });
-                  }}
-                />
-              )}
-              {view.kind === "games" && (
-                <GameArenaPage
-                  session={session}
-                  grade={selectedGrade}
-                  onSessionChange={setSession}
-                  initialGame={view.initialGame}
-                  initialUnitNo={view.initialUnitNo}
-                  onOpenStudyPackUnit={(unitNo) => {
-                    playClickSound();
-                    setView({ kind: "study_pack", initialUnitNo: unitNo });
-                    window.scrollTo({ top: 0, behavior: "smooth" });
-                  }}
-                />
-              )}
-              {view.kind === "lesson" && (
-                <LessonDetailPage
-                  grade={view.grade ?? selectedGrade}
-                  lessonNo={view.lessonNo}
-                  onBack={() => setView({ kind: "map" })}
-                  onNavigateLesson={openLesson}
-                  onLaunchLearning={launchLearning}
-                />
-              )}
-              {view.kind === "learning" && (
-                <LearningHubPage
-                  session={session}
-                  grade={selectedGrade}
-                  onSessionChange={setSession}
-                  initialTab={view.tab}
-                  initialLessonNo={view.lessonNo}
-                  onLaunchGameChallenge={(game, unitNo) => {
-                    playClickSound();
-                    setView({ kind: "games", initialGame: game, initialUnitNo: unitNo });
-                    window.scrollTo({ top: 0, behavior: "smooth" });
-                  }}
-                />
-              )}
-              {view.kind === "teacher" && (
-                <TeacherStudioPage
-                  session={session}
-                  grade={selectedGrade}
-                  onSessionChange={setSession}
-                />
-              )}
-              {view.kind === "cms" && (
-                <CmsPortalPage
-                  session={session}
-                  onOpenAccount={() => setView({ kind: "account" })}
-                />
-              )}
-              {view.kind === "glossary" && (
-                <GlossaryAndRulesPage grade={selectedGrade} onSelectLesson={openLesson} />
-              )}
-              {view.kind === "account" && (
-                <AccountPage session={session} onSessionChange={setSession} />
-              )}
+              <Suspense
+                fallback={
+                  <div className="flex min-h-[260px] flex-col items-center justify-center gap-3 rounded-3xl border border-sky-100 bg-white/80 p-8 text-sm font-semibold text-slate-600 shadow-sm">
+                    <Loader2 className="h-7 w-7 animate-spin text-indigo-600" />
+                    <span>Đang tải nội dung học tập SciLingo...</span>
+                  </div>
+                }
+              >
+                {view.kind === "map" && (
+                  <CurriculumMapPage
+                    session={session}
+                    grade={selectedGrade}
+                    onGradeChange={handleGradeChange}
+                    onSelectLesson={openLesson}
+                    onOpenStudyPack={() => {
+                      playClickSound();
+                      setView({ kind: "study_pack" });
+                    }}
+                    onOpenGames={(initialGame) => {
+                      playClickSound();
+                      setView({ kind: "games", initialGame });
+                      window.scrollTo({ top: 0, behavior: "smooth" });
+                    }}
+                  />
+                )}
+                {view.kind === "study_pack" && (
+                  <StudyPack16Page
+                    session={session}
+                    grade={selectedGrade}
+                    initialUnitNo={view.initialUnitNo}
+                    onSelectLesson={openLesson}
+                    onLaunchLightningUnit={(unitNo) => {
+                      playClickSound();
+                      setView({ kind: "games", initialGame: "lightning", initialUnitNo: unitNo });
+                      window.scrollTo({ top: 0, behavior: "smooth" });
+                    }}
+                  />
+                )}
+                {view.kind === "games" && (
+                  <GameArenaPage
+                    session={session}
+                    grade={selectedGrade}
+                    onSessionChange={(next) => {
+                      setSession(next);
+                      if (next) setAuthNotice(null);
+                    }}
+                    initialGame={view.initialGame}
+                    initialUnitNo={view.initialUnitNo}
+                    onOpenStudyPackUnit={(unitNo) => {
+                      playClickSound();
+                      setView({ kind: "study_pack", initialUnitNo: unitNo });
+                      window.scrollTo({ top: 0, behavior: "smooth" });
+                    }}
+                  />
+                )}
+                {view.kind === "lesson" && (
+                  <LessonDetailPage
+                    grade={view.grade ?? selectedGrade}
+                    lessonNo={view.lessonNo}
+                    onBack={() => setView({ kind: "map" })}
+                    onNavigateLesson={openLesson}
+                    onLaunchLearning={launchLearning}
+                  />
+                )}
+                {view.kind === "learning" && (
+                  <LearningHubPage
+                    session={session}
+                    grade={selectedGrade}
+                    onSessionChange={(next) => {
+                      setSession(next);
+                      if (next) setAuthNotice(null);
+                    }}
+                    initialTab={view.tab}
+                    initialLessonNo={view.lessonNo}
+                    onLaunchGameChallenge={(game, unitNo) => {
+                      playClickSound();
+                      setView({ kind: "games", initialGame: game, initialUnitNo: unitNo });
+                      window.scrollTo({ top: 0, behavior: "smooth" });
+                    }}
+                  />
+                )}
+                {view.kind === "teacher" && (
+                  <TeacherStudioPage
+                    session={session}
+                    grade={selectedGrade}
+                    onSessionChange={(next) => {
+                      setSession(next);
+                      if (next) setAuthNotice(null);
+                    }}
+                  />
+                )}
+                {view.kind === "cms" && (
+                  <CmsPortalPage
+                    session={session}
+                    onOpenAccount={() => setView({ kind: "account" })}
+                  />
+                )}
+                {view.kind === "glossary" && (
+                  <GlossaryAndRulesPage grade={selectedGrade} onSelectLesson={openLesson} />
+                )}
+                {view.kind === "account" && (
+                  <AccountPage
+                    session={session}
+                    onSessionChange={(next) => {
+                      setSession(next);
+                      if (next) setAuthNotice(null);
+                    }}
+                  />
+                )}
+              </Suspense>
             </PageTransitionWrapper>
           </AnimatePresence>
         </main>

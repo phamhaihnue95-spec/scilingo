@@ -64,9 +64,25 @@ const API_ROOT = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/+$/, "");
 const API_BASE = `${API_ROOT}/api/v1`;
 const ACCESS_KEY = "scilingo_access_token";
 const REFRESH_KEY = "scilingo_refresh_token";
+const AUTH_NO_RETRY_PATHS = new Set([
+  "/auth/login",
+  "/auth/register",
+  "/auth/refresh",
+  "/analytics/track",
+]);
+
+export const AUTH_EXPIRED_EVENT = "scilingo:auth-expired";
+export const API_COLD_START_EVENT = "scilingo:cold-start";
+
+let slowRequestCount = 0;
+let refreshPromise: Promise<string | null> | null = null;
 
 export function getStoredAccessToken(): string | null {
   return localStorage.getItem(ACCESS_KEY);
+}
+
+export function getStoredRefreshToken(): string | null {
+  return localStorage.getItem(REFRESH_KEY);
 }
 
 export function saveAuthTokens(accessToken: string, refreshToken: string): void {
@@ -79,7 +95,104 @@ export function clearAuthTokens(): void {
   localStorage.removeItem(REFRESH_KEY);
 }
 
-async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+function emitColdStart(active: boolean): void {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent(API_COLD_START_EVENT, { detail: { active } }));
+}
+
+function emitAuthExpired(): void {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent(AUTH_EXPIRED_EVENT));
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function fetchWithColdStartTracking(url: string, init: RequestInit): Promise<Response> {
+  let markedSlow = false;
+  const timer =
+    typeof window !== "undefined"
+      ? window.setTimeout(() => {
+          markedSlow = true;
+          slowRequestCount += 1;
+          if (slowRequestCount === 1) {
+            emitColdStart(true);
+          }
+        }, 3500)
+      : undefined;
+
+  try {
+    return await fetch(url, init);
+  } finally {
+    if (timer !== undefined) {
+      window.clearTimeout(timer);
+    }
+    if (markedSlow) {
+      slowRequestCount = Math.max(0, slowRequestCount - 1);
+      if (slowRequestCount === 0) {
+        emitColdStart(false);
+      }
+    }
+  }
+}
+
+async function fetchWithColdStartAndRetry(url: string, init: RequestInit): Promise<Response> {
+  const method = (init.method ?? "GET").toUpperCase();
+  const canRetry = method === "GET";
+  try {
+    const res = await fetchWithColdStartTracking(url, init);
+    if (canRetry && (res.status === 502 || res.status === 503 || res.status === 504)) {
+      await sleep(1800);
+      return await fetchWithColdStartTracking(url, init);
+    }
+    return res;
+  } catch (err) {
+    if (canRetry && err instanceof TypeError) {
+      await sleep(1800);
+      return await fetchWithColdStartTracking(url, init);
+    }
+    throw err;
+  }
+}
+
+export async function refreshAccessToken(): Promise<string | null> {
+  if (refreshPromise) return refreshPromise;
+  const refreshToken = getStoredRefreshToken();
+  if (!refreshToken) {
+    clearAuthTokens();
+    emitAuthExpired();
+    return null;
+  }
+
+  refreshPromise = (async () => {
+    try {
+      const res = await fetchWithColdStartTracking(`${API_BASE}/auth/refresh`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refresh_token: refreshToken }),
+      });
+      if (!res.ok) {
+        clearAuthTokens();
+        emitAuthExpired();
+        return null;
+      }
+      const data = (await res.json()) as AuthSession;
+      saveAuthTokens(data.access_token, data.refresh_token);
+      return data.access_token;
+    } catch {
+      clearAuthTokens();
+      emitAuthExpired();
+      return null;
+    } finally {
+      refreshPromise = null;
+    }
+  })();
+
+  return refreshPromise;
+}
+
+async function request<T>(path: string, init: RequestInit = {}, retried = false): Promise<T> {
   const headers = new Headers(init.headers);
   if (!headers.has("Content-Type") && init.body) {
     headers.set("Content-Type", "application/json");
@@ -89,7 +202,17 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     headers.set("Authorization", `Bearer ${token}`);
   }
 
-  const res = await fetch(`${API_BASE}${path}`, { ...init, headers });
+  const res = await fetchWithColdStartAndRetry(`${API_BASE}${path}`, { ...init, headers });
+  const basePath = path.split("?")[0];
+  if (res.status === 401 && !retried && token && !AUTH_NO_RETRY_PATHS.has(basePath)) {
+    const newAccessToken = await refreshAccessToken();
+    if (newAccessToken) {
+      const retryHeaders = new Headers(init.headers);
+      retryHeaders.delete("Authorization");
+      return request<T>(path, { ...init, headers: retryHeaders }, true);
+    }
+  }
+
   if (!res.ok) {
     let message = `Lỗi HTTP ${res.status}`;
     try {
@@ -417,23 +540,32 @@ export const api = {
   },
 
   async downloadExamFile(examId: string, format: "docx" | "pdf"): Promise<void> {
-    const token = getStoredAccessToken();
-    const res = await fetch(
-      `${API_BASE}/lms/exams/${encodeURIComponent(examId)}/export?format=${format}`,
-      { headers: token ? { Authorization: `Bearer ${token}` } : {} }
-    );
+    const url = `${API_BASE}/lms/exams/${encodeURIComponent(examId)}/export?format=${format}`;
+    let token = getStoredAccessToken();
+    let res = await fetchWithColdStartAndRetry(url, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (res.status === 401 && token) {
+      const refreshed = await refreshAccessToken();
+      if (refreshed) {
+        token = refreshed;
+        res = await fetchWithColdStartAndRetry(url, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      }
+    }
     if (!res.ok) {
       throw new Error(`Không thể xuất file ${format.toUpperCase()} (HTTP ${res.status})`);
     }
     const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
+    const objectUrl = URL.createObjectURL(blob);
     const link = document.createElement("a");
-    link.href = url;
+    link.href = objectUrl;
     link.download = `scilingo-exam-${examId.slice(0, 8)}.${format}`;
     document.body.appendChild(link);
     link.click();
     link.remove();
-    URL.revokeObjectURL(url);
+    URL.revokeObjectURL(objectUrl);
   },
 
   assignExam(classroomId: string, examId: string, title?: string): Promise<AssignmentItem> {

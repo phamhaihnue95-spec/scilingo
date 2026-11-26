@@ -613,7 +613,7 @@ class CurriculumService:
         if payload.strict_lint and not lint_report.passed:
             first_issue = lint_report.issues[0]
             raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                 detail=(
                     f"Vi phạm danh pháp IUPAC/SI ('{first_issue.matched_text}' → nên dùng "
                     f"'{first_issue.recommended}')."
@@ -694,7 +694,7 @@ class CurriculumService:
         if effective_status == "verified" and not lint_report.passed:
             first_issue = lint_report.issues[0]
             raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                 detail=(
                     f"Không thể duyệt 'verified' do lỗi IUPAC/SI ('{first_issue.matched_text}' "
                     f"→ '{first_issue.recommended}')."
@@ -797,7 +797,7 @@ class CurriculumService:
         if next_status == "verified" and not lint_report.passed:
             first_issue = lint_report.issues[0]
             raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                 detail=(
                     f"Không thể xuất bản 'verified' do lỗi IUPAC/SI ('{first_issue.matched_text}' "
                     f"→ '{first_issue.recommended}')."

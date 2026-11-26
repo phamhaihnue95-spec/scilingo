@@ -24,7 +24,7 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    app_name: str = "SciLingo KHTN 8 API"
+    app_name: str = "SciLingo KHTN 6–9 API"
     api_v1_prefix: str = "/api/v1"
     environment: str = "development"
 
@@ -35,9 +35,10 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
     refresh_token_expire_days: int = 7
+    rate_limit_enabled: bool = True
 
     platform_admin_email: str = "phamhaihnue95@gmail.com"
-    platform_admin_password: str = "Hamberger23"
+    platform_admin_password: str = ""
     platform_admin_full_name: str = "Phạm Thị Hải (Quản trị hệ thống)"
 
     cors_origins: Annotated[list[str], NoDecode] = [
