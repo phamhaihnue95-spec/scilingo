@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.core.rate_limit import rate_limit
+from app.modules.curriculum.audio import fetch_pronunciation_mp3, sanitize_pronunciation_text
 from app.modules.curriculum.schemas import (
     CmsLessonListOut,
     CmsLessonUpdateRequest,
@@ -92,6 +95,34 @@ def get_lesson_detail(
 def get_iupac_rules(db: Session = Depends(get_db)) -> TerminologyRulebookOut:
     """Return the official 13-element exception and IUPAC/SI terminology rulebook."""
     return CurriculumService(db).get_iupac_rulebook()
+
+
+@router.get(
+    "/curriculum/pronounce",
+    dependencies=[Depends(rate_limit("audio_pronounce", max_requests=60, window_seconds=60))],
+)
+def pronounce_english_term(
+    text: str = Query(..., min_length=1, max_length=120),
+) -> Response:
+    """Stream cached English pronunciation MP3 for reliable Android/mobile playback."""
+    cleaned = sanitize_pronunciation_text(text)
+    if not cleaned:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Thuật ngữ phát âm không hợp lệ.",
+        )
+    try:
+        mp3_bytes = fetch_pronunciation_mp3(cleaned)
+    except (RuntimeError, ValueError) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Không tải được âm thanh phát âm.",
+        ) from exc
+    return Response(
+        content=mp3_bytes,
+        media_type="audio/mpeg",
+        headers={"Cache-Control": "public, max-age=604800"},
+    )
 
 
 @router.get("/terms", response_model=TermSearchResponse)

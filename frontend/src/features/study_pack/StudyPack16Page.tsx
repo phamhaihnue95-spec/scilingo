@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   AlertTriangle,
   BookOpen,
   CheckCircle2,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Layers,
@@ -13,6 +14,7 @@ import {
   Shuffle,
   Sparkles,
   Target,
+  X,
   XCircle,
   Zap,
 } from "lucide-react";
@@ -90,8 +92,23 @@ export function StudyPack16Page({
   const [searchTotal, setSearchTotal] = useState(0);
 
   const [mode, setMode] = useState<StudyMode>("list");
+  const [mobileUnitDrawerOpen, setMobileUnitDrawerOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const workspaceRef = useRef<HTMLDivElement | null>(null);
+
+  const selectUnit = (unitNo: number, scrollOnMobile = false) => {
+    playClickSound();
+    setActiveUnitNo(unitNo);
+    setSearchQuery("");
+    setMobileUnitDrawerOpen(false);
+    setQuizUnits((prev) => (prev.includes(unitNo) ? prev : [unitNo]));
+    if (scrollOnMobile) {
+      window.setTimeout(() => {
+        workspaceRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 60);
+    }
+  };
 
   // Flashcard state
   const [fcIndex, setFcIndex] = useState(0);
@@ -309,46 +326,46 @@ export function StudyPack16Page({
   }, [quizData, quizSubmitted, quizAnswers]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Hero Banner */}
-      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 via-sky-500 to-emerald-500 p-6 text-white shadow-lg sm:p-7">
+      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 via-sky-500 to-emerald-500 p-4 text-white shadow-lg sm:p-7">
         <ScienceAmbientParticles />
         <div className="pointer-events-none absolute -right-12 -top-12 h-56 w-56 rounded-full bg-white/15 blur-2xl" />
         <div className="pointer-events-none absolute -bottom-16 left-1/3 h-48 w-48 rounded-full bg-amber-300/20 blur-2xl" />
 
-        <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-          <div className="space-y-2">
-            <div className="inline-flex flex-wrap items-center gap-2 rounded-full bg-white/20 px-3.5 py-1 text-xs font-bold backdrop-blur-sm">
+        <div className="relative flex flex-col gap-3.5 lg:flex-row lg:items-center lg:justify-between lg:gap-5">
+          <div className="space-y-1.5 sm:space-y-2">
+            <div className="inline-flex flex-wrap items-center gap-2 rounded-full bg-white/20 px-3 py-0.5 text-[11px] font-bold backdrop-blur-sm sm:px-3.5 sm:py-1 sm:text-xs">
               <Sparkles className="h-3.5 w-3.5 text-amber-200" />
-              <span>Trường THCS Cầu Giấy B · Giáo viên Phạm Thị Hải</span>
+              <span>Trường THCS Cầu Giấy B · GV Phạm Thị Hải</span>
             </div>
             <div className="flex items-center gap-3">
               <div className="hidden rounded-2xl bg-white/20 p-2 backdrop-blur-sm sm:flex">
                 <Icon3D name="books" size={44} float />
               </div>
-              <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">
+              <h1 className="text-lg font-extrabold tracking-tight sm:text-3xl">
                 {overview?.title ?? "The English Dictionary for SCIENCE (16 Units)"}
               </h1>
             </div>
-            <p className="max-w-2xl text-sm text-sky-50">
+            <p className="hidden max-w-2xl text-sm text-sky-50 sm:block">
               Bộ đề học & cẩm nang {overview?.total_items ?? 920} thuật ngữ Khoa học tự nhiên kèm
               phiên âm IPA chuẩn, phát âm giọng đọc, thẻ lật Flashcard và bài luyện trắc nghiệm
               10% / 50% / 100% tiếng Anh theo chuyên đề.
             </p>
           </div>
 
-          <div className="grid grid-cols-3 gap-3 text-center">
-            <div className="rounded-2xl bg-white/20 px-4 py-3 backdrop-blur-sm">
-              <div className="text-2xl font-extrabold">{overview?.total_units ?? 16}</div>
-              <div className="text-xs font-medium text-sky-50">Chuyên đề</div>
+          <div className="grid grid-cols-3 gap-2 text-center sm:gap-3">
+            <div className="rounded-2xl bg-white/20 px-2.5 py-2 backdrop-blur-sm sm:px-4 sm:py-3">
+              <div className="text-lg font-extrabold sm:text-2xl">{overview?.total_units ?? 16}</div>
+              <div className="text-[11px] font-medium text-sky-50 sm:text-xs">Chuyên đề</div>
             </div>
-            <div className="rounded-2xl bg-white/20 px-4 py-3 backdrop-blur-sm">
-              <div className="text-2xl font-extrabold">{overview?.total_items ?? 920}</div>
-              <div className="text-xs font-medium text-sky-50">Thuật ngữ IPA</div>
+            <div className="rounded-2xl bg-white/20 px-2.5 py-2 backdrop-blur-sm sm:px-4 sm:py-3">
+              <div className="text-lg font-extrabold sm:text-2xl">{overview?.total_items ?? 920}</div>
+              <div className="text-[11px] font-medium text-sky-50 sm:text-xs">Thuật ngữ IPA</div>
             </div>
-            <div className="rounded-2xl bg-white/20 px-4 py-3 backdrop-blur-sm">
-              <div className="text-2xl font-extrabold">TT 32 & 94</div>
-              <div className="text-xs font-medium text-sky-50">Chuẩn IUPAC</div>
+            <div className="rounded-2xl bg-white/20 px-2.5 py-2 backdrop-blur-sm sm:px-4 sm:py-3">
+              <div className="text-lg font-extrabold sm:text-2xl">TT 32 & 94</div>
+              <div className="text-[11px] font-medium text-sky-50 sm:text-xs">Chuẩn IUPAC</div>
             </div>
           </div>
         </div>
@@ -367,10 +384,10 @@ export function StudyPack16Page({
       )}
 
       {!loading && overview && (
-        <div className="grid gap-6 lg:grid-cols-12">
-          {/* Left Unit Index */}
-          <aside className="space-y-3 lg:col-span-4">
-            <div className="rounded-2xl border border-sky-100 bg-white/90 p-4 shadow-sm backdrop-blur-sm">
+        <div className="grid gap-4 lg:grid-cols-12 lg:gap-6">
+          {/* Desktop Left Unit Index */}
+          <aside className="hidden lg:col-span-4 lg:block">
+            <div className="sticky top-20 rounded-2xl border border-sky-100 bg-white/90 p-4 shadow-sm backdrop-blur-sm">
               <div className="mb-3 flex items-center justify-between">
                 <h2 className="text-sm font-extrabold uppercase tracking-wide text-slate-700">
                   16 Units Chuyên đề
@@ -388,13 +405,7 @@ export function StudyPack16Page({
                     <button
                       key={u.unit_no}
                       type="button"
-                      onClick={() => {
-                        setActiveUnitNo(u.unit_no);
-                        setSearchQuery("");
-                        if (!quizUnits.includes(u.unit_no)) {
-                          setQuizUnits([u.unit_no]);
-                        }
-                      }}
+                      onClick={() => selectUnit(u.unit_no)}
                       className={`flex w-full items-center justify-between gap-2 rounded-xl border p-3 text-left transition ${
                         isActive
                           ? style.active
@@ -444,8 +455,71 @@ export function StudyPack16Page({
             </div>
           </aside>
 
-          {/* Right Interactive Workspace */}
-          <div className="space-y-4 lg:col-span-8">
+          {/* Right Interactive Workspace (Unified Single-Screen on Mobile) */}
+          <div ref={workspaceRef} className="min-w-0 space-y-3 sm:space-y-4 lg:col-span-8">
+            {/* Compact Sticky Mobile Unit Switcher */}
+            {(() => {
+              const currentUnitSummary =
+                overview.units.find((u) => u.unit_no === activeUnitNo) ?? overview.units[0];
+              const activeStyle =
+                DISC_CARD_STYLE[currentUnitSummary.discipline] ?? DISC_CARD_STYLE.physics;
+              return (
+                <div className="sticky top-[57px] z-10 space-y-2 rounded-2xl border border-sky-200/80 bg-white/95 p-2.5 shadow-sm backdrop-blur-md lg:hidden">
+                  <button
+                    type="button"
+                    onClick={() => setMobileUnitDrawerOpen(true)}
+                    className="flex w-full items-center justify-between gap-2 rounded-xl bg-gradient-to-r from-indigo-50 via-sky-50 to-emerald-50 px-3 py-2 text-left ring-1 ring-sky-200/70"
+                  >
+                    <div className="flex min-w-0 items-center gap-2">
+                      <Icon3D
+                        name={STUDY_PACK_UNIT_3D_ICON[currentUnitSummary.unit_no] ?? "sparkles"}
+                        size={24}
+                      />
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            className={`rounded-md px-1.5 py-0.5 text-[10px] font-extrabold ${activeStyle.chip}`}
+                          >
+                            Unit {currentUnitSummary.unit_no}
+                          </span>
+                          <span className="truncate text-xs font-extrabold text-slate-900">
+                            {currentUnitSummary.title_en}
+                          </span>
+                        </div>
+                        <div className="truncate text-[11px] font-medium text-slate-600">
+                          {currentUnitSummary.title_vi} · {currentUnitSummary.item_count} từ
+                        </div>
+                      </div>
+                    </div>
+                    <span className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-indigo-600 px-2.5 py-1 text-[11px] font-bold text-white shadow-sm">
+                      16 Units
+                      <ChevronDown className="h-3.5 w-3.5" />
+                    </span>
+                  </button>
+
+                  <div className="flex gap-1.5 overflow-x-auto pb-0.5">
+                    {overview.units.map((u) => {
+                      const isActive = u.unit_no === activeUnitNo && !searchQuery.trim();
+                      const style = DISC_CARD_STYLE[u.discipline] ?? DISC_CARD_STYLE.physics;
+                      return (
+                        <button
+                          key={u.unit_no}
+                          type="button"
+                          onClick={() => selectUnit(u.unit_no)}
+                          className={`shrink-0 rounded-xl border px-2.5 py-1.5 text-xs font-extrabold transition ${
+                            isActive
+                              ? style.active
+                              : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-sky-50"
+                          }`}
+                        >
+                          U{u.unit_no} · {u.title_en}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
             {/* Search & Mode Controls */}
             <div className="space-y-3 rounded-2xl border border-sky-100 bg-white/95 p-4 shadow-sm">
               <div className="relative">
@@ -583,7 +657,7 @@ export function StudyPack16Page({
                           <SpeakButton
                             termEn={item.term_en}
                             title={`Phát âm: ${item.term_en}`}
-                            className="h-7 w-7"
+                            className="h-8 w-8 sm:h-7 sm:w-7"
                           />
                         </div>
                         <div className="text-sm font-semibold text-slate-700">
@@ -981,6 +1055,92 @@ export function StudyPack16Page({
                 )}
               </section>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Mobile Full 16-Unit Drawer / Bottom Sheet */}
+      {mobileUnitDrawerOpen && overview && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/50 backdrop-blur-sm lg:hidden"
+          onClick={() => setMobileUnitDrawerOpen(false)}
+        >
+          <div
+            className="flex max-h-[82vh] w-full flex-col rounded-t-3xl bg-white shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3.5">
+              <div>
+                <h2 className="text-sm font-extrabold text-slate-900">
+                  Chọn chuyên đề (16 Units · {overview.total_items} từ)
+                </h2>
+                <p className="text-[11px] text-slate-500">
+                  Chạm vào một Unit để chuyển nhanh danh sách &amp; flashcard
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setMobileUnitDrawerOpen(false)}
+                className="rounded-xl p-1.5 text-slate-500 hover:bg-slate-100"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="space-y-2 overflow-y-auto p-3.5">
+              {overview.units.map((u) => {
+                const isActive = u.unit_no === activeUnitNo && !searchQuery.trim();
+                const style = DISC_CARD_STYLE[u.discipline] ?? DISC_CARD_STYLE.physics;
+                return (
+                  <button
+                    key={u.unit_no}
+                    type="button"
+                    onClick={() => selectUnit(u.unit_no, true)}
+                    className={`flex w-full items-center justify-between gap-2 rounded-xl border p-3 text-left transition ${
+                      isActive
+                        ? style.active
+                        : "border-slate-200 bg-white hover:border-sky-300 hover:bg-sky-50/50"
+                    }`}
+                  >
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <Icon3D
+                          name={STUDY_PACK_UNIT_3D_ICON[u.unit_no] ?? "sparkles"}
+                          size={22}
+                        />
+                        <span
+                          className={`rounded-md px-2 py-0.5 text-[11px] font-extrabold ${
+                            isActive ? "bg-white/25 text-white" : style.chip
+                          }`}
+                        >
+                          Unit {u.unit_no}
+                        </span>
+                        <span
+                          className={`truncate text-sm font-bold ${
+                            isActive ? "text-white" : "text-slate-900"
+                          }`}
+                        >
+                          {u.title_en}
+                        </span>
+                      </div>
+                      <div
+                        className={`mt-0.5 truncate text-xs ${
+                          isActive ? "text-white/90" : "text-slate-500"
+                        }`}
+                      >
+                        {u.title_vi}
+                      </div>
+                    </div>
+                    <span
+                      className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-bold ${
+                        isActive ? "bg-white/25 text-white" : "bg-slate-100 text-slate-700"
+                      }`}
+                    >
+                      {u.item_count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}

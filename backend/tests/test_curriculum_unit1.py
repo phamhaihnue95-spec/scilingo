@@ -89,3 +89,21 @@ def test_seed_is_idempotent(test_db_session: Session) -> None:
     assert ch_added == 0
     assert lesson_added == 0
     assert term_added == 0
+
+
+def test_pronounce_audio_endpoint_returns_mpeg(client: TestClient, monkeypatch) -> None:
+    import app.modules.curriculum.router as curriculum_router
+
+    monkeypatch.setattr(
+        curriculum_router,
+        "fetch_pronunciation_mp3",
+        lambda cleaned: b"ID3FAKE_MP3_" + cleaned.encode("utf-8"),
+    )
+    ok_resp = client.get("/api/v1/curriculum/pronounce", params={"text": "Hydrochloric acid (HCl)"})
+    assert ok_resp.status_code == 200
+    assert ok_resp.headers["content-type"].startswith("audio/mpeg")
+    assert "max-age=" in ok_resp.headers.get("cache-control", "")
+    assert ok_resp.content == b"ID3FAKE_MP3_Hydrochloric acid"
+
+    bad_resp = client.get("/api/v1/curriculum/pronounce", params={"text": "(HCl)"})
+    assert bad_resp.status_code == 400

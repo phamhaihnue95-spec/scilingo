@@ -24,6 +24,7 @@ import type {
   TutorAskResult,
 } from "../../api/types";
 import { VALID_GRADES } from "../../utils/grades";
+import { speakEnglishTerm } from "../../utils/speech";
 
 interface Props {
   session: AuthSession | null;
@@ -45,15 +46,6 @@ interface BrowserSpeechRecognition {
 }
 
 type SpeechRecognitionCtor = new () => BrowserSpeechRecognition;
-
-function speakEnglishTerm(text: string): void {
-  if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
-  window.speechSynthesis.cancel();
-  const utter = new SpeechSynthesisUtterance(text);
-  utter.lang = "en-US";
-  utter.rate = 0.92;
-  window.speechSynthesis.speak(utter);
-}
 
 export function AiCopilotPage({ session, grade, onOpenAccount }: Props) {
   const [tab, setTab] = useState<CopilotTab>("tutor");
